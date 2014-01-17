@@ -56,8 +56,16 @@ class ElementBase
     @attributes = {}
     @styles = {}
     @children = []
+
+    # nodeType is a DOM nomenclature:
+    # 1 ELEMENT_NODE
+    # 2 ATTRIBUTE_NODE
+    # 3 TEXT_NODE
+    # (see http://www.javascriptkit.com/domref/nodetype.shtml
+    #  for the other 9 types)
     if node? and node.nodeType is 1 #ELEMENT_NODE
       # add children
+      #alert 'adding child ' + node.nodeType
       for i in [0...node.childNodes.length]
         childNode = node.childNodes[i]
         @addChild childNode, true  if childNode.nodeType is 1 #ELEMENT_NODE
@@ -98,7 +106,7 @@ class ElementBase
       if @attribute("style").hasValue()
         styles = @attribute("style").value.split(";")
         for i in [0...styles.length]
-          unless svg.trim(styles[i]) is ""
+          unless svg.trim(styles[i]) == ""
             style = styles[i].split(":")
             name = svg.trim(style[0])
             value = svg.trim(style[1])
@@ -128,10 +136,6 @@ class ElementBase
   style: (name, createIfNotExists) ->
     console.log "name, createIfNotExists " + name + " " + createIfNotExists
     console.log "@styles " + @styles + " class name: " + this.constructor.name
-    if this.constructor.name == "title" or this.constructor.name == "desc" or this.constructor.name == "MISSING"
-      console.log "for the break"
-      console.trace()
-      return svg.EmptyProperty
     if @styles == undefined then console.trace()
     s = @styles[name]
     return s  if s?
@@ -153,10 +157,10 @@ class ElementBase
   render: (ctx) ->
     
     # don't render display=none
-    return  if @style("display").value is "none"
+    return  if @style("display").value == "none"
     
     # don't render visibility=hidden
-    return  if @attribute("visibility").value is "hidden"
+    return  if @attribute("visibility").value == "hidden"
     ctx.save()
     if @attribute("mask").hasValue() # mask
       mask = @attribute("mask").getDefinition()
@@ -201,12 +205,15 @@ class ElementBase
 
 class title extends ElementBase
   constructor: (node) ->
+    super node
 
 class desc extends ElementBase
   constructor: (node) ->
+    super node
 
 class MISSING extends ElementBase
   constructor: (node) ->
+    super node
     console.log "ERROR: Element '" + node.nodeName + "' not yet implemented."  if console
 
 
@@ -248,7 +255,7 @@ class feMorphology extends ElementBase
   # TODO: implement
 
 
-class filter extends ElementBase
+class filterClass extends ElementBase
   constructor: (node) ->
     super node
   
@@ -296,19 +303,21 @@ class filter extends ElementBase
 
 class clipPath extends ElementBase
   constructor: (node) ->
+    #alert 'constructing clippath'
     super node
 
   apply: (ctx) ->
+    #alert 'clipping'
     for i in [0...@children.length]
       if @children[i].path
         @children[i].path ctx
         ctx.clip()
     return
 
-  render = (ctx) ->
+  render: (ctx) ->
   # NO RENDER
 
-class mask extends ElementBase
+class maskClass extends ElementBase
   constructor: (node) ->
     super node
 
@@ -348,6 +357,7 @@ class mask extends ElementBase
 class ElementBaseStyle extends ElementBase
 
   constructor: (node) ->
+    #alert 'building an ElementBaseStyle'
     super node
     # text, or spaces then CDATA
     css = ""
@@ -359,14 +369,14 @@ class ElementBaseStyle extends ElementBase
     cssDefs = css.split("}")
 
     for i in [0...cssDefs.length]
-      unless svg.trim(cssDefs[i]) is ""
+      unless svg.trim(cssDefs[i]) == ""
         cssDef = cssDefs[i].split("{")
         cssClasses = cssDef[0].split(",")
         cssProps = cssDef[1].split(";")
 
         for j in [0...cssClasses.length]
           cssClass = svg.trim(cssClasses[j])
-          unless cssClass is ""
+          unless cssClass == ""
             props = {}
 
             for k in [0...cssProps.length]
@@ -375,7 +385,7 @@ class ElementBaseStyle extends ElementBase
               value = cssProps[k].substr(prop + 1, cssProps[k].length - prop)
               props[svg.trim(name)] = new Property(svg.trim(name), svg.trim(value))  if name? and value?
             svg.Styles[cssClass] = props
-            if cssClass is "@font-face"
+            if cssClass == "@font-face"
               fontFamily = props["font-family"].value.replace(/"/g, "")
               srcs = props["src"].value.split(",")
 
@@ -394,6 +404,7 @@ class ElementBaseStyle extends ElementBase
 
 class fontface extends ElementBase
   constructor: (node) ->
+    #alert 'creating a font'
     super node
     @ascent = @attribute("ascent").value
     @descent = @attribute("descent").value
@@ -402,26 +413,27 @@ class fontface extends ElementBase
 class font extends ElementBase
 
   constructor: (node) ->
+    #alert 'constructing a font'
+    super node
     @isRTL = false
     @isArabic = false
     @fontFace = null
     @missingGlyph = null
     @glyphs = []
-    super node
     @horizAdvX = @attribute("horiz-adv-x").numValue()
 
     for i in [0...@children.length]
       child = @children[i]
-      if child.type is "font-face"
+      if child.type == "font-face"
         @fontFace = child
         svg.Definitions[child.style("font-family").value] = this  if child.style("font-family").hasValue()
-      else if child.type is "missing-glyph"
+      else if child.type == "missing-glyph"
         @missingGlyph = child
-      else if child.type is "glyph"
-        unless child.arabicForm is ""
+      else if child.type == "glyph"
+        unless child.arabicForm == ""
           @isRTL = true
           @isArabic = true
-          @glyphs[child.unicode] = []  if typeof (@glyphs[child.unicode]) is "undefined"
+          @glyphs[child.unicode] = []  if typeof (@glyphs[child.unicode]) == "undefined"
           @glyphs[child.unicode][child.arabicForm] = child
         else
           @glyphs[child.unicode] = child
@@ -449,7 +461,7 @@ class AnimateBase extends ElementBase
   getProperty: ->
     attributeType = @attribute("attributeType").value
     attributeName = @attribute("attributeName").value
-    return @parent.style(attributeName, true)  if attributeType is "CSS"
+    return @parent.style(attributeName, true)  if attributeType == "CSS"
     @parent.attribute attributeName, true
 
   calcValue: ->
@@ -468,9 +480,9 @@ class AnimateBase extends ElementBase
     if @duration > @maxDuration
       
       # loop for indefinitely repeating animations
-      if @attribute("repeatCount").value is "indefinite" or @attribute("repeatDur").value is "indefinite"
+      if @attribute("repeatCount").value == "indefinite" or @attribute("repeatDur").value == "indefinite"
         @duration = 0.0
-      else if @attribute("fill").valueOrDefault("remove") is "remove" and not @removed
+      else if @attribute("fill").valueOrDefault("remove") == "remove" and not @removed
         @removed = true
         @getProperty().value = @initialValue
         return true
@@ -494,7 +506,8 @@ class AnimateBase extends ElementBase
   
   # fraction of duration we've covered
   progress: ->
-    ret = (@duration - @begin) / (@maxDuration - @begin)
+    ret = {}
+    ret.progress = (@duration - @begin) / (@maxDuration - @begin)
     if @values.hasValue()
       p = ret.progress * (@values.value.length - 1)
       lb = Math.floor(p)
@@ -551,6 +564,7 @@ class animate extends AnimateBase
     p = @progress()
     
     # tween value linearly
+    console.log 'p: ' + p
     newValue = p.from.numValue() + (p.to.numValue() - p.from.numValue()) * p.progress
     newValue + @initialUnits
 
@@ -561,7 +575,7 @@ class GradientBase extends ElementBase
     @gradientUnits = @attribute("gradientUnits").valueOrDefault("objectBoundingBox")
     for i in [0...@children.length]
       child = @children[i]
-      @stops.push child  if child.type is "stop"
+      @stops.push child  if child.type == "stop"
     return
 
   getGradient: ->
@@ -618,13 +632,13 @@ class radialGradient extends GradientBase
     @attribute("cx", true).value = "50%"  unless @attribute("cx").hasValue()
     @attribute("cy", true).value = "50%"  unless @attribute("cy").hasValue()
     @attribute("r", true).value = "50%"  unless @attribute("r").hasValue()
-    cx = ((if @gradientUnits is "objectBoundingBox" then bb.x() + bb.width() * @attribute("cx").numValue() else @attribute("cx").toPixels("x")))
-    cy = ((if @gradientUnits is "objectBoundingBox" then bb.y() + bb.height() * @attribute("cy").numValue() else @attribute("cy").toPixels("y")))
+    cx = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("cx").numValue() else @attribute("cx").toPixels("x")))
+    cy = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("cy").numValue() else @attribute("cy").toPixels("y")))
     fx = cx
     fy = cy
-    fx = ((if @gradientUnits is "objectBoundingBox" then bb.x() + bb.width() * @attribute("fx").numValue() else @attribute("fx").toPixels("x")))  if @attribute("fx").hasValue()
-    fy = ((if @gradientUnits is "objectBoundingBox" then bb.y() + bb.height() * @attribute("fy").numValue() else @attribute("fy").toPixels("y")))  if @attribute("fy").hasValue()
-    r = ((if @gradientUnits is "objectBoundingBox" then (bb.width() + bb.height()) / 2.0 * @attribute("r").numValue() else @attribute("r").toPixels()))
+    fx = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("fx").numValue() else @attribute("fx").toPixels("x")))  if @attribute("fx").hasValue()
+    fy = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("fy").numValue() else @attribute("fy").toPixels("y")))  if @attribute("fy").hasValue()
+    r = ((if @gradientUnits == "objectBoundingBox" then (bb.width() + bb.height()) / 2.0 * @attribute("r").numValue() else @attribute("r").toPixels()))
     ctx.createRadialGradient fx, fy, 0, cx, cy, r
 
 
@@ -639,10 +653,10 @@ class linearGradient extends GradientBase
       @attribute("y1", true).value = 0
       @attribute("x2", true).value = 1
       @attribute("y2", true).value = 0
-    x1 = ((if @gradientUnits is "objectBoundingBox" then bb.x() + bb.width() * @attribute("x1").numValue() else @attribute("x1").toPixels("x")))
-    y1 = ((if @gradientUnits is "objectBoundingBox" then bb.y() + bb.height() * @attribute("y1").numValue() else @attribute("y1").toPixels("y")))
-    x2 = ((if @gradientUnits is "objectBoundingBox" then bb.x() + bb.width() * @attribute("x2").numValue() else @attribute("x2").toPixels("x")))
-    y2 = ((if @gradientUnits is "objectBoundingBox" then bb.y() + bb.height() * @attribute("y2").numValue() else @attribute("y2").toPixels("y")))
+    x1 = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x1").numValue() else @attribute("x1").toPixels("x")))
+    y1 = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y1").numValue() else @attribute("y1").toPixels("y")))
+    x2 = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x2").numValue() else @attribute("x2").toPixels("x")))
+    y2 = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y2").numValue() else @attribute("y2").toPixels("y")))
     return null  if x1 is x2 and y1 is y2
     ctx.createLinearGradient x1, y1, x2, y2
 
@@ -659,8 +673,8 @@ class RenderedElementBase extends ElementBase
       ctx.fillStyle = fs  if fs?
     else if @style("fill").hasValue()
       fillStyle = @style("fill")
-      fillStyle.value = @style("color").value  if fillStyle.value is "currentColor"
-      ctx.fillStyle = ((if fillStyle.value is "none" then "rgba(0,0,0,0)" else fillStyle.value))
+      fillStyle.value = @style("color").value  if fillStyle.value == "currentColor"
+      ctx.fillStyle = ((if fillStyle.value == "none" then "rgba(0,0,0,0)" else fillStyle.value))
     if @style("fill-opacity").hasValue()
       fillStyle = new Property("fill", ctx.fillStyle)
       fillStyle = fillStyle.addOpacity(@style("fill-opacity").value)
@@ -672,8 +686,8 @@ class RenderedElementBase extends ElementBase
       ctx.strokeStyle = fs  if fs?
     else if @style("stroke").hasValue()
       strokeStyle = @style("stroke")
-      strokeStyle.value = @style("color").value  if strokeStyle.value is "currentColor"
-      ctx.strokeStyle = ((if strokeStyle.value is "none" then "rgba(0,0,0,0)" else strokeStyle.value))
+      strokeStyle.value = @style("color").value  if strokeStyle.value == "currentColor"
+      ctx.strokeStyle = ((if strokeStyle.value == "none" then "rgba(0,0,0,0)" else strokeStyle.value))
     if @style("stroke-opacity").hasValue()
       strokeStyle = new Property("stroke", ctx.strokeStyle)
       strokeStyle = strokeStyle.addOpacity(@style("stroke-opacity").value)
@@ -681,12 +695,19 @@ class RenderedElementBase extends ElementBase
     if @style("stroke-width").hasValue()
       newLineWidth = @style("stroke-width").toPixels()
       ctx.lineWidth = (if newLineWidth is 0 then 0.001 else newLineWidth) # browsers don't respect 0
-    ctx.lineCap = @style("stroke-linecap").value  if @style("stroke-linecap").hasValue()
-    ctx.lineJoin = @style("stroke-linejoin").value  if @style("stroke-linejoin").hasValue()
-    ctx.miterLimit = @style("stroke-miterlimit").value  if @style("stroke-miterlimit").hasValue()
+    if @style("stroke-linecap").hasValue()
+      ctx.lineCap = @style("stroke-linecap").value
+    if @style("stroke-linejoin").hasValue()
+      ctx.lineJoin = @style("stroke-linejoin").value  
+    if @style("stroke-miterlimit").hasValue()
+      ctx.miterLimit = @style("stroke-miterlimit").value  
     
     # font
-    ctx.font = svg.Font.CreateFont(@style("font-style").value, @style("font-variant").value, @style("font-weight").value, (if @style("font-size").hasValue() then @style("font-size").toPixels() + "px" else ""), @style("font-family").value).toString()  unless typeof (ctx.font) is "undefined"
+    daFont = new Font
+    #alert 'typeof(ctx.font): ' + typeof(ctx.font)
+    if typeof(ctx.font) != "undefined"
+      #alert 'creating a font'
+      ctx.font = daFont.CreateFont(@style("font-style").value, @style("font-variant").value, @style("font-weight").value, (if @style("font-size").hasValue() then @style("font-size").toPixels() + "px" else ""), @style("font-family").value).toString()
     
     # transform
     if @attribute("transform").hasValue()
@@ -729,15 +750,15 @@ class use extends RenderedElementBase
   renderChildren: (ctx) ->
     element = @getDefinition()
     if element?
-      
       # temporarily detach from parent and render
       oldParent = element.parent
       element.parent = null
       element.render ctx
       element.parent = oldParent
+    return
 
 
-class g extends RenderedElementBase
+class gClass extends RenderedElementBase
   constructor: (node) ->
     super node
 
@@ -818,21 +839,24 @@ class TextElementBase extends RenderedElementBase
   getGlyph: (font, text, i) ->
     c = text[i]
     glyph = null
+    console.log "font: " + font + " glyphs: " + font.glyphs
     if font.isArabic
       arabicForm = "isolated"
-      arabicForm = "terminal"  if (i is 0 or text[i - 1] is " ") and i < text.length - 2 and text[i + 1] isnt " "
-      arabicForm = "medial"  if i > 0 and text[i - 1] isnt " " and i < text.length - 2 and text[i + 1] isnt " "
-      arabicForm = "initial"  if i > 0 and text[i - 1] isnt " " and (i is text.length - 1 or text[i + 1] is " ")
-      unless typeof (font.glyphs[c]) is "undefined"
+      arabicForm = "terminal"  if (i is 0 or text[i - 1] == " ") and i < text.length - 2 and text[i + 1] != " "
+      arabicForm = "medial"  if i > 0 and text[i - 1] != " " and i < text.length - 2 and text[i + 1] != " "
+      arabicForm = "initial"  if i > 0 and text[i - 1] != " " and (i is text.length - 1 or text[i + 1] == " ")
+      unless typeof (font.glyphs[c]) == "undefined"
         glyph = font.glyphs[c][arabicForm]
-        glyph = font.glyphs[c]  if not glyph? and font.glyphs[c].type is "glyph"
+        glyph = font.glyphs[c]  if not glyph? and font.glyphs[c].type == "glyph"
     else
+      console.trace()
       glyph = font.glyphs[c]
     glyph = font.missingGlyph  unless glyph?
     glyph
 
   renderChildren: (ctx) ->
-    customFont = @parent.style("font-family").getDefinition()
+    customFontStyle = @parent.style("font-family")
+    customFont = customFontStyle.getDefinition()
     if customFont?
       fontSize = @parent.style("font-size").numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize)
       fontStyle = @parent.style("font-style").valueOrDefault(svg.Font.Parse(svg.ctx.font).fontStyle)
@@ -847,24 +871,25 @@ class TextElementBase extends RenderedElementBase
         ctx.scale scale, -scale
         lw = ctx.lineWidth
         ctx.lineWidth = ctx.lineWidth * customFont.fontFace.unitsPerEm / fontSize
-        ctx.transform 1, 0, .4, 1, 0, 0  if fontStyle is "italic"
+        ctx.transform 1, 0, .4, 1, 0, 0  if fontStyle == "italic"
         glyph.render ctx
-        ctx.transform 1, 0, -.4, 1, 0, 0  if fontStyle is "italic"
+        ctx.transform 1, 0, -.4, 1, 0, 0  if fontStyle == "italic"
         ctx.lineWidth = lw
         ctx.scale 1 / scale, -1 / scale
         ctx.translate -@x, -@y
         @x += fontSize * (glyph.horizAdvX or customFont.horizAdvX) / customFont.fontFace.unitsPerEm
-        @x += dx[i]  if typeof (dx[i]) isnt "undefined" and not isNaN(dx[i])
+        @x += dx[i]  if typeof (dx[i]) != "undefined" and not isNaN(dx[i])
       return
-    ctx.fillText svg.compressSpaces(@getText()), @x, @y  unless ctx.fillStyle is ""
-    ctx.strokeText svg.compressSpaces(@getText()), @x, @y  unless ctx.strokeStyle is ""
+    ctx.fillText svg.compressSpaces(@getText()), @x, @y  unless ctx.fillStyle == ""
+    ctx.strokeText svg.compressSpaces(@getText()), @x, @y  unless ctx.strokeStyle == ""
 
   getText: ->
 
   
   # OVERRIDE ME
   measureText: (ctx) ->
-    customFont = @parent.style("font-family").getDefinition()
+    customFontStyle = @parent.style("font-family")
+    customFont = customFontStyle.getDefinition()
     if customFont?
       fontSize = @parent.style("font-size").numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize)
       measure = 0
@@ -875,7 +900,7 @@ class TextElementBase extends RenderedElementBase
       for i in [0...text.length]
         glyph = @getGlyph(customFont, text, i)
         measure += (glyph.horizAdvX or customFont.horizAdvX) * fontSize / customFont.fontFace.unitsPerEm
-        measure += dx[i]  if typeof (dx[i]) isnt "undefined" and not isNaN(dx[i])
+        measure += dx[i]  if typeof (dx[i]) != "undefined" and not isNaN(dx[i])
       return measure
     textToMeasure = svg.compressSpaces(@getText())
     return textToMeasure.length * 10  unless ctx.measureText
@@ -885,11 +910,17 @@ class TextElementBase extends RenderedElementBase
     ctx.restore()
     width
 
-class a extends TextElementBase
+class aClass extends TextElementBase
   constructor: (node) ->
     super node
     @hasText = true
 
+    # nodeType is a DOM nomenclature:
+    # 1 ELEMENT_NODE
+    # 2 ATTRIBUTE_NODE
+    # 3 TEXT_NODE
+    # (see http://www.javascriptkit.com/domref/nodetype.shtml
+    #  for the other 9 types)
     for i in [0...node.childNodes.length]
       @hasText = false  unless node.childNodes[i].nodeType is 3
     
@@ -948,6 +979,7 @@ class text extends RenderedElementBase
     #@baseSetContext = @setContext
   
   setContext: (ctx) ->
+    #alert 'text.setContext'
     super ctx
     ctx.textBaseline = @style("dominant-baseline").value  if @style("dominant-baseline").hasValue()
     ctx.textBaseline = @style("alignment-baseline").value  if @style("alignment-baseline").hasValue()
@@ -974,8 +1006,8 @@ class text extends RenderedElementBase
       @x += @attribute("dx").toPixels("x")  if @attribute("dx").hasValue()
       @x += child.attribute("dx").toPixels("x")  if child.attribute("dx").hasValue()
       child.x = @x
-    childLength = (if typeof (child.measureText is "undefined") then 0 else child.measureText(ctx))
-    if @textAnchor isnt "start" and (i is 0 or child.attribute("x").hasValue()) # new group?
+    childLength = (if typeof (child.measureText == "undefined") then 0 else child.measureText(ctx))
+    if @textAnchor != "start" and (i is 0 or child.attribute("x").hasValue()) # new group?
       # loop through rest of children
       groupLength = childLength
 
@@ -983,7 +1015,7 @@ class text extends RenderedElementBase
         childInGroup = @children[j]
         break  if childInGroup.attribute("x").hasValue() # new group
         groupLength += childInGroup.measureText(ctx)
-      child.x -= ((if @textAnchor is "end" then groupLength else groupLength / 2.0))
+      child.x -= ((if @textAnchor == "end" then groupLength else groupLength / 2.0))
     @x = child.x + childLength
     if child.attribute("y").hasValue()
       child.y = child.attribute("y").toPixels("y")
@@ -1026,7 +1058,7 @@ class svgElement extends RenderedElementBase
     height = svg.ViewPort.height()
     @attribute("width", true).value = "100%"  unless @attribute("width").hasValue()
     @attribute("height", true).value = "100%"  unless @attribute("height").hasValue()
-    if typeof (@root) is "undefined"
+    if typeof (@root) == "undefined"
       width = @attribute("width").toPixels("x")
       height = @attribute("height").toPixels("y")
       x = 0
@@ -1066,8 +1098,8 @@ class PathElementBase extends RenderedElementBase
   renderChildren: (ctx) ->
     @path ctx
     svg.Mouse.checkPath this, ctx
-    ctx.fill()  unless ctx.fillStyle is ""
-    ctx.stroke()  unless ctx.strokeStyle is ""
+    ctx.fill()  unless ctx.fillStyle == ""
+    ctx.stroke()  unless ctx.strokeStyle == ""
     markers = @getMarkers()
     if markers?
       if @style("marker-start").isUrlDefinition()
@@ -1141,7 +1173,7 @@ class PathParser
     p
 
   getReflectedControlPoint: ->
-    return @current  if @previousCommand.toLowerCase() isnt "c" and @previousCommand.toLowerCase() isnt "s" and @previousCommand.toLowerCase() isnt "q" and @previousCommand.toLowerCase() isnt "t"
+    return @current  if @previousCommand.toLowerCase() != "c" and @previousCommand.toLowerCase() != "s" and @previousCommand.toLowerCase() != "q" and @previousCommand.toLowerCase() != "t"
     
     # reflect point
     p = new Point(2 * @current.x - @control.x, 2 * @current.y - @control.y)
@@ -1517,8 +1549,8 @@ class marker extends ElementBase
 
   render: (ctx, point, angle) ->
     ctx.translate point.x, point.y
-    ctx.rotate angle  if @attribute("orient").valueOrDefault("auto") is "auto"
-    ctx.scale ctx.lineWidth, ctx.lineWidth  if @attribute("markerUnits").valueOrDefault("strokeWidth") is "strokeWidth"
+    ctx.rotate angle  if @attribute("orient").valueOrDefault("auto") == "auto"
+    ctx.scale ctx.lineWidth, ctx.lineWidth  if @attribute("markerUnits").valueOrDefault("strokeWidth") == "strokeWidth"
     ctx.save()
     
     # render me using a temporary svg element
@@ -1533,8 +1565,8 @@ class marker extends ElementBase
     tempSvg.children = @children
     tempSvg.render ctx
     ctx.restore()
-    ctx.scale 1 / ctx.lineWidth, 1 / ctx.lineWidth  if @attribute("markerUnits").valueOrDefault("strokeWidth") is "strokeWidth"
-    ctx.rotate -angle  if @attribute("orient").valueOrDefault("auto") is "auto"
+    ctx.scale 1 / ctx.lineWidth, 1 / ctx.lineWidth  if @attribute("markerUnits").valueOrDefault("strokeWidth") == "strokeWidth"
+    ctx.rotate -angle  if @attribute("orient").valueOrDefault("auto") == "auto"
     ctx.translate -point.x, -point.y
     return
 
@@ -1566,8 +1598,8 @@ class pattern extends ElementBase
         cctx.translate x * c.width, y * c.height
         tempSvg.render cctx
         cctx.restore()
-    pattern = ctx.createPattern(c, "repeat")
-    pattern
+    patternToBeReturned = ctx.createPattern(c, "repeat")
+    patternToBeReturned
 
 
 
@@ -1578,7 +1610,7 @@ class feGaussianBlur extends ElementBase
     @extraFilterDistance = @blurRadius
   
   apply: (ctx, x, y, width, height) ->
-    if typeof (stackBlurCanvasRGBA) is "undefined"
+    if typeof (stackBlurCanvasRGBA) == "undefined"
       console.log "ERROR: StackBlur.js must be included for blur to work"
       return
     
@@ -1591,56 +1623,12 @@ class feGaussianBlur extends ElementBase
     return
 
 
-# aspect ratio
-AspectRatio = (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
-  # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
-  aspectRatio = svg.compressSpaces(aspectRatio)
-  aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
-  align = aspectRatio.split(" ")[0] or "xMidYMid"
-  meetOrSlice = aspectRatio.split(" ")[1] or "meet"
-  
-  # calculate scale
-  scaleX = width / desiredWidth
-  scaleY = height / desiredHeight
-  scaleMin = Math.min(scaleX, scaleY)
-  scaleMax = Math.max(scaleX, scaleY)
-  if meetOrSlice is "meet"
-    desiredWidth *= scaleMin
-    desiredHeight *= scaleMin
-  if meetOrSlice is "slice"
-    desiredWidth *= scaleMax
-    desiredHeight *= scaleMax
-  refX = new Property("refX", refX)
-  refY = new Property("refY", refY)
-  if refX.hasValue() and refY.hasValue()
-    ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
-  else
-    
-    # align
-    ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
-    ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
-    ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
-    ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
-  
-  # scale
-  if align is "none"
-    ctx.scale scaleX, scaleY
-  else if meetOrSlice is "meet"
-    ctx.scale scaleMin, scaleMin
-  else ctx.scale scaleMax, scaleMax  if meetOrSlice is "slice"
-  
-  # translate
-  ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
-  return
 
 class Transform
   constructor: (v) ->
     @Type = {}
     
-    # translate
     @Type.translate = translate
-
-    # rotate
     @Type.rotate = rotate
     @Type.scale = scale
     @Type.matrix = matrix
@@ -1814,23 +1802,23 @@ class BoundingBox
       b = 6 * p0[i] - 12 * p1[i] + 6 * p2[i]
       a = -3 * p0[i] + 9 * p1[i] - 9 * p2[i] + 3 * p3[i]
       c = 3 * p1[i] - 3 * p0[i]
-      if a is 0
-        continue  if b is 0
+      if a == 0
+        continue  if b == 0
         t = -c / b
         if 0 < t and t < 1
-          @addX f(t)  if i is 0
-          @addY f(t)  if i is 1
+          @addX f(t)  if i == 0
+          @addY f(t)  if i == 1
         continue
       b2ac = Math.pow(b, 2) - 4 * c * a
       continue  if b2ac < 0
       t1 = (-b + Math.sqrt(b2ac)) / (2 * a)
       if 0 < t1 and t1 < 1
-        @addX f(t1)  if i is 0
-        @addY f(t1)  if i is 1
+        @addX f(t1)  if i == 0
+        @addY f(t1)  if i == 1
       t2 = (-b - Math.sqrt(b2ac)) / (2 * a)
       if 0 < t2 and t2 < 1
-        @addX f(t2)  if i is 0
-        @addY f(t2)  if i is 1
+        @addX f(t2)  if i == 0
+        @addY f(t2)  if i == 1
     return
 
   isPointInBox: (x, y) ->
@@ -1865,9 +1853,9 @@ class ViewPort
     @Current().height
 
   ComputeSize: (d) ->
-    return d  if d? and typeof (d) is "number"
-    return @width()  if d is "x"
-    return @height()  if d is "y"
+    return d  if d? and typeof (d) == "number"
+    return @width()  if d == "x"
+    return @height()  if d == "y"
     Math.sqrt(Math.pow(@width(), 2) + Math.pow(@height(), 2)) / Math.sqrt(2)
 
 class Point
@@ -1885,11 +1873,11 @@ class Point
 
   @pointsArrayFromNumberArray: (s) ->
     a = svg.ToNumberArray(s)
-    path = []
+    pathOfPoints = []
 
     for i in [0...a.length] by 2
-      path.push new Point(a[i], a[i + 1])
-    path
+      pathOfPoints.push new Point(a[i], a[i + 1])
+    pathOfPoints
 
   angleTo: (p) ->
     Math.atan2 p.y - @y, p.x - @x
@@ -1902,9 +1890,11 @@ class Point
     return
 
 class Font
+
   Styles: "normal|italic|oblique|inherit"
   Variants: "normal|small-caps|inherit"
   Weights: "normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900|inherit"
+
   CreateFont: (fontStyle, fontVariant, fontWeight, fontSize, fontFamily, inherit) ->
     f = (if inherit? then @Parse(inherit) else @CreateFont("", "", "", "", "", svg.ctx.font))
     fontFamily: fontFamily or f.fontFamily
@@ -1927,20 +1917,20 @@ class Font
     ff = ""
     for i in d
       if not set.fontStyle and @Styles.indexOf(i) isnt -1
-        f.fontStyle = i  unless i is "inherit"
+        f.fontStyle = i  unless i == "inherit"
         set.fontStyle = true
       else if not set.fontVariant and @Variants.indexOf(i) isnt -1
-        f.fontVariant = i  unless i is "inherit"
+        f.fontVariant = i  unless i == "inherit"
         set.fontStyle = set.fontVariant = true
       else if not set.fontWeight and @Weights.indexOf(i) isnt -1
-        f.fontWeight = i  unless i is "inherit"
+        f.fontWeight = i  unless i == "inherit"
         set.fontStyle = set.fontVariant = set.fontWeight = true
       else unless set.fontSize
-        f.fontSize = i.split("/")[0]  unless i is "inherit"
+        f.fontSize = i.split("/")[0]  unless i == "inherit"
         set.fontStyle = set.fontVariant = set.fontWeight = set.fontSize = true
       else
-        ff += i  unless i is "inherit"
-    f.fontFamily = ff  unless ff is ""
+        ff += i  unless i == "inherit"
+    f.fontFamily = ff  unless ff == ""
     f
 
 
@@ -1951,7 +1941,7 @@ class Property
     @value
 
   hasValue: ->
-    @value? and @value isnt ""
+    @value? and @value != ""
 
 
   # return the numerical value of the property
@@ -1974,7 +1964,7 @@ class Property
   # augment the current color value with the opacity
   addOpacity: (opacity) ->
     newValue = @value
-    if opacity? and opacity isnt "" and typeof (@value) is "string" # can only add opacity to colors, not patterns
+    if opacity? and opacity != "" and typeof (@value) == "string" # can only add opacity to colors, not patterns
       color = new RGBColor(@value)
       newValue = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", " + opacity + ")"  if color.ok
     new Property(@name, newValue)
@@ -1986,6 +1976,7 @@ class Property
     name = @value.match(/#([^\)']+)/)
     name = name[1]  if name
     name = @value  unless name
+    if name == "" then return null
     svg.Definitions[name]
 
   isUrlDefinition: ->
@@ -2068,7 +2059,7 @@ RGBColor = (color_string) ->
   
   # strip any leading #
   # remove # if any
-  color_string = color_string.substr(1, 6)  if color_string.charAt(0) is "#"
+  color_string = color_string.substr(1, 6)  if color_string.charAt(0) == "#"
   color_string = color_string.replace(RegExp(" ", "g"), "")
   color_string = color_string.toLowerCase()
   
@@ -2320,34 +2311,39 @@ canvg = (target, s, opts) ->
       canvg c, div.innerHTML
     return
   opts = opts or {}
-  target = document.getElementById(target)  if typeof target is "string"
+  console.log 'initialed opts to: ' + opts 
+  target = document.getElementById(target)  if typeof target == "string"
   
   # store class on canvas
   target.svg.stop()  if target.svg?
   
-  svg = new svgClass
+  console.log 'about to create svg and opts is: ' + opts         
+  svg = new svgClass opts
+  console.log 'just created svg and opts is: ' + svg.opts         
   # on i.e. 8 for flash canvas, we can't assign the property so check for it
-  target.svg = svg  unless target.childNodes.length is 1 and target.childNodes[0].nodeName is "OBJECT"
-  svg.opts = opts
+  target.svg = svg  unless target.childNodes.length is 1 and target.childNodes[0].nodeName == "OBJECT"
   ctx = target.getContext("2d")
-  unless typeof (s.documentElement) is "undefined"
-    
+  unless typeof (s.documentElement) == "undefined"
+    console.log 'about to call loadXmlDoc and opts is: ' + svg.opts 
     # load from xml doc
     svg.loadXmlDoc ctx, s
-  else if s.substr(0, 1) is "<"
-    
+  else if s.substr(0, 1) == "<"
+    console.log 'about to call loadXml and opts is: ' + svg.opts     
     # load from xml string
     svg.loadXml ctx, s
   else
-    
+    console.log 'about to call load and opts is: ' + svg.opts         
     # load from url
     svg.load ctx, s
 
 class svgClass
   @uniqueId: 0
-  constructor = ->
+  isFirstRender: true
+
+  constructor: (@opts)->
     @FRAMERATE = 30
     @MAX_VIRTUAL_PIXELS = 30000
+    console.log 'constructing svg and opts is: ' + @opts
 
   UniqueId: ->
     @constructor.uniqueId++
@@ -2368,10 +2364,6 @@ class svgClass
 
     # fonts
     @Font = new Font
-
-
-    # aspect ratio
-    @AspectRatio = AspectRatio
 
 
     # elements
@@ -2413,15 +2405,15 @@ class svgClass
     @Element.TextElementBase = TextElementBase
     @Element.tspan = tspan
     @Element.tref = tref
-    @Element.a = a
+    @Element.a = aClass
     @Element.image = image
-    @Element.g = g
+    @Element.g = gClass
     @Element.symbol = symbol
     @Element.style = ElementBaseStyle
     @Element.use = use
-    @Element.mask = mask
+    @Element.mask = maskClass
     @Element.clipPath = clipPath
-    @Element.filter = filter
+    @Element.filter = filterClass
     @Element.feMorphology = feMorphology
     @Element.feColorMatrix = feColorMatrix
     @Element.feGaussianBlur = feGaussianBlur
@@ -2433,6 +2425,46 @@ class svgClass
     @Mouse = new Mouse
     return
 
+  AspectRatio: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
+    # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
+    aspectRatio = svg.compressSpaces(aspectRatio)
+    aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
+    align = aspectRatio.split(" ")[0] or "xMidYMid"
+    meetOrSlice = aspectRatio.split(" ")[1] or "meet"
+    
+    # calculate scale
+    scaleX = width / desiredWidth
+    scaleY = height / desiredHeight
+    scaleMin = Math.min(scaleX, scaleY)
+    scaleMax = Math.max(scaleX, scaleY)
+    if meetOrSlice == "meet"
+      desiredWidth *= scaleMin
+      desiredHeight *= scaleMin
+    if meetOrSlice == "slice"
+      desiredWidth *= scaleMax
+      desiredHeight *= scaleMax
+    refX = new Property("refX", refX)
+    refY = new Property("refY", refY)
+    if refX.hasValue() and refY.hasValue()
+      ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
+    else
+      
+      # align
+      ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
+      ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
+      ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
+      ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
+    
+    # scale
+    if align == "none"
+      ctx.scale scaleX, scaleY
+    else if meetOrSlice == "meet"
+      ctx.scale scaleMin, scaleMin
+    else ctx.scale scaleMax, scaleMax  if meetOrSlice == "slice"
+    
+    # translate
+    ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
+    return
 
   # images loaded
   ImagesLoaded: ->
@@ -2491,13 +2523,7 @@ class svgClass
     className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
     className = className.replace(/\-/g, "") # remove dashes
     e = null
-    # Todo this should be handled
-    # more gracefully - we really want the title
-    # and desc to be created - but just to not to cause
-    # troubles with the attributes and styles
-    if className is "title" or className is "desc" or className is "MISSING"
-      return null 
-    unless typeof (@Element[className]) is "undefined"
+    unless typeof (@Element[className]) == "undefined"
       console.log 'attempting to create a ' + className
       e = new @Element[className](node)
     else
@@ -2569,9 +2595,9 @@ class svgClass
     # clear and render
     ctx.clearRect 0, 0, cWidth, cHeight  unless @opts["ignoreClear"] is true
     e.render ctx
-    if isFirstRender
-      isFirstRender = false
-      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) is "function"
+    if @isFirstRender
+      @isFirstRender = false
+      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
 
 
 
@@ -2579,12 +2605,14 @@ class svgClass
     @init ctx
 
     # bind mouse
+    console.log "opts: " + @opts
+    console.log "opts ignoreMouse: " + @opts["ignoreMouse"]
     unless @opts["ignoreMouse"] is true
-      ctx.canvas.onclick = (e) ->
+      ctx.canvas.onclick = (e) =>
         p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
         @Mouse.onclick p.x, p.y
 
-      ctx.canvas.onmousemove = (e) ->
+      ctx.canvas.onmousemove = (e) =>
         p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
         @Mouse.onmousemove p.x, p.y
 
@@ -2593,9 +2621,6 @@ class svgClass
     #alert  "svgCreateElement from dom"
     e.root = true
     
-    # render loop
-    isFirstRender = true
-
     console.log 'assigning @ctxFromLoadXMLDoc'
     @ctxFromLoadXMLDoc = ctx
     @eFromLoadXMLDoc = e
@@ -2605,7 +2630,7 @@ class svgClass
       waitingForImages = false
       @draw()
 
-    @intervalID = setInterval(->
+    @intervalID = setInterval(=>
       needUpdate = false
       if waitingForImages and @ImagesLoaded()
         waitingForImages = false
@@ -2620,7 +2645,7 @@ class svgClass
           needUpdate = needUpdate | @Animations[i].update(1000 / @FRAMERATE)
       
       # need update from redraw?
-      needUpdate = true  if @opts["forceRedraw"]() is true  if typeof (@opts["forceRedraw"]) is "function"
+      needUpdate = true  if @opts["forceRedraw"]() is true  if typeof (@opts["forceRedraw"]) == "function"
       
       # render if needed
       if needUpdate

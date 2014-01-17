@@ -1,4 +1,4 @@
-var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgClass, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
+var AnimateBase, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, aClass, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filterClass, font, fontface, gClass, glyph, image, line, linearGradient, marker, maskClass, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgClass, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -189,11 +189,6 @@ ElementBase = (function() {
 
     console.log("name, createIfNotExists " + name + " " + createIfNotExists);
     console.log("@styles " + this.styles + " class name: " + this.constructor.name);
-    if (this.constructor.name === "title" || this.constructor.name === "desc" || this.constructor.name === "MISSING") {
-      console.log("for the break");
-      console.trace();
-      return svg.EmptyProperty;
-    }
     if (this.styles === void 0) {
       console.trace();
     }
@@ -283,7 +278,9 @@ ElementBase = (function() {
 title = (function(_super) {
   __extends(title, _super);
 
-  function title(node) {}
+  function title(node) {
+    title.__super__.constructor.call(this, node);
+  }
 
   return title;
 
@@ -292,7 +289,9 @@ title = (function(_super) {
 desc = (function(_super) {
   __extends(desc, _super);
 
-  function desc(node) {}
+  function desc(node) {
+    desc.__super__.constructor.call(this, node);
+  }
 
   return desc;
 
@@ -302,6 +301,7 @@ MISSING = (function(_super) {
   __extends(MISSING, _super);
 
   function MISSING(node) {
+    MISSING.__super__.constructor.call(this, node);
     if (console) {
       console.log("ERROR: Element '" + node.nodeName + "' not yet implemented.");
     }
@@ -362,15 +362,15 @@ feMorphology = (function(_super) {
 
 })(ElementBase);
 
-filter = (function(_super) {
-  __extends(filter, _super);
+filterClass = (function(_super) {
+  __extends(filterClass, _super);
 
-  function filter(node) {
-    filter.__super__.constructor.call(this, node);
+  function filterClass(node) {
+    filterClass.__super__.constructor.call(this, node);
   }
 
-  filter.prototype.apply = function(ctx, element) {
-    var bb, c, efd, height, i, px, py, tempCtx, width, x, y, _i, _j, _ref, _ref1;
+  filterClass.prototype.apply = function(ctx, element) {
+    var bb, c, efd, filter, height, i, px, py, tempCtx, width, x, y, _i, _j, _ref, _ref1;
 
     bb = element.getBoundingBox();
     x = Math.floor(bb.x1);
@@ -399,15 +399,13 @@ filter = (function(_super) {
     return element.style("filter", true).value = filter;
   };
 
-  filter.prototype.render = function(ctx) {};
+  filterClass.prototype.render = function(ctx) {};
 
-  return filter;
+  return filterClass;
 
 })(ElementBase);
 
 clipPath = (function(_super) {
-  var render;
-
   __extends(clipPath, _super);
 
   function clipPath(node) {
@@ -425,21 +423,21 @@ clipPath = (function(_super) {
     }
   };
 
-  render = function(ctx) {};
+  clipPath.prototype.render = function(ctx) {};
 
   return clipPath;
 
 })(ElementBase);
 
-mask = (function(_super) {
-  __extends(mask, _super);
+maskClass = (function(_super) {
+  __extends(maskClass, _super);
 
-  function mask(node) {
-    mask.__super__.constructor.call(this, node);
+  function maskClass(node) {
+    maskClass.__super__.constructor.call(this, node);
   }
 
-  mask.prototype.apply = function(ctx, element) {
-    var c, cMask, height, maskCtx, tempCtx, width, x, y;
+  maskClass.prototype.apply = function(ctx, element) {
+    var c, cMask, height, mask, maskCtx, tempCtx, width, x, y;
 
     x = this.attribute("x").toPixels("x");
     y = this.attribute("y").toPixels("y");
@@ -465,9 +463,9 @@ mask = (function(_super) {
     return element.attribute("mask").value = mask;
   };
 
-  mask.prototype.render = function(ctx) {};
+  maskClass.prototype.render = function(ctx) {};
 
-  return mask;
+  return maskClass;
 
 })(ElementBase);
 
@@ -550,12 +548,12 @@ font = (function(_super) {
   function font(node) {
     var child, i, _i, _ref;
 
+    font.__super__.constructor.call(this, node);
     this.isRTL = false;
     this.isArabic = false;
     this.fontFace = null;
     this.missingGlyph = null;
     this.glyphs = [];
-    font.__super__.constructor.call(this, node);
     this.horizAdvX = this.attribute("horiz-adv-x").numValue();
     for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       child = this.children[i];
@@ -660,7 +658,8 @@ AnimateBase = (function(_super) {
   AnimateBase.prototype.progress = function() {
     var lb, p, ret, ub;
 
-    ret = (this.duration - this.begin) / (this.maxDuration - this.begin);
+    ret = {};
+    ret.progress = (this.duration - this.begin) / (this.maxDuration - this.begin);
     if (this.values.hasValue()) {
       p = ret.progress * (this.values.value.length - 1);
       lb = Math.floor(p);
@@ -740,6 +739,7 @@ animate = (function(_super) {
     var newValue, p;
 
     p = this.progress();
+    console.log('p: ' + p);
     newValue = p.from.numValue() + (p.to.numValue() - p.from.numValue()) * p.progress;
     return newValue + this.initialUnits;
   };
@@ -899,7 +899,7 @@ RenderedElementBase = (function(_super) {
   }
 
   RenderedElementBase.prototype.setContext = function(ctx) {
-    var clip, fillStyle, fs, newLineWidth, strokeStyle, transform;
+    var clip, daFont, fillStyle, fs, newLineWidth, strokeStyle, transform;
 
     if (this.style("fill").isUrlDefinition()) {
       fs = this.style("fill").getFillStyleDefinition(this, this.style("fill-opacity"));
@@ -948,8 +948,9 @@ RenderedElementBase = (function(_super) {
     if (this.style("stroke-miterlimit").hasValue()) {
       ctx.miterLimit = this.style("stroke-miterlimit").value;
     }
+    daFont = new Font;
     if (typeof ctx.font !== "undefined") {
-      ctx.font = svg.Font.CreateFont(this.style("font-style").value, this.style("font-variant").value, this.style("font-weight").value, (this.style("font-size").hasValue() ? this.style("font-size").toPixels() + "px" : ""), this.style("font-family").value).toString();
+      ctx.font = daFont.CreateFont(this.style("font-style").value, this.style("font-variant").value, this.style("font-weight").value, (this.style("font-size").hasValue() ? this.style("font-size").toPixels() + "px" : ""), this.style("font-family").value).toString();
     }
     if (this.attribute("transform").hasValue()) {
       transform = new svg.Transform(this.attribute("transform").value);
@@ -1031,7 +1032,7 @@ use = (function(_super) {
       oldParent = element.parent;
       element.parent = null;
       element.render(ctx);
-      return element.parent = oldParent;
+      element.parent = oldParent;
     }
   };
 
@@ -1039,14 +1040,14 @@ use = (function(_super) {
 
 })(RenderedElementBase);
 
-g = (function(_super) {
-  __extends(g, _super);
+gClass = (function(_super) {
+  __extends(gClass, _super);
 
-  function g(node) {
-    g.__super__.constructor.call(this, node);
+  function gClass(node) {
+    gClass.__super__.constructor.call(this, node);
   }
 
-  g.prototype.getBoundingBox = function() {
+  gClass.prototype.getBoundingBox = function() {
     var bb, i, _i, _ref1;
 
     bb = new BoundingBox();
@@ -1056,7 +1057,7 @@ g = (function(_super) {
     return bb;
   };
 
-  return g;
+  return gClass;
 
 })(RenderedElementBase);
 
@@ -1162,6 +1163,7 @@ TextElementBase = (function(_super) {
 
     c = text[i];
     glyph = null;
+    console.log("font: " + font + " glyphs: " + font.glyphs);
     if (font.isArabic) {
       arabicForm = "isolated";
       if ((i === 0 || text[i - 1] === " ") && i < text.length - 2 && text[i + 1] !== " ") {
@@ -1180,6 +1182,7 @@ TextElementBase = (function(_super) {
         }
       }
     } else {
+      console.trace();
       glyph = font.glyphs[c];
     }
     if (glyph == null) {
@@ -1189,9 +1192,10 @@ TextElementBase = (function(_super) {
   };
 
   TextElementBase.prototype.renderChildren = function(ctx) {
-    var customFont, dx, fontSize, fontStyle, glyph, i, lw, scale, text, _i, _ref1;
+    var customFont, customFontStyle, dx, fontSize, fontStyle, glyph, i, lw, scale, text, _i, _ref1;
 
-    customFont = this.parent.style("font-family").getDefinition();
+    customFontStyle = this.parent.style("font-family");
+    customFont = customFontStyle.getDefinition();
     if (customFont != null) {
       fontSize = this.parent.style("font-size").numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize);
       fontStyle = this.parent.style("font-style").valueOrDefault(svg.Font.Parse(svg.ctx.font).fontStyle);
@@ -1235,9 +1239,10 @@ TextElementBase = (function(_super) {
   TextElementBase.prototype.getText = function() {};
 
   TextElementBase.prototype.measureText = function(ctx) {
-    var customFont, dx, fontSize, glyph, i, measure, text, textToMeasure, width, _i, _ref1;
+    var customFont, customFontStyle, dx, fontSize, glyph, i, measure, text, textToMeasure, width, _i, _ref1;
 
-    customFont = this.parent.style("font-family").getDefinition();
+    customFontStyle = this.parent.style("font-family");
+    customFont = customFontStyle.getDefinition();
     if (customFont != null) {
       fontSize = this.parent.style("font-size").numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize);
       measure = 0;
@@ -1270,13 +1275,13 @@ TextElementBase = (function(_super) {
 
 })(RenderedElementBase);
 
-a = (function(_super) {
-  __extends(a, _super);
+aClass = (function(_super) {
+  __extends(aClass, _super);
 
-  function a(node) {
+  function aClass(node) {
     var i, _i, _ref1;
 
-    a.__super__.constructor.call(this, node);
+    aClass.__super__.constructor.call(this, node);
     this.hasText = true;
     for (i = _i = 0, _ref1 = node.childNodes.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
       if (node.childNodes[i].nodeType !== 3) {
@@ -1286,15 +1291,15 @@ a = (function(_super) {
     this.text = (this.hasText ? node.childNodes[0].nodeValue : "");
   }
 
-  a.prototype.getText = function() {
+  aClass.prototype.getText = function() {
     return this.text;
   };
 
-  a.prototype.renderChildren = function(ctx) {
-    var fontSize;
+  aClass.prototype.renderChildren = function(ctx) {
+    var fontSize, g;
 
     if (this.hasText) {
-      a.__super__.renderChildren.call(this, ctx);
+      aClass.__super__.renderChildren.call(this, ctx);
       fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
       return svg.Mouse.checkBoundingBox(this, new BoundingBox(this.x, this.y - fontSize.toPixels("y"), this.x + this.measureText(ctx), this.y));
     } else {
@@ -1305,15 +1310,15 @@ a = (function(_super) {
     }
   };
 
-  a.prototype.onclick = function() {
+  aClass.prototype.onclick = function() {
     return window.open(this.getHrefAttribute().value);
   };
 
-  a.prototype.onmousemove = function() {
+  aClass.prototype.onmousemove = function() {
     return svg.ctx.canvas.style.cursor = "pointer";
   };
 
-  return a;
+  return aClass;
 
 })(TextElementBase);
 
@@ -1722,7 +1727,7 @@ path = (function(_super) {
   }
 
   path.prototype.path = function(ctx) {
-    var a1, ad, ah, bb, c, centp, cntrl, cp, cpp, curr, currp, dir, halfWay, l, largeArcFlag, m, newP, p, p1, pp, r, rx, ry, s, sweepFlag, sx, sy, u, v, xAxisRotation;
+    var a, a1, ad, ah, bb, c, centp, cntrl, cp, cpp, curr, currp, dir, halfWay, l, largeArcFlag, m, newP, p, p1, pp, r, rx, ry, s, sweepFlag, sx, sy, u, v, xAxisRotation;
 
     pp = new PathParser(this.d);
     this.pp = pp;
@@ -2045,7 +2050,7 @@ line = (function(_super) {
   };
 
   line.prototype.getMarkers = function() {
-    var points;
+    var a, points;
 
     points = this.getPoints();
     a = points[0].angleTo(points[1]);
@@ -2245,7 +2250,7 @@ pattern = (function(_super) {
   }
 
   pattern.prototype.createPattern = function(ctx, element) {
-    var c, cctx, height, tempSvg, width, x, y, _i, _j;
+    var c, cctx, height, patternToBeReturned, tempSvg, width, x, y, _i, _j;
 
     width = this.attribute("width").toPixels("x", true);
     height = this.attribute("height").toPixels("y", true);
@@ -2270,8 +2275,8 @@ pattern = (function(_super) {
         cctx.restore();
       }
     }
-    pattern = ctx.createPattern(c, "repeat");
-    return pattern;
+    patternToBeReturned = ctx.createPattern(c, "repeat");
+    return patternToBeReturned;
   };
 
   return pattern;
@@ -2302,55 +2307,6 @@ feGaussianBlur = (function(_super) {
   return feGaussianBlur;
 
 })(ElementBase);
-
-AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
-  var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
-
-  aspectRatio = svg.compressSpaces(aspectRatio);
-  aspectRatio = aspectRatio.replace(/^defer\s/, "");
-  align = aspectRatio.split(" ")[0] || "xMidYMid";
-  meetOrSlice = aspectRatio.split(" ")[1] || "meet";
-  scaleX = width / desiredWidth;
-  scaleY = height / desiredHeight;
-  scaleMin = Math.min(scaleX, scaleY);
-  scaleMax = Math.max(scaleX, scaleY);
-  if (meetOrSlice === "meet") {
-    desiredWidth *= scaleMin;
-    desiredHeight *= scaleMin;
-  }
-  if (meetOrSlice === "slice") {
-    desiredWidth *= scaleMax;
-    desiredHeight *= scaleMax;
-  }
-  refX = new Property("refX", refX);
-  refY = new Property("refY", refY);
-  if (refX.hasValue() && refY.hasValue()) {
-    ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
-  } else {
-    if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-      ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
-    }
-    if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-      ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
-    }
-    if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-      ctx.translate(width - desiredWidth, 0);
-    }
-    if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-      ctx.translate(0, height - desiredHeight);
-    }
-  }
-  if (align === "none") {
-    ctx.scale(scaleX, scaleY);
-  } else if (meetOrSlice === "meet") {
-    ctx.scale(scaleMin, scaleMin);
-  } else {
-    if (meetOrSlice === "slice") {
-      ctx.scale(scaleMax, scaleMax);
-    }
-  }
-  ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
-};
 
 Transform = (function() {
   function Transform(v) {
@@ -2469,6 +2425,8 @@ skewY = (function(_super) {
 
 rotate = (function() {
   function rotate(s) {
+    var a;
+
     a = svg.ToNumberArray(s);
     this.angle = new Property("angle", a[0]);
     this.cx = a[1] || 0;
@@ -2482,6 +2440,8 @@ rotate = (function() {
   };
 
   rotate.prototype.applyToPoint = function(p) {
+    var a;
+
     a = this.angle.toRadians();
     p.applyTransform([1, 0, 0, 1, this.p.x || 0.0, this.p.y || 0.0]);
     p.applyTransform([Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0]);
@@ -2591,7 +2551,7 @@ BoundingBox = (function() {
   };
 
   BoundingBox.prototype.addBezierCurve = function(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
-    var b, b2ac, c, f, i, p0, p1, p2, p3, t, t1, t2, _i;
+    var a, b, b2ac, c, f, i, p0, p1, p2, p3, t, t1, t2, _i;
 
     p0 = [p0x, p0y];
     p1 = [p1x, p1y];
@@ -2711,6 +2671,8 @@ Point = (function() {
   }
 
   Point.pointsFromNumberArray = function(s) {
+    var a;
+
     if (arguments.length === 1) {
       a = svg.ToNumberArray(s);
       return new Point(a[0], a[1]);
@@ -2718,14 +2680,14 @@ Point = (function() {
   };
 
   Point.pointsArrayFromNumberArray = function(s) {
-    var i, _i, _ref1;
+    var a, i, pathOfPoints, _i, _ref1;
 
     a = svg.ToNumberArray(s);
-    path = [];
+    pathOfPoints = [];
     for (i = _i = 0, _ref1 = a.length; _i < _ref1; i = _i += 2) {
-      path.push(new Point(a[i], a[i + 1]));
+      pathOfPoints.push(new Point(a[i], a[i + 1]));
     }
-    return path;
+    return pathOfPoints;
   };
 
   Point.prototype.angleTo = function(p) {
@@ -2885,6 +2847,9 @@ Property = (function() {
     }
     if (!name) {
       name = this.value;
+    }
+    if (name === "") {
+      return null;
     }
     return svg.Definitions[name];
   };
@@ -3216,7 +3181,7 @@ RGBColor = function(color_string) {
     return "rgb(" + this.r + ", " + this.g + ", " + this.b + ")";
   };
   this.toHex = function() {
-    var b, r;
+    var b, g, r;
 
     r = this.r.toString(16);
     g = this.g.toString(16);
@@ -3289,38 +3254,43 @@ canvg = function(target, s, opts) {
     return;
   }
   opts = opts || {};
+  console.log('initialed opts to: ' + opts);
   if (typeof target === "string") {
     target = document.getElementById(target);
   }
   if (target.svg != null) {
     target.svg.stop();
   }
-  svg = new svgClass;
+  console.log('about to create svg and opts is: ' + opts);
+  svg = new svgClass(opts);
+  console.log('just created svg and opts is: ' + svg.opts);
   if (!(target.childNodes.length === 1 && target.childNodes[0].nodeName === "OBJECT")) {
     target.svg = svg;
   }
-  svg.opts = opts;
   ctx = target.getContext("2d");
   if (typeof s.documentElement !== "undefined") {
+    console.log('about to call loadXmlDoc and opts is: ' + svg.opts);
     return svg.loadXmlDoc(ctx, s);
   } else if (s.substr(0, 1) === "<") {
+    console.log('about to call loadXml and opts is: ' + svg.opts);
     return svg.loadXml(ctx, s);
   } else {
+    console.log('about to call load and opts is: ' + svg.opts);
     return svg.load(ctx, s);
   }
 };
 
 svgClass = (function() {
-  var constructor;
-
-  function svgClass() {}
-
   svgClass.uniqueId = 0;
 
-  constructor = function() {
+  svgClass.prototype.isFirstRender = true;
+
+  function svgClass(opts) {
+    this.opts = opts;
     this.FRAMERATE = 30;
-    return this.MAX_VIRTUAL_PIXELS = 30000;
-  };
+    this.MAX_VIRTUAL_PIXELS = 30000;
+    console.log('constructing svg and opts is: ' + this.opts);
+  }
 
   svgClass.prototype.UniqueId = function() {
     this.constructor.uniqueId++;
@@ -3336,7 +3306,6 @@ svgClass = (function() {
     this.ViewPort = new ViewPort;
     this.Transform = Transform;
     this.Font = new Font;
-    this.AspectRatio = AspectRatio;
     this.Element = {};
     this.EmptyProperty = new Property("EMPTY", "");
     this.Element.svg = svgElement;
@@ -3366,15 +3335,15 @@ svgClass = (function() {
     this.Element.TextElementBase = TextElementBase;
     this.Element.tspan = tspan;
     this.Element.tref = tref;
-    this.Element.a = a;
+    this.Element.a = aClass;
     this.Element.image = image;
-    this.Element.g = g;
+    this.Element.g = gClass;
     this.Element.symbol = symbol;
     this.Element.style = ElementBaseStyle;
     this.Element.use = use;
-    this.Element.mask = mask;
+    this.Element.mask = maskClass;
     this.Element.clipPath = clipPath;
-    this.Element.filter = filter;
+    this.Element.filter = filterClass;
     this.Element.feMorphology = feMorphology;
     this.Element.feColorMatrix = feColorMatrix;
     this.Element.feGaussianBlur = feGaussianBlur;
@@ -3382,6 +3351,55 @@ svgClass = (function() {
     this.Element.title = title;
     this.Element.desc = desc;
     this.Mouse = new Mouse;
+  };
+
+  svgClass.prototype.AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
+    var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
+
+    aspectRatio = svg.compressSpaces(aspectRatio);
+    aspectRatio = aspectRatio.replace(/^defer\s/, "");
+    align = aspectRatio.split(" ")[0] || "xMidYMid";
+    meetOrSlice = aspectRatio.split(" ")[1] || "meet";
+    scaleX = width / desiredWidth;
+    scaleY = height / desiredHeight;
+    scaleMin = Math.min(scaleX, scaleY);
+    scaleMax = Math.max(scaleX, scaleY);
+    if (meetOrSlice === "meet") {
+      desiredWidth *= scaleMin;
+      desiredHeight *= scaleMin;
+    }
+    if (meetOrSlice === "slice") {
+      desiredWidth *= scaleMax;
+      desiredHeight *= scaleMax;
+    }
+    refX = new Property("refX", refX);
+    refY = new Property("refY", refY);
+    if (refX.hasValue() && refY.hasValue()) {
+      ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
+    } else {
+      if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+        ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
+      }
+      if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+        ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
+      }
+      if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+        ctx.translate(width - desiredWidth, 0);
+      }
+      if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+        ctx.translate(0, height - desiredHeight);
+      }
+    }
+    if (align === "none") {
+      ctx.scale(scaleX, scaleY);
+    } else if (meetOrSlice === "meet") {
+      ctx.scale(scaleMin, scaleMin);
+    } else {
+      if (meetOrSlice === "slice") {
+        ctx.scale(scaleMax, scaleMax);
+      }
+    }
+    ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
   };
 
   svgClass.prototype.ImagesLoaded = function() {
@@ -3438,7 +3456,7 @@ svgClass = (function() {
   };
 
   svgClass.prototype.ToNumberArray = function(s) {
-    var i, _i, _ref1;
+    var a, i, _i, _ref1;
 
     a = this.trim(this.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
     for (i = _i = 0, _ref1 = a.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
@@ -3453,9 +3471,6 @@ svgClass = (function() {
     className = node.nodeName.replace(/^[^:]+:/, "");
     className = className.replace(/\-/g, "");
     e = null;
-    if (className === "title" || className === "desc" || className === "MISSING") {
-      return null;
-    }
     if (typeof this.Element[className] !== "undefined") {
       console.log('attempting to create a ' + className);
       e = new this.Element[className](node);
@@ -3499,7 +3514,7 @@ svgClass = (function() {
   };
 
   svgClass.prototype.draw = function() {
-    var cHeight, cWidth, ctx, e, isFirstRender, viewBox, xRatio, yRatio;
+    var cHeight, cWidth, ctx, e, viewBox, xRatio, yRatio;
 
     ctx = this.ctxFromLoadXMLDoc;
     e = this.eFromLoadXMLDoc;
@@ -3557,8 +3572,8 @@ svgClass = (function() {
       ctx.clearRect(0, 0, cWidth, cHeight);
     }
     e.render(ctx);
-    if (isFirstRender) {
-      isFirstRender = false;
+    if (this.isFirstRender) {
+      this.isFirstRender = false;
       if (typeof this.opts["renderCallback"] === "function") {
         return this.opts["renderCallback"]();
       }
@@ -3566,27 +3581,29 @@ svgClass = (function() {
   };
 
   svgClass.prototype.loadXmlDoc = function(ctx, dom) {
-    var e, isFirstRender, waitingForImages;
+    var e, waitingForImages,
+      _this = this;
 
     this.init(ctx);
+    console.log("opts: " + this.opts);
+    console.log("opts ignoreMouse: " + this.opts["ignoreMouse"]);
     if (this.opts["ignoreMouse"] !== true) {
       ctx.canvas.onclick = function(e) {
         var p;
 
-        p = this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return this.Mouse.onclick(p.x, p.y);
+        p = _this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return _this.Mouse.onclick(p.x, p.y);
       };
       ctx.canvas.onmousemove = function(e) {
         var p;
 
-        p = this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return this.Mouse.onmousemove(p.x, p.y);
+        p = _this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return _this.Mouse.onmousemove(p.x, p.y);
       };
     }
     e = this.CreateElement(dom.documentElement);
     console.log("*** svgCreateElement from dom: " + dom.documentElement);
     e.root = true;
-    isFirstRender = true;
     console.log('assigning @ctxFromLoadXMLDoc');
     this.ctxFromLoadXMLDoc = ctx;
     this.eFromLoadXMLDoc = e;
@@ -3599,24 +3616,24 @@ svgClass = (function() {
       var i, needUpdate, _i, _ref1;
 
       needUpdate = false;
-      if (waitingForImages && this.ImagesLoaded()) {
+      if (waitingForImages && _this.ImagesLoaded()) {
         waitingForImages = false;
         needUpdate = true;
       }
-      if (this.opts["ignoreMouse"] !== true) {
-        needUpdate = needUpdate | this.Mouse.hasEvents();
+      if (_this.opts["ignoreMouse"] !== true) {
+        needUpdate = needUpdate | _this.Mouse.hasEvents();
       }
-      if (this.opts["ignoreAnimation"] !== true) {
-        for (i = _i = 0, _ref1 = this.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          needUpdate = needUpdate | this.Animations[i].update(1000 / this.FRAMERATE);
+      if (_this.opts["ignoreAnimation"] !== true) {
+        for (i = _i = 0, _ref1 = _this.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          needUpdate = needUpdate | _this.Animations[i].update(1000 / _this.FRAMERATE);
         }
       }
-      if (typeof this.opts["forceRedraw"] === "function" ? this.opts["forceRedraw"]() === true : void 0) {
+      if (typeof _this.opts["forceRedraw"] === "function" ? _this.opts["forceRedraw"]() === true : void 0) {
         needUpdate = true;
       }
       if (needUpdate) {
-        this.draw();
-        return this.Mouse.runEvents();
+        _this.draw();
+        return _this.Mouse.runEvents();
       }
     }, 1000 / this.FRAMERATE);
   };
