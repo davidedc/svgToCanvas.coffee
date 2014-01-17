@@ -1,4 +1,4 @@
-var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
+var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, build, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -3292,6 +3292,7 @@ canvg = function(target, s, opts) {
   if (target.svg != null) {
     target.svg.stop();
   }
+  svg = build();
   if (!(target.childNodes.length === 1 && target.childNodes[0].nodeName === "OBJECT")) {
     target.svg = svg;
   }
@@ -3306,227 +3307,161 @@ canvg = function(target, s, opts) {
   }
 };
 
-svg = {};
+build = function() {
+  svg = {};
+  svg.FRAMERATE = 30;
+  svg.MAX_VIRTUAL_PIXELS = 30000;
+  svg.init = function(ctx) {
+    var uniqueId;
 
-svg.FRAMERATE = 30;
-
-svg.MAX_VIRTUAL_PIXELS = 30000;
-
-svg.init = function(ctx) {
-  var uniqueId;
-
-  uniqueId = 0;
-  svg.UniqueId = function() {
-    uniqueId++;
-    return "canvg" + uniqueId;
+    uniqueId = 0;
+    svg.UniqueId = function() {
+      uniqueId++;
+      return "canvg" + uniqueId;
+    };
+    svg.Definitions = {};
+    svg.Styles = {};
+    svg.Animations = [];
+    svg.Images = [];
+    svg.ctx = ctx;
+    svg.ViewPort = new ViewPort;
   };
-  svg.Definitions = {};
-  svg.Styles = {};
-  svg.Animations = [];
-  svg.Images = [];
-  svg.ctx = ctx;
-  svg.ViewPort = new ViewPort;
-};
+  svg.init();
+  svg.ImagesLoaded = function() {
+    var svgImage, _i, _len, _ref1;
 
-svg.init();
-
-svg.ImagesLoaded = function() {
-  var svgImage, _i, _len, _ref1;
-
-  _ref1 = svg.Images;
-  for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-    svgImage = _ref1[_i];
-    if (!svgImage.loaded) {
-      return false;
+    _ref1 = svg.Images;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      svgImage = _ref1[_i];
+      if (!svgImage.loaded) {
+        return false;
+      }
     }
-  }
-  return true;
-};
+    return true;
+  };
+  svg.trim = function(s) {
+    return s.replace(/^\s+|\s+$/g, "");
+  };
+  svg.compressSpaces = function(s) {
+    return s.replace(/[\s\r\t\n]+/g, " ");
+  };
+  svg.ajax = function(url) {
+    var AJAX;
 
-svg.trim = function(s) {
-  return s.replace(/^\s+|\s+$/g, "");
-};
-
-svg.compressSpaces = function(s) {
-  return s.replace(/[\s\r\t\n]+/g, " ");
-};
-
-svg.ajax = function(url) {
-  var AJAX;
-
-  AJAX = void 0;
-  if (window.XMLHttpRequest) {
-    AJAX = new XMLHttpRequest();
-  } else {
-    AJAX = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  if (AJAX) {
-    AJAX.open("GET", url, false);
-    AJAX.send(null);
-    return AJAX.responseText;
-  }
-  return null;
-};
-
-svg.parseXml = function(xml) {
-  var parser, xmlDoc;
-
-  if (window.DOMParser) {
-    parser = new DOMParser();
-    return parser.parseFromString(xml, "text/xml");
-  } else {
-    xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "");
-    xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-    xmlDoc.async = "false";
-    xmlDoc.loadXML(xml);
-    return xmlDoc;
-  }
-};
-
-svg.ToNumberArray = function(s) {
-  var i, _i, _ref1;
-
-  a = svg.trim(svg.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
-  for (i = _i = 0, _ref1 = a.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-    a[i] = parseFloat(a[i]);
-  }
-  return a;
-};
-
-svg.Transform = Transform;
-
-svg.Font = new Font;
-
-svg.AspectRatio = AspectRatio;
-
-svg.Element = {};
-
-svg.EmptyProperty = new Property("EMPTY", "");
-
-svg.Element.svg = svgElement;
-
-svg.Element.rect = rect;
-
-svg.Element.circle = circle;
-
-svg.Element.ellipse = ellipse;
-
-svg.Element.line = line;
-
-svg.Element.polyline = polyline;
-
-svg.Element.polygon = polygon;
-
-svg.Element.path = path;
-
-svg.Element.pattern = pattern;
-
-svg.Element.marker = marker;
-
-svg.Element.defs = defs;
-
-svg.Element.GradientBase = GradientBase;
-
-svg.Element.linearGradient = linearGradient;
-
-svg.Element.radialGradient = radialGradient;
-
-svg.Element.stop = stop;
-
-svg.Element.AnimateBase = AnimateBase;
-
-svg.Element.animate = animate;
-
-svg.Element.animateColor = animateColor;
-
-svg.Element.animateTransform = animateTransform;
-
-svg.Element.font = font;
-
-svg.Element.fontface = fontface;
-
-svg.Element.missingglyph = missingglyph;
-
-svg.Element.glyph = glyph;
-
-svg.Element.text = text;
-
-svg.Element.TextElementBase = TextElementBase;
-
-svg.Element.tspan = tspan;
-
-svg.Element.tref = tref;
-
-svg.Element.a = a;
-
-svg.Element.image = image;
-
-svg.Element.g = g;
-
-svg.Element.symbol = symbol;
-
-svg.Element.style = ElementBaseStyle;
-
-svg.Element.use = use;
-
-svg.Element.mask = mask;
-
-svg.Element.clipPath = clipPath;
-
-svg.Element.filter = filter;
-
-svg.Element.feMorphology = feMorphology;
-
-svg.Element.feColorMatrix = feColorMatrix;
-
-svg.Element.feGaussianBlur = feGaussianBlur;
-
-svg.Element.MISSING = MISSING;
-
-svg.Element.title = title;
-
-svg.Element.desc = desc;
-
-svg.Mouse = new Mouse;
-
-svg.CreateElement = function(node) {
-  var className, e;
-
-  className = node.nodeName.replace(/^[^:]+:/, "");
-  className = className.replace(/\-/g, "");
-  e = null;
-  if (className === "title" || className === "desc" || className === "MISSING") {
-    console.log("not creating a " + svg.Element[className]);
+    AJAX = void 0;
+    if (window.XMLHttpRequest) {
+      AJAX = new XMLHttpRequest();
+    } else {
+      AJAX = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    if (AJAX) {
+      AJAX.open("GET", url, false);
+      AJAX.send(null);
+      return AJAX.responseText;
+    }
     return null;
-  }
-  if (typeof svg.Element[className] !== "undefined") {
-    e = new svg.Element[className](node);
-  } else {
-    e = new svg.Element.MISSING(node);
-  }
-  e.type = node.nodeName;
-  return e;
-};
+  };
+  svg.parseXml = function(xml) {
+    var parser, xmlDoc;
 
-svg.load = function(ctx, url) {
-  return svg.loadXml(ctx, svg.ajax(url));
-};
+    if (window.DOMParser) {
+      parser = new DOMParser();
+      return parser.parseFromString(xml, "text/xml");
+    } else {
+      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "");
+      xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+      xmlDoc.async = "false";
+      xmlDoc.loadXML(xml);
+      return xmlDoc;
+    }
+  };
+  svg.ToNumberArray = function(s) {
+    var i, _i, _ref1;
 
-svg.loadXml = function(ctx, xml) {
-  return svg.loadXmlDoc(ctx, svg.parseXml(xml));
-};
+    a = svg.trim(svg.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
+    for (i = _i = 0, _ref1 = a.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+      a[i] = parseFloat(a[i]);
+    }
+    return a;
+  };
+  svg.Transform = Transform;
+  svg.Font = new Font;
+  svg.AspectRatio = AspectRatio;
+  svg.Element = {};
+  svg.EmptyProperty = new Property("EMPTY", "");
+  svg.Element.svg = svgElement;
+  svg.Element.rect = rect;
+  svg.Element.circle = circle;
+  svg.Element.ellipse = ellipse;
+  svg.Element.line = line;
+  svg.Element.polyline = polyline;
+  svg.Element.polygon = polygon;
+  svg.Element.path = path;
+  svg.Element.pattern = pattern;
+  svg.Element.marker = marker;
+  svg.Element.defs = defs;
+  svg.Element.GradientBase = GradientBase;
+  svg.Element.linearGradient = linearGradient;
+  svg.Element.radialGradient = radialGradient;
+  svg.Element.stop = stop;
+  svg.Element.AnimateBase = AnimateBase;
+  svg.Element.animate = animate;
+  svg.Element.animateColor = animateColor;
+  svg.Element.animateTransform = animateTransform;
+  svg.Element.font = font;
+  svg.Element.fontface = fontface;
+  svg.Element.missingglyph = missingglyph;
+  svg.Element.glyph = glyph;
+  svg.Element.text = text;
+  svg.Element.TextElementBase = TextElementBase;
+  svg.Element.tspan = tspan;
+  svg.Element.tref = tref;
+  svg.Element.a = a;
+  svg.Element.image = image;
+  svg.Element.g = g;
+  svg.Element.symbol = symbol;
+  svg.Element.style = ElementBaseStyle;
+  svg.Element.use = use;
+  svg.Element.mask = mask;
+  svg.Element.clipPath = clipPath;
+  svg.Element.filter = filter;
+  svg.Element.feMorphology = feMorphology;
+  svg.Element.feColorMatrix = feColorMatrix;
+  svg.Element.feGaussianBlur = feGaussianBlur;
+  svg.Element.MISSING = MISSING;
+  svg.Element.title = title;
+  svg.Element.desc = desc;
+  svg.Mouse = new Mouse;
+  svg.CreateElement = function(node) {
+    var className, e;
 
-svg.stop = function() {
-  if (svg.intervalID) {
-    return clearInterval(svg.intervalID);
-  }
-};
-
-svg.loadXmlDoc = function(ctx, dom) {
-  var draw, e, isFirstRender, mapXY, waitingForImages;
-
-  svg.init(ctx);
-  mapXY = function(p) {
+    className = node.nodeName.replace(/^[^:]+:/, "");
+    className = className.replace(/\-/g, "");
+    e = null;
+    if (className === "title" || className === "desc" || className === "MISSING") {
+      return null;
+    }
+    if (typeof svg.Element[className] !== "undefined") {
+      console.log('attempting to create a ' + className);
+      e = new svg.Element[className](node);
+    } else {
+      e = new svg.Element.MISSING(node);
+    }
+    e.type = node.nodeName;
+    return e;
+  };
+  svg.load = function(ctx, url) {
+    return svg.loadXml(ctx, svg.ajax(url));
+  };
+  svg.loadXml = function(ctx, xml) {
+    return svg.loadXmlDoc(ctx, svg.parseXml(xml));
+  };
+  svg.stop = function() {
+    if (svg.intervalID) {
+      return clearInterval(svg.intervalID);
+    }
+  };
+  svg.mapXY = function(p, ctx) {
     var e;
 
     e = ctx.canvas;
@@ -3543,27 +3478,11 @@ svg.loadXmlDoc = function(ctx, dom) {
     }
     return p;
   };
-  if (svg.opts["ignoreMouse"] !== true) {
-    ctx.canvas.onclick = function(e) {
-      var p;
+  svg.draw = function() {
+    var cHeight, cWidth, ctx, e, isFirstRender, viewBox, xRatio, yRatio;
 
-      p = mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
-      return svg.Mouse.onclick(p.x, p.y);
-    };
-    ctx.canvas.onmousemove = function(e) {
-      var p;
-
-      p = mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
-      return svg.Mouse.onmousemove(p.x, p.y);
-    };
-  }
-  e = svg.CreateElement(dom.documentElement);
-  console.log("*** svgCreateElement from dom: " + dom.documentElement);
-  e.root = true;
-  isFirstRender = true;
-  draw = function() {
-    var cHeight, cWidth, viewBox, xRatio, yRatio;
-
+    ctx = svg.ctxFromLoadXMLDoc;
+    e = svg.eFromLoadXMLDoc;
     svg.ViewPort.Clear();
     if (ctx.canvas.parentNode) {
       svg.ViewPort.SetCurrent(ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight);
@@ -3625,35 +3544,62 @@ svg.loadXmlDoc = function(ctx, dom) {
       }
     }
   };
-  waitingForImages = true;
-  if (svg.ImagesLoaded()) {
-    waitingForImages = false;
-    draw();
-  }
-  return svg.intervalID = setInterval(function() {
-    var i, needUpdate, _i, _ref1;
+  svg.loadXmlDoc = function(ctx, dom) {
+    var e, isFirstRender, waitingForImages;
 
-    needUpdate = false;
-    if (waitingForImages && svg.ImagesLoaded()) {
-      waitingForImages = false;
-      needUpdate = true;
-    }
+    svg.init(ctx);
     if (svg.opts["ignoreMouse"] !== true) {
-      needUpdate = needUpdate | svg.Mouse.hasEvents();
+      ctx.canvas.onclick = function(e) {
+        var p;
+
+        p = svg.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return svg.Mouse.onclick(p.x, p.y);
+      };
+      ctx.canvas.onmousemove = function(e) {
+        var p;
+
+        p = svg.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return svg.Mouse.onmousemove(p.x, p.y);
+      };
     }
-    if (svg.opts["ignoreAnimation"] !== true) {
-      for (i = _i = 0, _ref1 = svg.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-        needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE);
+    e = svg.CreateElement(dom.documentElement);
+    console.log("*** svgCreateElement from dom: " + dom.documentElement);
+    e.root = true;
+    isFirstRender = true;
+    console.log('assigning svg.ctxFromLoadXMLDoc');
+    svg.ctxFromLoadXMLDoc = ctx;
+    svg.eFromLoadXMLDoc = e;
+    waitingForImages = true;
+    if (svg.ImagesLoaded()) {
+      waitingForImages = false;
+      svg.draw();
+    }
+    return svg.intervalID = setInterval(function() {
+      var i, needUpdate, _i, _ref1;
+
+      needUpdate = false;
+      if (waitingForImages && svg.ImagesLoaded()) {
+        waitingForImages = false;
+        needUpdate = true;
       }
-    }
-    if (typeof svg.opts["forceRedraw"] === "function" ? svg.opts["forceRedraw"]() === true : void 0) {
-      needUpdate = true;
-    }
-    if (needUpdate) {
-      draw();
-      return svg.Mouse.runEvents();
-    }
-  }, 1000 / svg.FRAMERATE);
+      if (svg.opts["ignoreMouse"] !== true) {
+        needUpdate = needUpdate | svg.Mouse.hasEvents();
+      }
+      if (svg.opts["ignoreAnimation"] !== true) {
+        for (i = _i = 0, _ref1 = svg.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE);
+        }
+      }
+      if (typeof svg.opts["forceRedraw"] === "function" ? svg.opts["forceRedraw"]() === true : void 0) {
+        needUpdate = true;
+      }
+      if (needUpdate) {
+        svg.draw();
+        return svg.Mouse.runEvents();
+      }
+    }, 1000 / svg.FRAMERATE);
+  };
+  return svg;
 };
 
 if (CanvasRenderingContext2D) {

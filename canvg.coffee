@@ -2323,7 +2323,7 @@ canvg = (target, s, opts) ->
   # store class on canvas
   target.svg.stop()  if target.svg?
   
-  #svg = build();
+  svg = build();
   # on i.e. 8 for flash canvas, we can't assign the property so check for it
   target.svg = svg  unless target.childNodes.length is 1 and target.childNodes[0].nodeName is "OBJECT"
   svg.opts = opts
@@ -2341,187 +2341,184 @@ canvg = (target, s, opts) ->
     # load from url
     svg.load ctx, s
 
-svg = {}
-svg.FRAMERATE = 30
-svg.MAX_VIRTUAL_PIXELS = 30000
+build = ->
+  svg = {}
+  svg.FRAMERATE = 30
+  svg.MAX_VIRTUAL_PIXELS = 30000
 
-# globals
-svg.init = (ctx) ->
-  uniqueId = 0
-  svg.UniqueId = ->
-    uniqueId++
-    "canvg" + uniqueId
+  # globals
+  svg.init = (ctx) ->
+    uniqueId = 0
+    svg.UniqueId = ->
+      uniqueId++
+      "canvg" + uniqueId
 
-  svg.Definitions = {}
-  svg.Styles = {}
-  svg.Animations = []
-  svg.Images = []
-  svg.ctx = ctx
-  svg.ViewPort = new ViewPort
+    svg.Definitions = {}
+    svg.Styles = {}
+    svg.Animations = []
+    svg.Images = []
+    svg.ctx = ctx
+    svg.ViewPort = new ViewPort
 
-  return
+    return
 
-svg.init()
+  svg.init()
 
-# images loaded
-svg.ImagesLoaded = ->
-  for svgImage in svg.Images
-    return false  unless svgImage.loaded
-  true
-
-
-# trim
-svg.trim = (s) ->
-  s.replace /^\s+|\s+$/g, ""
+  # images loaded
+  svg.ImagesLoaded = ->
+    for svgImage in svg.Images
+      return false  unless svgImage.loaded
+    true
 
 
-# compress spaces
-svg.compressSpaces = (s) ->
-  s.replace /[\s\r\t\n]+/g, " "
+  # trim
+  svg.trim = (s) ->
+    s.replace /^\s+|\s+$/g, ""
 
 
-# ajax
-svg.ajax = (url) ->
-  AJAX = undefined
-  if window.XMLHttpRequest
-    AJAX = new XMLHttpRequest()
-  else
-    AJAX = new ActiveXObject("Microsoft.XMLHTTP")
-  if AJAX
-    AJAX.open "GET", url, false
-    AJAX.send null
-    return AJAX.responseText
-  null
+  # compress spaces
+  svg.compressSpaces = (s) ->
+    s.replace /[\s\r\t\n]+/g, " "
 
 
-# parse xml
-svg.parseXml = (xml) ->
-  if window.DOMParser
-    parser = new DOMParser()
-    parser.parseFromString xml, "text/xml"
-  else
-    xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "")
-    xmlDoc = new ActiveXObject("Microsoft.XMLDOM")
-    xmlDoc.async = "false"
-    xmlDoc.loadXML xml
-    xmlDoc
+  # ajax
+  svg.ajax = (url) ->
+    AJAX = undefined
+    if window.XMLHttpRequest
+      AJAX = new XMLHttpRequest()
+    else
+      AJAX = new ActiveXObject("Microsoft.XMLHTTP")
+    if AJAX
+      AJAX.open "GET", url, false
+      AJAX.send null
+      return AJAX.responseText
+    null
 
 
-# points and paths
-svg.ToNumberArray = (s) ->
-  a = svg.trim(svg.compressSpaces((s or "").replace(/,/g, " "))).split(" ")
-  for i in [0...a.length]
-    a[i] = parseFloat(a[i])
-  a
+  # parse xml
+  svg.parseXml = (xml) ->
+    if window.DOMParser
+      parser = new DOMParser()
+      parser.parseFromString xml, "text/xml"
+    else
+      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "")
+      xmlDoc = new ActiveXObject("Microsoft.XMLDOM")
+      xmlDoc.async = "false"
+      xmlDoc.loadXML xml
+      xmlDoc
 
 
-# transforms
-svg.Transform = Transform
+  # points and paths
+  svg.ToNumberArray = (s) ->
+    a = svg.trim(svg.compressSpaces((s or "").replace(/,/g, " "))).split(" ")
+    for i in [0...a.length]
+      a[i] = parseFloat(a[i])
+    a
 
 
-# fonts
-svg.Font = new Font
+  # transforms
+  svg.Transform = Transform
 
 
-# aspect ratio
-svg.AspectRatio = AspectRatio
+  # fonts
+  svg.Font = new Font
 
 
-# elements
-svg.Element = {}
-svg.EmptyProperty = new Property("EMPTY", "")
+  # aspect ratio
+  svg.AspectRatio = AspectRatio
 
 
-# Elements. Each element has its
-# own class. The reason they are kept
-# in this structure is that we create the
-# objects dynamically by doing a
-#   new svg.Element[elementname]
-# later on.
-
-svg.Element.svg = svgElement
-svg.Element.rect = rect
-svg.Element.circle = circle
-svg.Element.ellipse = ellipse
-svg.Element.line = line
-svg.Element.polyline = polyline
-svg.Element.polygon = polygon
-svg.Element.path = path
-svg.Element.pattern = pattern
-svg.Element.marker = marker
-svg.Element.defs = defs
-svg.Element.GradientBase = GradientBase
-svg.Element.linearGradient = linearGradient
-svg.Element.radialGradient = radialGradient
-svg.Element.stop = stop
-svg.Element.AnimateBase = AnimateBase
-svg.Element.animate = animate
-svg.Element.animateColor = animateColor
-svg.Element.animateTransform = animateTransform
-svg.Element.font = font
-svg.Element.fontface = fontface
-svg.Element.missingglyph = missingglyph
-svg.Element.glyph = glyph
-svg.Element.text = text
-svg.Element.TextElementBase = TextElementBase
-svg.Element.tspan = tspan
-svg.Element.tref = tref
-svg.Element.a = a
-svg.Element.image = image
-svg.Element.g = g
-svg.Element.symbol = symbol
-svg.Element.style = ElementBaseStyle
-svg.Element.use = use
-svg.Element.mask = mask
-svg.Element.clipPath = clipPath
-svg.Element.filter = filter
-svg.Element.feMorphology = feMorphology
-svg.Element.feColorMatrix = feColorMatrix
-svg.Element.feGaussianBlur = feGaussianBlur
-svg.Element.MISSING = MISSING
-# title element, do nothing
-svg.Element.title = title
-# desc element, do nothing
-svg.Element.desc = desc
+  # elements
+  svg.Element = {}
+  svg.EmptyProperty = new Property("EMPTY", "")
 
 
-svg.Mouse = new Mouse
+  # Elements. Each element has its
+  # own class. The reason they are kept
+  # in this structure is that we create the
+  # objects dynamically by doing a
+  #   new svg.Element[elementname]
+  # later on.
 
-# element factory
-svg.CreateElement = (node) ->
-  className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
-  className = className.replace(/\-/g, "") # remove dashes
-  e = null
-  # Todo this should be handled
-  # more gracefully - we really want the title
-  # and desc to be created - but just to not to cause
-  # troubles with the attributes and styles
-  if className is "title" or className is "desc" or className is "MISSING"
-    console.log "not creating a " + svg.Element[className]
-    return null 
-  unless typeof (svg.Element[className]) is "undefined"
-    e = new svg.Element[className](node)
-  else
-    e = new svg.Element.MISSING(node)
-  e.type = node.nodeName
-  e
+  svg.Element.svg = svgElement
+  svg.Element.rect = rect
+  svg.Element.circle = circle
+  svg.Element.ellipse = ellipse
+  svg.Element.line = line
+  svg.Element.polyline = polyline
+  svg.Element.polygon = polygon
+  svg.Element.path = path
+  svg.Element.pattern = pattern
+  svg.Element.marker = marker
+  svg.Element.defs = defs
+  svg.Element.GradientBase = GradientBase
+  svg.Element.linearGradient = linearGradient
+  svg.Element.radialGradient = radialGradient
+  svg.Element.stop = stop
+  svg.Element.AnimateBase = AnimateBase
+  svg.Element.animate = animate
+  svg.Element.animateColor = animateColor
+  svg.Element.animateTransform = animateTransform
+  svg.Element.font = font
+  svg.Element.fontface = fontface
+  svg.Element.missingglyph = missingglyph
+  svg.Element.glyph = glyph
+  svg.Element.text = text
+  svg.Element.TextElementBase = TextElementBase
+  svg.Element.tspan = tspan
+  svg.Element.tref = tref
+  svg.Element.a = a
+  svg.Element.image = image
+  svg.Element.g = g
+  svg.Element.symbol = symbol
+  svg.Element.style = ElementBaseStyle
+  svg.Element.use = use
+  svg.Element.mask = mask
+  svg.Element.clipPath = clipPath
+  svg.Element.filter = filter
+  svg.Element.feMorphology = feMorphology
+  svg.Element.feColorMatrix = feColorMatrix
+  svg.Element.feGaussianBlur = feGaussianBlur
+  svg.Element.MISSING = MISSING
+  # title element, do nothing
+  svg.Element.title = title
+  # desc element, do nothing
+  svg.Element.desc = desc
+  svg.Mouse = new Mouse
+
+  # element factory
+  svg.CreateElement = (node) ->
+    className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
+    className = className.replace(/\-/g, "") # remove dashes
+    e = null
+    # Todo this should be handled
+    # more gracefully - we really want the title
+    # and desc to be created - but just to not to cause
+    # troubles with the attributes and styles
+    if className is "title" or className is "desc" or className is "MISSING"
+      return null 
+    unless typeof (svg.Element[className]) is "undefined"
+      console.log 'attempting to create a ' + className
+      e = new svg.Element[className](node)
+    else
+      e = new svg.Element.MISSING(node)
+    e.type = node.nodeName
+    e
 
 
-# load from url
-svg.load = (ctx, url) ->
-  svg.loadXml ctx, svg.ajax(url)
+  # load from url
+  svg.load = (ctx, url) ->
+    svg.loadXml ctx, svg.ajax(url)
 
 
-# load from xml
-svg.loadXml = (ctx, xml) ->
-  svg.loadXmlDoc ctx, svg.parseXml(xml)
+  # load from xml
+  svg.loadXml = (ctx, xml) ->
+    svg.loadXmlDoc ctx, svg.parseXml(xml)
 
-svg.stop = ->
-  clearInterval svg.intervalID  if svg.intervalID
+  svg.stop = ->
+    clearInterval svg.intervalID  if svg.intervalID
 
-svg.loadXmlDoc = (ctx, dom) ->
-  svg.init ctx
-  mapXY = (p) ->
+  svg.mapXY = (p, ctx) ->
     e = ctx.canvas
     while e
       p.x -= e.offsetLeft
@@ -2531,25 +2528,10 @@ svg.loadXmlDoc = (ctx, dom) ->
     p.y += window.scrollY  if window.scrollY
     p
 
-  
-  # bind mouse
-  unless svg.opts["ignoreMouse"] is true
-    ctx.canvas.onclick = (e) ->
-      p = mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
-      svg.Mouse.onclick p.x, p.y
+  svg.draw = ->
+    ctx = svg.ctxFromLoadXMLDoc
+    e = svg.eFromLoadXMLDoc
 
-    ctx.canvas.onmousemove = (e) ->
-      p = mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
-      svg.Mouse.onmousemove p.x, p.y
-
-  e = svg.CreateElement(dom.documentElement)
-  console.log "*** svgCreateElement from dom: " + dom.documentElement
-  #alert  "svgCreateElement from dom"
-  e.root = true
-  
-  # render loop
-  isFirstRender = true
-  draw = ->
     svg.ViewPort.Clear()
     svg.ViewPort.SetCurrent ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight  if ctx.canvas.parentNode
     unless svg.opts["ignoreDimensions"] is true
@@ -2591,34 +2573,61 @@ svg.loadXmlDoc = (ctx, dom) ->
       isFirstRender = false
       svg.opts["renderCallback"]()  if typeof (svg.opts["renderCallback"]) is "function"
 
-  waitingForImages = true
-  if svg.ImagesLoaded()
-    waitingForImages = false
-    draw()
-  svg.intervalID = setInterval(->
-    needUpdate = false
-    if waitingForImages and svg.ImagesLoaded()
+
+
+  svg.loadXmlDoc = (ctx, dom) ->
+    svg.init ctx
+
+    # bind mouse
+    unless svg.opts["ignoreMouse"] is true
+      ctx.canvas.onclick = (e) ->
+        p = svg.mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        svg.Mouse.onclick p.x, p.y
+
+      ctx.canvas.onmousemove = (e) ->
+        p = svg.mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        svg.Mouse.onmousemove p.x, p.y
+
+    e = svg.CreateElement(dom.documentElement)
+    console.log "*** svgCreateElement from dom: " + dom.documentElement
+    #alert  "svgCreateElement from dom"
+    e.root = true
+    
+    # render loop
+    isFirstRender = true
+
+    console.log 'assigning svg.ctxFromLoadXMLDoc'
+    svg.ctxFromLoadXMLDoc = ctx
+    svg.eFromLoadXMLDoc = e
+    
+    waitingForImages = true
+    if svg.ImagesLoaded()
       waitingForImages = false
-      needUpdate = true
-    
-    # need update from mouse events?
-    needUpdate = needUpdate | svg.Mouse.hasEvents()  unless svg.opts["ignoreMouse"] is true
-    
-    # need update from animations?
-    unless svg.opts["ignoreAnimation"] is true
-      for i in [0...svg.Animations.length]
-        needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE)
-    
-    # need update from redraw?
-    needUpdate = true  if svg.opts["forceRedraw"]() is true  if typeof (svg.opts["forceRedraw"]) is "function"
-    
-    # render if needed
-    if needUpdate
-      draw()
-      svg.Mouse.runEvents() # run and clear our events
-  , 1000 / svg.FRAMERATE)
+      svg.draw()
 
-
+    svg.intervalID = setInterval(->
+      needUpdate = false
+      if waitingForImages and svg.ImagesLoaded()
+        waitingForImages = false
+        needUpdate = true
+      
+      # need update from mouse events?
+      needUpdate = needUpdate | svg.Mouse.hasEvents()  unless svg.opts["ignoreMouse"] is true
+      
+      # need update from animations?
+      unless svg.opts["ignoreAnimation"] is true
+        for i in [0...svg.Animations.length]
+          needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE)
+      
+      # need update from redraw?
+      needUpdate = true  if svg.opts["forceRedraw"]() is true  if typeof (svg.opts["forceRedraw"]) is "function"
+      
+      # render if needed
+      if needUpdate
+        svg.draw()
+        svg.Mouse.runEvents() # run and clear our events
+    , 1000 / svg.FRAMERATE)
+  return svg
 
 if CanvasRenderingContext2D
   CanvasRenderingContext2D::drawSvg = (s, dx, dy, dw, dh) ->
