@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>canvg.js test</title>
+    	<script type="text/javascript" src="StackBlur.js"></script>
+		<script type="text/javascript" src="canvg.js"></script>
+		<script type="text/javascript">
+		function q(k) {
+			var qs = window.location.search.substring(1);
+			var t = qs.split("&");
+			for (i=0;i<t.length;i++) {
+				kv = t[i].split("=");
+				if (kv[0] == k) return unescape(kv[1]).replace('+',' ');
+			}		
+			return null;
+		}		
+		var context;
+		function bodyonload() { 
+			context = document.getElementById('canvas').getContext; 
+			var qUrl = q('url'); if (qUrl != null && qUrl != '') { r(); canvg('canvas', qUrl); }
+			var qSvg = q('svg'); if (qSvg != null && qSvg != '') { r(); canvg('canvas', qSvg); }			
+		}
+		function render() {
+			var c = document.getElementById('canvas');
+			c.width = document.getElementById('width').value;
+			c.height = document.getElementById('height').value;
+			if (context) c.getContext = context;
+			canvg(c, document.getElementById('svg').value);
+		}
+		function r() {
+			var c = document.getElementById('canvas');
+			c.width = '1000';
+			c.height = '600';
+			if (context) c.getContext = context;
+		}
+		</script>
+		
+		<style type="text/css">
+		body { font-family: verdana; }
+		#title { padding: 0 0 5px 5px; margin: 0; }
+		#message { background-color: orangered; padding: 5px; margin-bottom: 10px; }
+		#message a { color: white; }
+		td { vertical-align: top; }
+		td.examples { width: 150px; }
+		td.examples table { width: 150px; margin: 0 20px 10px 0; font-size: 8px; }
+		td.examples table thead th { text-align: left;  background: darkblue; color: white; padding: 2px; }
+		hr { border: 1px solid darkblue; margin: 15px 0; }
+		label { color: darkblue; }
+		a image { border: 0; }
+		</style>
+		<script type="text/javascript">
+
+		  var _gaq = _gaq || [];
+		  _gaq.push(['_setAccount', 'UA-15494947-1']);
+		  _gaq.push(['_trackPageview']);
+
+		  (function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		  })();
+
+		</script>		
+	</head>
+	<body onload="bodyonload();">
+		
+		<table><tr><td rowspan="2" class="examples">
+		
+		<table><thead><tr><th colspan="3">Play</th></tr></thead><tbody>
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/23.svg')">tiger</a></td><td> <a href="svgs/23.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.croczilla.com/bits_and_pieces/svg/samples/" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/bee.svg')">bee</a></td><td> <a href="svgs/bee.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Che_Guevara_vector_SVG_format.svg')">Che guevara</a></td><td> <a href="svgs/Che_Guevara_vector_SVG_format.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>			
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/BeeQueen.svg')">Bee queen</a></td><td> <a href="svgs/BeeQueen.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>			
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/albert-einstein.svg')">Einstein</a></td><td> <a href="svgs/albert-einstein.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>			
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/NagasakibombHighDetail.svg')">Nagasaki bomb High Detail</a></td><td> <a href="svgs/NagasakibombHighDetail.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/NagasakibombMediumDetail.svg')">Nagasaki bomb Medium Detail</a></td><td> <a href="svgs/NagasakibombMediumDetail.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/NagasakibombCutoutLowDetail.svg')">Nagasaki bomb Cutout Low Detail</a></td><td> <a href="svgs/NagasakibombCutoutLowDetail.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Saturn.svg')">Saturn</a></td><td> <a href="svgs/Saturn.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Saturn2.svg')">Saturn 2</a></td><td> <a href="svgs/Saturn2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Hazard_C.svg')">Hazard_C</a></td><td> <a href="svgs/Hazard_C.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Hazard_E.svg')">Hazard_E</a></td><td> <a href="svgs/Hazard_E.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Hazard_F.svg')">Hazard_F</a></td><td> <a href="svgs/Hazard_F.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Hazard_N.svg')">Hazard_N</a></td><td> <a href="svgs/Hazard_N.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Hazard_T.svg')">Hazard_T</a></td><td> <a href="svgs/Hazard_T.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/hazard-stripes-variety.svg')">hazard-stripes-variety</a></td><td> <a href="svgs/hazard-stripes-variety.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-1.svg')">opt ill 1</a></td><td> <a href="svgs/optical-illusion-1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-2.svg')">opt ill 2</a></td><td> <a href="svgs/optical-illusion-2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-3.svg')">opt ill 3</a></td><td> <a href="svgs/optical-illusion-3.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-4.svg')">opt ill 4</a></td><td> <a href="svgs/optical-illusion-4.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-5.svg')">opt ill 5</a></td><td> <a href="svgs/optical-illusion-5.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-6.svg')">opt ill 6</a></td><td> <a href="svgs/optical-illusion-6.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-7.svg')">opt ill 7</a></td><td> <a href="svgs/optical-illusion-7.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-8.svg')">opt ill 8</a></td><td> <a href="svgs/optical-illusion-8.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-9.svg')">opt ill 9</a></td><td> <a href="svgs/optical-illusion-9.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/optical-illusion-10.svg')">opt ill 10</a></td><td> <a href="svgs/optical-illusion-10.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/white-rabbit.svg')">white rabbit</a></td><td> <a href="svgs/white-rabbit.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/deer.svg')">deer</a></td><td> <a href="svgs/deer.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/osteographia.svg')">osteographia</a></td><td> <a href="svgs/osteographia.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/nervesCenteringAtLove.svg')">Nerves Centering AtLove</a></td><td> <a href="svgs/nervesCenteringAtLove.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Argonaut.svg')">Argonaut</a></td><td> <a href="svgs/Argonaut.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/skullWithPole.svg')">Skull With Pole</a></td><td> <a href="svgs/skullWithPole.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland1.svg')">Alice In Wonderland 1</a></td><td> <a href="svgs/aliceInWonderland1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland2.svg')">Alice In Wonderland 2</a></td><td> <a href="svgs/aliceInWonderland2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Descartes_mind_and_body.svg')">Descartes mind and body</a></td><td> <a href="svgs/Descartes_mind_and_body.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Brain_of_gauss.svg')">Brain_of_gauss</a></td><td> <a href="svgs/Brain_of_gauss.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/atlanticdirigible.svg')">atlanticdirigible</a></td><td> <a href="svgs/atlanticdirigible.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/armsBones2.svg')">armsBones2</a></td><td> <a href="svgs/armsBones2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/haeckel-vertebrates.svg')">haeckel-vertebrates</a></td><td> <a href="svgs/haeckel-vertebrates.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland9.svg')">aliceInWonderland9</a></td><td> <a href="svgs/aliceInWonderland9.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland8.svg')">aliceInWonderland8</a></td><td> <a href="svgs/aliceInWonderland8.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland7.svg')">aliceInWonderland7</a></td><td> <a href="svgs/aliceInWonderland7.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland6.svg')">aliceInWonderland6</a></td><td> <a href="svgs/aliceInWonderland6.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland5.svg')">aliceInWonderland5</a></td><td> <a href="svgs/aliceInWonderland5.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland4.svg')">aliceInWonderland4</a></td><td> <a href="svgs/aliceInWonderland4.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/aliceInWonderland3.svg')">aliceInWonderland3</a></td><td> <a href="svgs/aliceInWonderland3.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/HeronSteamEngine.svg')">HeronSteamEngine</a></td><td> <a href="svgs/HeronSteamEngine.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/HeronSteamEngine.svg')">HeronSteamEngine</a></td><td> <a href="svgs/HeronSteamEngine.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/greek-gods-goddesses-1.svg')">greek-gods-goddesses-1</a></td><td> <a href="svgs/greek-gods-goddesses-1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/armsBones1.svg')">armsBones1</a></td><td> <a href="svgs/armsBones1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Farthingdale.svg')">Farthingdale</a></td><td> <a href="svgs/Farthingdale.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/whale.svg')">whale</a></td><td> <a href="svgs/whale.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/keplero_2.svg')">keplero_2</a></td><td> <a href="svgs/keplero_2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Pumpkin_Tidbits_Freebie.svg')">Pumpkin_Tidbits_Freebie</a></td><td> <a href="svgs/Pumpkin_Tidbits_Freebie.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/mustang_diagram_750.svg')">mustang_diagram_750</a></td><td> <a href="svgs/mustang_diagram_750.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/heart.svg')">heart</a></td><td> <a href="svgs/heart.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Dragon.svg')">Dragon</a></td><td> <a href="svgs/Dragon.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Horsefish.svg')">Horsefish</a></td><td> <a href="svgs/Horsefish.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Scaly_fish.svg')">Scaly_fish</a></td><td> <a href="svgs/Scaly_fish.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Maelstrom.svg')">Maelstrom</a></td><td> <a href="svgs/Maelstrom.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Tadpole.svg')">Tadpole</a></td><td> <a href="svgs/Tadpole.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Lapwing.svg')">Lapwing</a></td><td> <a href="svgs/Lapwing.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Snail.svg')">Snail</a></td><td> <a href="svgs/Snail.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Jaguar.svg')">Jaguar</a></td><td> <a href="svgs/Jaguar.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>	
+
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Tree_House.svg')">Tree_House</a></td><td> <a href="svgs/Tree_House.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Golgi1.svg')">Golgi1</a></td><td> <a href="svgs/Golgi1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Bird_Nest.svg')">Bird_Nest</a></td><td> <a href="svgs/Bird_Nest.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/skeleton2of2.svg')">skeleton2of2</a></td><td> <a href="svgs/skeleton2of2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/chimaera.svg')">chimaera</a></td><td> <a href="svgs/chimaera.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/skeletonelk.svg')">skeletonelk</a></td><td> <a href="svgs/skeletonelk.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Golgi2.svg')">Golgi2</a></td><td> <a href="svgs/Golgi2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/human_skull_2of2.svg')">human_skull_2of2</a></td><td> <a href="svgs/human_skull_2of2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Anatomy_Heart.svg')">Anatomy_Heart</a></td><td> <a href="svgs/Anatomy_Heart.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Bird_Egg.svg')">Bird_Egg</a></td><td> <a href="svgs/Bird_Egg.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/VintageEye.svg')">VintageEye</a></td><td> <a href="svgs/VintageEye.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/mouth.svg')">mouth</a></td><td> <a href="svgs/mouth.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/eyeball.svg')">eyeball</a></td><td> <a href="svgs/eyeball.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/handbones.svg')">handbones</a></td><td> <a href="svgs/handbones.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/cabbagebutterfly.svg')">cabbagebutterfly</a></td><td> <a href="svgs/cabbagebutterfly.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/cat.svg')">cat</a></td><td> <a href="svgs/cat.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/fish_vintage.svg')">fish_vintage</a></td><td> <a href="svgs/fish_vintage.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/human_skull_1of2.svg')">human_skull_1of2</a></td><td> <a href="svgs/human_skull_1of2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/top.svg')">top</a></td><td> <a href="svgs/top.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Taylor_1766_ogon.svg')">Taylor_1766_ogon</a></td><td> <a href="svgs/Taylor_1766_ogon.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/victorian_train.svg')">victorian_train</a></td><td> <a href="svgs/victorian_train.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/poison_apparatus_of_rattlesnake.svg')">poison_apparatus_of_rattlesnake</a></td><td> <a href="svgs/poison_apparatus_of_rattlesnake.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/dragon2.svg')">dragon2</a></td><td> <a href="svgs/dragon2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/anotherEye1.svg')">anotherEye1</a></td><td> <a href="svgs/anotherEye1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/anotherEye2.svg')">anotherEye2</a></td><td> <a href="svgs/anotherEye2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/toucan.svg')">toucan</a></td><td> <a href="svgs/toucan.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/teeth.svg')">teeth</a></td><td> <a href="svgs/teeth.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/rodentskull.svg')">rodentskull</a></td><td> <a href="svgs/rodentskull.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/eye3.svg')">eye3</a></td><td> <a href="svgs/eye3.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/mardigrasmask.svg')">mardigrasmask</a></td><td> <a href="svgs/mardigrasmask.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/eye2.svg')">eye2</a></td><td> <a href="svgs/eye2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/arm.svg')">arm</a></td><td> <a href="svgs/arm.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/eye.svg')">eye</a></td><td> <a href="svgs/eye.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/fingers.svg')">fingers</a></td><td> <a href="svgs/fingers.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/flyingfish2.svg')">flyingfish2</a></td><td> <a href="svgs/flyingfish2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/pin.svg')">pin</a></td><td> <a href="svgs/pin.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/globefish2.svg')">globefish2</a></td><td> <a href="svgs/globefish2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/housefly.svg')">housefly</a></td><td> <a href="svgs/housefly.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/Tenniel_Alice_hand.svg')">Tenniel_Alice_hand</a></td><td> <a href="svgs/Tenniel_Alice_hand.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+	<tr><td><a href="javascript:r();canvg('canvas', 'svgs/tenniel_cheshire_cat.svg')">tenniel_cheshire_cat</a></td><td> <a href="svgs/tenniel_cheshire_cat.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+
+
+			</tbody></table>
+
+
+		</td><tr><td>
+		
+		<div style="border: 0px; width: 1000px; height: 600px;">
+			<canvas id="canvas" width="1000px" height="600px"></canvas>
+		</div>
+		
+		</td></tr></table>
+	</body>
+</html>
