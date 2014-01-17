@@ -1,4 +1,4 @@
-var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, build, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
+var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgClass, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -1703,7 +1703,9 @@ path = (function(_super) {
   function path(node) {
     var d;
 
+    console.log('creating a path');
     path.__super__.constructor.call(this, node);
+    console.log('created a PathElementBase');
     d = this.attribute("d").value;
     d = d.replace(/,/g, " ");
     d = d.replace(/([MmZzLlHhVvCcSsQqTtAa])([MmZzLlHhVvCcSsQqTtAa])/g, "$1 $2");
@@ -1716,6 +1718,7 @@ path = (function(_super) {
     d = svg.compressSpaces(d);
     d = svg.trim(d);
     this.d = d;
+    console.log('finished creating a path');
   }
 
   path.prototype.path = function(ctx) {
@@ -3292,7 +3295,7 @@ canvg = function(target, s, opts) {
   if (target.svg != null) {
     target.svg.stop();
   }
-  svg = build();
+  svg = new svgClass;
   if (!(target.childNodes.length === 1 && target.childNodes[0].nodeName === "OBJECT")) {
     target.svg = svg;
   }
@@ -3307,30 +3310,84 @@ canvg = function(target, s, opts) {
   }
 };
 
-build = function() {
-  svg = {};
-  svg.FRAMERATE = 30;
-  svg.MAX_VIRTUAL_PIXELS = 30000;
-  svg.init = function(ctx) {
-    var uniqueId;
+svgClass = (function() {
+  var constructor;
 
-    uniqueId = 0;
-    svg.UniqueId = function() {
-      uniqueId++;
-      return "canvg" + uniqueId;
-    };
-    svg.Definitions = {};
-    svg.Styles = {};
-    svg.Animations = [];
-    svg.Images = [];
-    svg.ctx = ctx;
-    svg.ViewPort = new ViewPort;
+  function svgClass() {}
+
+  svgClass.uniqueId = 0;
+
+  constructor = function() {
+    this.FRAMERATE = 30;
+    return this.MAX_VIRTUAL_PIXELS = 30000;
   };
-  svg.init();
-  svg.ImagesLoaded = function() {
+
+  svgClass.prototype.UniqueId = function() {
+    this.constructor.uniqueId++;
+    return "canvg" + this.constructor.uniqueId;
+  };
+
+  svgClass.prototype.init = function(ctx) {
+    this.Definitions = {};
+    this.Styles = {};
+    this.Animations = [];
+    this.Images = [];
+    this.ctx = ctx;
+    this.ViewPort = new ViewPort;
+    this.Transform = Transform;
+    this.Font = new Font;
+    this.AspectRatio = AspectRatio;
+    this.Element = {};
+    this.EmptyProperty = new Property("EMPTY", "");
+    this.Element.svg = svgElement;
+    this.Element.rect = rect;
+    this.Element.circle = circle;
+    this.Element.ellipse = ellipse;
+    this.Element.line = line;
+    this.Element.polyline = polyline;
+    this.Element.polygon = polygon;
+    this.Element.path = path;
+    this.Element.pattern = pattern;
+    this.Element.marker = marker;
+    this.Element.defs = defs;
+    this.Element.GradientBase = GradientBase;
+    this.Element.linearGradient = linearGradient;
+    this.Element.radialGradient = radialGradient;
+    this.Element.stop = stop;
+    this.Element.AnimateBase = AnimateBase;
+    this.Element.animate = animate;
+    this.Element.animateColor = animateColor;
+    this.Element.animateTransform = animateTransform;
+    this.Element.font = font;
+    this.Element.fontface = fontface;
+    this.Element.missingglyph = missingglyph;
+    this.Element.glyph = glyph;
+    this.Element.text = text;
+    this.Element.TextElementBase = TextElementBase;
+    this.Element.tspan = tspan;
+    this.Element.tref = tref;
+    this.Element.a = a;
+    this.Element.image = image;
+    this.Element.g = g;
+    this.Element.symbol = symbol;
+    this.Element.style = ElementBaseStyle;
+    this.Element.use = use;
+    this.Element.mask = mask;
+    this.Element.clipPath = clipPath;
+    this.Element.filter = filter;
+    this.Element.feMorphology = feMorphology;
+    this.Element.feColorMatrix = feColorMatrix;
+    this.Element.feGaussianBlur = feGaussianBlur;
+    this.Element.MISSING = MISSING;
+    this.Element.title = title;
+    this.Element.desc = desc;
+    this.Mouse = new Mouse;
+  };
+
+  svgClass.prototype.ImagesLoaded = function() {
     var svgImage, _i, _len, _ref1;
 
-    _ref1 = svg.Images;
+    _ref1 = this.Images;
     for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
       svgImage = _ref1[_i];
       if (!svgImage.loaded) {
@@ -3339,13 +3396,16 @@ build = function() {
     }
     return true;
   };
-  svg.trim = function(s) {
+
+  svgClass.prototype.trim = function(s) {
     return s.replace(/^\s+|\s+$/g, "");
   };
-  svg.compressSpaces = function(s) {
+
+  svgClass.prototype.compressSpaces = function(s) {
     return s.replace(/[\s\r\t\n]+/g, " ");
   };
-  svg.ajax = function(url) {
+
+  svgClass.prototype.ajax = function(url) {
     var AJAX;
 
     AJAX = void 0;
@@ -3361,7 +3421,8 @@ build = function() {
     }
     return null;
   };
-  svg.parseXml = function(xml) {
+
+  svgClass.prototype.parseXml = function(xml) {
     var parser, xmlDoc;
 
     if (window.DOMParser) {
@@ -3375,64 +3436,18 @@ build = function() {
       return xmlDoc;
     }
   };
-  svg.ToNumberArray = function(s) {
+
+  svgClass.prototype.ToNumberArray = function(s) {
     var i, _i, _ref1;
 
-    a = svg.trim(svg.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
+    a = this.trim(this.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
     for (i = _i = 0, _ref1 = a.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
       a[i] = parseFloat(a[i]);
     }
     return a;
   };
-  svg.Transform = Transform;
-  svg.Font = new Font;
-  svg.AspectRatio = AspectRatio;
-  svg.Element = {};
-  svg.EmptyProperty = new Property("EMPTY", "");
-  svg.Element.svg = svgElement;
-  svg.Element.rect = rect;
-  svg.Element.circle = circle;
-  svg.Element.ellipse = ellipse;
-  svg.Element.line = line;
-  svg.Element.polyline = polyline;
-  svg.Element.polygon = polygon;
-  svg.Element.path = path;
-  svg.Element.pattern = pattern;
-  svg.Element.marker = marker;
-  svg.Element.defs = defs;
-  svg.Element.GradientBase = GradientBase;
-  svg.Element.linearGradient = linearGradient;
-  svg.Element.radialGradient = radialGradient;
-  svg.Element.stop = stop;
-  svg.Element.AnimateBase = AnimateBase;
-  svg.Element.animate = animate;
-  svg.Element.animateColor = animateColor;
-  svg.Element.animateTransform = animateTransform;
-  svg.Element.font = font;
-  svg.Element.fontface = fontface;
-  svg.Element.missingglyph = missingglyph;
-  svg.Element.glyph = glyph;
-  svg.Element.text = text;
-  svg.Element.TextElementBase = TextElementBase;
-  svg.Element.tspan = tspan;
-  svg.Element.tref = tref;
-  svg.Element.a = a;
-  svg.Element.image = image;
-  svg.Element.g = g;
-  svg.Element.symbol = symbol;
-  svg.Element.style = ElementBaseStyle;
-  svg.Element.use = use;
-  svg.Element.mask = mask;
-  svg.Element.clipPath = clipPath;
-  svg.Element.filter = filter;
-  svg.Element.feMorphology = feMorphology;
-  svg.Element.feColorMatrix = feColorMatrix;
-  svg.Element.feGaussianBlur = feGaussianBlur;
-  svg.Element.MISSING = MISSING;
-  svg.Element.title = title;
-  svg.Element.desc = desc;
-  svg.Mouse = new Mouse;
-  svg.CreateElement = function(node) {
+
+  svgClass.prototype.CreateElement = function(node) {
     var className, e;
 
     className = node.nodeName.replace(/^[^:]+:/, "");
@@ -3441,27 +3456,31 @@ build = function() {
     if (className === "title" || className === "desc" || className === "MISSING") {
       return null;
     }
-    if (typeof svg.Element[className] !== "undefined") {
+    if (typeof this.Element[className] !== "undefined") {
       console.log('attempting to create a ' + className);
-      e = new svg.Element[className](node);
+      e = new this.Element[className](node);
     } else {
-      e = new svg.Element.MISSING(node);
+      e = new this.Element.MISSING(node);
     }
     e.type = node.nodeName;
     return e;
   };
-  svg.load = function(ctx, url) {
-    return svg.loadXml(ctx, svg.ajax(url));
+
+  svgClass.prototype.load = function(ctx, url) {
+    return this.loadXml(ctx, this.ajax(url));
   };
-  svg.loadXml = function(ctx, xml) {
-    return svg.loadXmlDoc(ctx, svg.parseXml(xml));
+
+  svgClass.prototype.loadXml = function(ctx, xml) {
+    return this.loadXmlDoc(ctx, this.parseXml(xml));
   };
-  svg.stop = function() {
-    if (svg.intervalID) {
-      return clearInterval(svg.intervalID);
+
+  svgClass.prototype.stop = function() {
+    if (this.intervalID) {
+      return clearInterval(this.intervalID);
     }
   };
-  svg.mapXY = function(p, ctx) {
+
+  svgClass.prototype.mapXY = function(p, ctx) {
     var e;
 
     e = ctx.canvas;
@@ -3478,16 +3497,17 @@ build = function() {
     }
     return p;
   };
-  svg.draw = function() {
+
+  svgClass.prototype.draw = function() {
     var cHeight, cWidth, ctx, e, isFirstRender, viewBox, xRatio, yRatio;
 
-    ctx = svg.ctxFromLoadXMLDoc;
-    e = svg.eFromLoadXMLDoc;
-    svg.ViewPort.Clear();
+    ctx = this.ctxFromLoadXMLDoc;
+    e = this.eFromLoadXMLDoc;
+    this.ViewPort.Clear();
     if (ctx.canvas.parentNode) {
-      svg.ViewPort.SetCurrent(ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight);
+      this.ViewPort.SetCurrent(ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight);
     }
-    if (svg.opts["ignoreDimensions"] !== true) {
+    if (this.opts["ignoreDimensions"] !== true) {
       if (e.style("width").hasValue()) {
         ctx.canvas.width = e.style("width").toPixels("x");
         ctx.canvas.style.width = ctx.canvas.width + "px";
@@ -3499,108 +3519,111 @@ build = function() {
     }
     cWidth = ctx.canvas.clientWidth || ctx.canvas.width;
     cHeight = ctx.canvas.clientHeight || ctx.canvas.height;
-    if (svg.opts["ignoreDimensions"] === true && e.style("width").hasValue() && e.style("height").hasValue()) {
+    if (this.opts["ignoreDimensions"] === true && e.style("width").hasValue() && e.style("height").hasValue()) {
       cWidth = e.style("width").toPixels("x");
       cHeight = e.style("height").toPixels("y");
     }
-    svg.ViewPort.SetCurrent(cWidth, cHeight);
-    if (svg.opts["offsetX"] != null) {
-      e.attribute("x", true).value = svg.opts["offsetX"];
+    this.ViewPort.SetCurrent(cWidth, cHeight);
+    if (this.opts["offsetX"] != null) {
+      e.attribute("x", true).value = this.opts["offsetX"];
     }
-    if (svg.opts["offsetY"] != null) {
-      e.attribute("y", true).value = svg.opts["offsetY"];
+    if (this.opts["offsetY"] != null) {
+      e.attribute("y", true).value = this.opts["offsetY"];
     }
-    if ((svg.opts["scaleWidth"] != null) && (svg.opts["scaleHeight"] != null)) {
+    if ((this.opts["scaleWidth"] != null) && (this.opts["scaleHeight"] != null)) {
       xRatio = 1;
       yRatio = 1;
-      viewBox = svg.ToNumberArray(e.attribute("viewBox").value);
+      viewBox = this.ToNumberArray(e.attribute("viewBox").value);
       if (e.attribute("width").hasValue()) {
-        xRatio = e.attribute("width").toPixels("x") / svg.opts["scaleWidth"];
+        xRatio = e.attribute("width").toPixels("x") / this.opts["scaleWidth"];
       } else {
         if (!isNaN(viewBox[2])) {
-          xRatio = viewBox[2] / svg.opts["scaleWidth"];
+          xRatio = viewBox[2] / this.opts["scaleWidth"];
         }
       }
       if (e.attribute("height").hasValue()) {
-        yRatio = e.attribute("height").toPixels("y") / svg.opts["scaleHeight"];
+        yRatio = e.attribute("height").toPixels("y") / this.opts["scaleHeight"];
       } else {
         if (!isNaN(viewBox[3])) {
-          yRatio = viewBox[3] / svg.opts["scaleHeight"];
+          yRatio = viewBox[3] / this.opts["scaleHeight"];
         }
       }
-      e.attribute("width", true).value = svg.opts["scaleWidth"];
-      e.attribute("height", true).value = svg.opts["scaleHeight"];
+      e.attribute("width", true).value = this.opts["scaleWidth"];
+      e.attribute("height", true).value = this.opts["scaleHeight"];
       e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio);
       e.attribute("preserveAspectRatio", true).value = "none";
     }
-    if (svg.opts["ignoreClear"] !== true) {
+    if (this.opts["ignoreClear"] !== true) {
       ctx.clearRect(0, 0, cWidth, cHeight);
     }
     e.render(ctx);
     if (isFirstRender) {
       isFirstRender = false;
-      if (typeof svg.opts["renderCallback"] === "function") {
-        return svg.opts["renderCallback"]();
+      if (typeof this.opts["renderCallback"] === "function") {
+        return this.opts["renderCallback"]();
       }
     }
   };
-  svg.loadXmlDoc = function(ctx, dom) {
+
+  svgClass.prototype.loadXmlDoc = function(ctx, dom) {
     var e, isFirstRender, waitingForImages;
 
-    svg.init(ctx);
-    if (svg.opts["ignoreMouse"] !== true) {
+    this.init(ctx);
+    if (this.opts["ignoreMouse"] !== true) {
       ctx.canvas.onclick = function(e) {
         var p;
 
-        p = svg.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return svg.Mouse.onclick(p.x, p.y);
+        p = this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return this.Mouse.onclick(p.x, p.y);
       };
       ctx.canvas.onmousemove = function(e) {
         var p;
 
-        p = svg.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return svg.Mouse.onmousemove(p.x, p.y);
+        p = this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return this.Mouse.onmousemove(p.x, p.y);
       };
     }
-    e = svg.CreateElement(dom.documentElement);
+    e = this.CreateElement(dom.documentElement);
     console.log("*** svgCreateElement from dom: " + dom.documentElement);
     e.root = true;
     isFirstRender = true;
-    console.log('assigning svg.ctxFromLoadXMLDoc');
-    svg.ctxFromLoadXMLDoc = ctx;
-    svg.eFromLoadXMLDoc = e;
+    console.log('assigning @ctxFromLoadXMLDoc');
+    this.ctxFromLoadXMLDoc = ctx;
+    this.eFromLoadXMLDoc = e;
     waitingForImages = true;
-    if (svg.ImagesLoaded()) {
+    if (this.ImagesLoaded()) {
       waitingForImages = false;
-      svg.draw();
+      this.draw();
     }
-    return svg.intervalID = setInterval(function() {
+    return this.intervalID = setInterval(function() {
       var i, needUpdate, _i, _ref1;
 
       needUpdate = false;
-      if (waitingForImages && svg.ImagesLoaded()) {
+      if (waitingForImages && this.ImagesLoaded()) {
         waitingForImages = false;
         needUpdate = true;
       }
-      if (svg.opts["ignoreMouse"] !== true) {
-        needUpdate = needUpdate | svg.Mouse.hasEvents();
+      if (this.opts["ignoreMouse"] !== true) {
+        needUpdate = needUpdate | this.Mouse.hasEvents();
       }
-      if (svg.opts["ignoreAnimation"] !== true) {
-        for (i = _i = 0, _ref1 = svg.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE);
+      if (this.opts["ignoreAnimation"] !== true) {
+        for (i = _i = 0, _ref1 = this.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          needUpdate = needUpdate | this.Animations[i].update(1000 / this.FRAMERATE);
         }
       }
-      if (typeof svg.opts["forceRedraw"] === "function" ? svg.opts["forceRedraw"]() === true : void 0) {
+      if (typeof this.opts["forceRedraw"] === "function" ? this.opts["forceRedraw"]() === true : void 0) {
         needUpdate = true;
       }
       if (needUpdate) {
-        svg.draw();
-        return svg.Mouse.runEvents();
+        this.draw();
+        return this.Mouse.runEvents();
       }
-    }, 1000 / svg.FRAMERATE);
+    }, 1000 / this.FRAMERATE);
   };
-  return svg;
-};
+
+  return svgClass;
+
+})();
 
 if (CanvasRenderingContext2D) {
   CanvasRenderingContext2D.prototype.drawSvg = function(s, dx, dy, dw, dh) {

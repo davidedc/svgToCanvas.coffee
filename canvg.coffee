@@ -1177,7 +1177,9 @@ class PathParser
 
 class path extends PathElementBase
   constructor: (node) ->
+    console.log 'creating a path'
     super node
+    console.log 'created a PathElementBase'
     d = @attribute("d").value
     
     # TODO: convert to real lexer based on http://www.w3.org/TR/SVG11/paths.html#PathDataBNF
@@ -1192,7 +1194,7 @@ class path extends PathElementBase
     d = svg.compressSpaces(d) # compress multiple spaces
     d = svg.trim(d)
     @d = d
-
+    console.log 'finished creating a path'
 
   path: (ctx) ->
     pp = new PathParser(@d)
@@ -2323,7 +2325,7 @@ canvg = (target, s, opts) ->
   # store class on canvas
   target.svg.stop()  if target.svg?
   
-  svg = build();
+  svg = new svgClass
   # on i.e. 8 for flash canvas, we can't assign the property so check for it
   target.svg = svg  unless target.childNodes.length is 1 and target.childNodes[0].nodeName is "OBJECT"
   svg.opts = opts
@@ -2341,48 +2343,116 @@ canvg = (target, s, opts) ->
     # load from url
     svg.load ctx, s
 
-build = ->
-  svg = {}
-  svg.FRAMERATE = 30
-  svg.MAX_VIRTUAL_PIXELS = 30000
+class svgClass
+  @uniqueId: 0
+  constructor = ->
+    @FRAMERATE = 30
+    @MAX_VIRTUAL_PIXELS = 30000
+
+  UniqueId: ->
+    @constructor.uniqueId++
+    "canvg" + @constructor.uniqueId
 
   # globals
-  svg.init = (ctx) ->
-    uniqueId = 0
-    svg.UniqueId = ->
-      uniqueId++
-      "canvg" + uniqueId
+  init: (ctx) ->
 
-    svg.Definitions = {}
-    svg.Styles = {}
-    svg.Animations = []
-    svg.Images = []
-    svg.ctx = ctx
-    svg.ViewPort = new ViewPort
+    @Definitions = {}
+    @Styles = {}
+    @Animations = []
+    @Images = []
+    @ctx = ctx
+    @ViewPort = new ViewPort
+    # transforms
+    @Transform = Transform
 
+
+    # fonts
+    @Font = new Font
+
+
+    # aspect ratio
+    @AspectRatio = AspectRatio
+
+
+    # elements
+    @Element = {}
+    @EmptyProperty = new Property("EMPTY", "")
+
+
+    # Elements. Each element has its
+    # own class. The reason they are kept
+    # in this structure is that we create the
+    # objects dynamically by doing a
+    #   new @Element[elementname]
+    # later on.
+
+    @Element.svg = svgElement
+    @Element.rect = rect
+    @Element.circle = circle
+    @Element.ellipse = ellipse
+    @Element.line = line
+    @Element.polyline = polyline
+    @Element.polygon = polygon
+    @Element.path = path
+    @Element.pattern = pattern
+    @Element.marker = marker
+    @Element.defs = defs
+    @Element.GradientBase = GradientBase
+    @Element.linearGradient = linearGradient
+    @Element.radialGradient = radialGradient
+    @Element.stop = stop
+    @Element.AnimateBase = AnimateBase
+    @Element.animate = animate
+    @Element.animateColor = animateColor
+    @Element.animateTransform = animateTransform
+    @Element.font = font
+    @Element.fontface = fontface
+    @Element.missingglyph = missingglyph
+    @Element.glyph = glyph
+    @Element.text = text
+    @Element.TextElementBase = TextElementBase
+    @Element.tspan = tspan
+    @Element.tref = tref
+    @Element.a = a
+    @Element.image = image
+    @Element.g = g
+    @Element.symbol = symbol
+    @Element.style = ElementBaseStyle
+    @Element.use = use
+    @Element.mask = mask
+    @Element.clipPath = clipPath
+    @Element.filter = filter
+    @Element.feMorphology = feMorphology
+    @Element.feColorMatrix = feColorMatrix
+    @Element.feGaussianBlur = feGaussianBlur
+    @Element.MISSING = MISSING
+    # title element, do nothing
+    @Element.title = title
+    # desc element, do nothing
+    @Element.desc = desc
+    @Mouse = new Mouse
     return
 
-  svg.init()
 
   # images loaded
-  svg.ImagesLoaded = ->
-    for svgImage in svg.Images
+  ImagesLoaded: ->
+    for svgImage in @Images
       return false  unless svgImage.loaded
     true
 
 
   # trim
-  svg.trim = (s) ->
+  trim: (s) ->
     s.replace /^\s+|\s+$/g, ""
 
 
   # compress spaces
-  svg.compressSpaces = (s) ->
+  compressSpaces: (s) ->
     s.replace /[\s\r\t\n]+/g, " "
 
 
   # ajax
-  svg.ajax = (url) ->
+  ajax: (url) ->
     AJAX = undefined
     if window.XMLHttpRequest
       AJAX = new XMLHttpRequest()
@@ -2396,7 +2466,7 @@ build = ->
 
 
   # parse xml
-  svg.parseXml = (xml) ->
+  parseXml: (xml) ->
     if window.DOMParser
       parser = new DOMParser()
       parser.parseFromString xml, "text/xml"
@@ -2409,85 +2479,15 @@ build = ->
 
 
   # points and paths
-  svg.ToNumberArray = (s) ->
-    a = svg.trim(svg.compressSpaces((s or "").replace(/,/g, " "))).split(" ")
+  ToNumberArray: (s) ->
+    a = @trim(@compressSpaces((s or "").replace(/,/g, " "))).split(" ")
     for i in [0...a.length]
       a[i] = parseFloat(a[i])
     a
 
 
-  # transforms
-  svg.Transform = Transform
-
-
-  # fonts
-  svg.Font = new Font
-
-
-  # aspect ratio
-  svg.AspectRatio = AspectRatio
-
-
-  # elements
-  svg.Element = {}
-  svg.EmptyProperty = new Property("EMPTY", "")
-
-
-  # Elements. Each element has its
-  # own class. The reason they are kept
-  # in this structure is that we create the
-  # objects dynamically by doing a
-  #   new svg.Element[elementname]
-  # later on.
-
-  svg.Element.svg = svgElement
-  svg.Element.rect = rect
-  svg.Element.circle = circle
-  svg.Element.ellipse = ellipse
-  svg.Element.line = line
-  svg.Element.polyline = polyline
-  svg.Element.polygon = polygon
-  svg.Element.path = path
-  svg.Element.pattern = pattern
-  svg.Element.marker = marker
-  svg.Element.defs = defs
-  svg.Element.GradientBase = GradientBase
-  svg.Element.linearGradient = linearGradient
-  svg.Element.radialGradient = radialGradient
-  svg.Element.stop = stop
-  svg.Element.AnimateBase = AnimateBase
-  svg.Element.animate = animate
-  svg.Element.animateColor = animateColor
-  svg.Element.animateTransform = animateTransform
-  svg.Element.font = font
-  svg.Element.fontface = fontface
-  svg.Element.missingglyph = missingglyph
-  svg.Element.glyph = glyph
-  svg.Element.text = text
-  svg.Element.TextElementBase = TextElementBase
-  svg.Element.tspan = tspan
-  svg.Element.tref = tref
-  svg.Element.a = a
-  svg.Element.image = image
-  svg.Element.g = g
-  svg.Element.symbol = symbol
-  svg.Element.style = ElementBaseStyle
-  svg.Element.use = use
-  svg.Element.mask = mask
-  svg.Element.clipPath = clipPath
-  svg.Element.filter = filter
-  svg.Element.feMorphology = feMorphology
-  svg.Element.feColorMatrix = feColorMatrix
-  svg.Element.feGaussianBlur = feGaussianBlur
-  svg.Element.MISSING = MISSING
-  # title element, do nothing
-  svg.Element.title = title
-  # desc element, do nothing
-  svg.Element.desc = desc
-  svg.Mouse = new Mouse
-
   # element factory
-  svg.CreateElement = (node) ->
+  CreateElement: (node) ->
     className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
     className = className.replace(/\-/g, "") # remove dashes
     e = null
@@ -2497,28 +2497,28 @@ build = ->
     # troubles with the attributes and styles
     if className is "title" or className is "desc" or className is "MISSING"
       return null 
-    unless typeof (svg.Element[className]) is "undefined"
+    unless typeof (@Element[className]) is "undefined"
       console.log 'attempting to create a ' + className
-      e = new svg.Element[className](node)
+      e = new @Element[className](node)
     else
-      e = new svg.Element.MISSING(node)
+      e = new @Element.MISSING(node)
     e.type = node.nodeName
     e
 
 
   # load from url
-  svg.load = (ctx, url) ->
-    svg.loadXml ctx, svg.ajax(url)
+  load: (ctx, url) ->
+    @loadXml ctx, @ajax(url)
 
 
   # load from xml
-  svg.loadXml = (ctx, xml) ->
-    svg.loadXmlDoc ctx, svg.parseXml(xml)
+  loadXml: (ctx, xml) ->
+    @loadXmlDoc ctx, @parseXml(xml)
 
-  svg.stop = ->
-    clearInterval svg.intervalID  if svg.intervalID
+  stop: ->
+    clearInterval @intervalID  if @intervalID
 
-  svg.mapXY = (p, ctx) ->
+  mapXY: (p, ctx) ->
     e = ctx.canvas
     while e
       p.x -= e.offsetLeft
@@ -2528,13 +2528,13 @@ build = ->
     p.y += window.scrollY  if window.scrollY
     p
 
-  svg.draw = ->
-    ctx = svg.ctxFromLoadXMLDoc
-    e = svg.eFromLoadXMLDoc
+  draw: ->
+    ctx = @ctxFromLoadXMLDoc
+    e = @eFromLoadXMLDoc
 
-    svg.ViewPort.Clear()
-    svg.ViewPort.SetCurrent ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight  if ctx.canvas.parentNode
-    unless svg.opts["ignoreDimensions"] is true
+    @ViewPort.Clear()
+    @ViewPort.SetCurrent ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight  if ctx.canvas.parentNode
+    unless @opts["ignoreDimensions"] is true
       
       # set canvas size
       if e.style("width").hasValue()
@@ -2545,50 +2545,50 @@ build = ->
         ctx.canvas.style.height = ctx.canvas.height + "px"
     cWidth = ctx.canvas.clientWidth or ctx.canvas.width
     cHeight = ctx.canvas.clientHeight or ctx.canvas.height
-    if svg.opts["ignoreDimensions"] is true and e.style("width").hasValue() and e.style("height").hasValue()
+    if @opts["ignoreDimensions"] is true and e.style("width").hasValue() and e.style("height").hasValue()
       cWidth = e.style("width").toPixels("x")
       cHeight = e.style("height").toPixels("y")
-    svg.ViewPort.SetCurrent cWidth, cHeight
-    e.attribute("x", true).value = svg.opts["offsetX"]  if svg.opts["offsetX"]?
-    e.attribute("y", true).value = svg.opts["offsetY"]  if svg.opts["offsetY"]?
-    if svg.opts["scaleWidth"]? and svg.opts["scaleHeight"]?
+    @ViewPort.SetCurrent cWidth, cHeight
+    e.attribute("x", true).value = @opts["offsetX"]  if @opts["offsetX"]?
+    e.attribute("y", true).value = @opts["offsetY"]  if @opts["offsetY"]?
+    if @opts["scaleWidth"]? and @opts["scaleHeight"]?
       xRatio = 1
       yRatio = 1
-      viewBox = svg.ToNumberArray(e.attribute("viewBox").value)
+      viewBox = @ToNumberArray(e.attribute("viewBox").value)
       if e.attribute("width").hasValue()
-        xRatio = e.attribute("width").toPixels("x") / svg.opts["scaleWidth"]
-      else xRatio = viewBox[2] / svg.opts["scaleWidth"]  unless isNaN(viewBox[2])
+        xRatio = e.attribute("width").toPixels("x") / @opts["scaleWidth"]
+      else xRatio = viewBox[2] / @opts["scaleWidth"]  unless isNaN(viewBox[2])
       if e.attribute("height").hasValue()
-        yRatio = e.attribute("height").toPixels("y") / svg.opts["scaleHeight"]
-      else yRatio = viewBox[3] / svg.opts["scaleHeight"]  unless isNaN(viewBox[3])
-      e.attribute("width", true).value = svg.opts["scaleWidth"]
-      e.attribute("height", true).value = svg.opts["scaleHeight"]
+        yRatio = e.attribute("height").toPixels("y") / @opts["scaleHeight"]
+      else yRatio = viewBox[3] / @opts["scaleHeight"]  unless isNaN(viewBox[3])
+      e.attribute("width", true).value = @opts["scaleWidth"]
+      e.attribute("height", true).value = @opts["scaleHeight"]
       e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio)
       e.attribute("preserveAspectRatio", true).value = "none"
     
     # clear and render
-    ctx.clearRect 0, 0, cWidth, cHeight  unless svg.opts["ignoreClear"] is true
+    ctx.clearRect 0, 0, cWidth, cHeight  unless @opts["ignoreClear"] is true
     e.render ctx
     if isFirstRender
       isFirstRender = false
-      svg.opts["renderCallback"]()  if typeof (svg.opts["renderCallback"]) is "function"
+      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) is "function"
 
 
 
-  svg.loadXmlDoc = (ctx, dom) ->
-    svg.init ctx
+  loadXmlDoc: (ctx, dom) ->
+    @init ctx
 
     # bind mouse
-    unless svg.opts["ignoreMouse"] is true
+    unless @opts["ignoreMouse"] is true
       ctx.canvas.onclick = (e) ->
-        p = svg.mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
-        svg.Mouse.onclick p.x, p.y
+        p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        @Mouse.onclick p.x, p.y
 
       ctx.canvas.onmousemove = (e) ->
-        p = svg.mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
-        svg.Mouse.onmousemove p.x, p.y
+        p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        @Mouse.onmousemove p.x, p.y
 
-    e = svg.CreateElement(dom.documentElement)
+    e = @CreateElement(dom.documentElement)
     console.log "*** svgCreateElement from dom: " + dom.documentElement
     #alert  "svgCreateElement from dom"
     e.root = true
@@ -2596,38 +2596,37 @@ build = ->
     # render loop
     isFirstRender = true
 
-    console.log 'assigning svg.ctxFromLoadXMLDoc'
-    svg.ctxFromLoadXMLDoc = ctx
-    svg.eFromLoadXMLDoc = e
+    console.log 'assigning @ctxFromLoadXMLDoc'
+    @ctxFromLoadXMLDoc = ctx
+    @eFromLoadXMLDoc = e
     
     waitingForImages = true
-    if svg.ImagesLoaded()
+    if @ImagesLoaded()
       waitingForImages = false
-      svg.draw()
+      @draw()
 
-    svg.intervalID = setInterval(->
+    @intervalID = setInterval(->
       needUpdate = false
-      if waitingForImages and svg.ImagesLoaded()
+      if waitingForImages and @ImagesLoaded()
         waitingForImages = false
         needUpdate = true
       
       # need update from mouse events?
-      needUpdate = needUpdate | svg.Mouse.hasEvents()  unless svg.opts["ignoreMouse"] is true
+      needUpdate = needUpdate | @Mouse.hasEvents()  unless @opts["ignoreMouse"] is true
       
       # need update from animations?
-      unless svg.opts["ignoreAnimation"] is true
-        for i in [0...svg.Animations.length]
-          needUpdate = needUpdate | svg.Animations[i].update(1000 / svg.FRAMERATE)
+      unless @opts["ignoreAnimation"] is true
+        for i in [0...@Animations.length]
+          needUpdate = needUpdate | @Animations[i].update(1000 / @FRAMERATE)
       
       # need update from redraw?
-      needUpdate = true  if svg.opts["forceRedraw"]() is true  if typeof (svg.opts["forceRedraw"]) is "function"
+      needUpdate = true  if @opts["forceRedraw"]() is true  if typeof (@opts["forceRedraw"]) is "function"
       
       # render if needed
       if needUpdate
-        svg.draw()
-        svg.Mouse.runEvents() # run and clear our events
-    , 1000 / svg.FRAMERATE)
-  return svg
+        @draw()
+        @Mouse.runEvents() # run and clear our events
+    , 1000 / @FRAMERATE)
 
 if CanvasRenderingContext2D
   CanvasRenderingContext2D::drawSvg = (s, dx, dy, dw, dh) ->
