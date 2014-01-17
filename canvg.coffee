@@ -1,4 +1,395 @@
-class Mouse
+# canvg.js - Coffeescript SVG parser and renderer on Canvas
+# MIT Licensed 
+# Davide Della Casa (davidedc@gmail.com)
+# [put here link to github]
+
+# original Javascript code by:
+# Gabe Lerner (gabelerner@gmail.com)
+# http://code.google.com/p/canvg/
+
+# canvg(target, s)
+# empty parameters: replace all 'svg' elements on page with 'canvas' elements
+# target: canvas element or the id of a canvas element
+# s: svg string, url to svg file, or xml document
+# opts: optional hash of options
+#     ignoreMouse: true => ignore mouse events
+#     ignoreAnimation: true => ignore animations
+#     ignoreDimensions: true => does not try to resize canvas
+#     ignoreClear: true => does not clear canvas
+#     offsetX: int => draws at a x offset
+#     offsetY: int => draws at a y offset
+#     scaleWidth: int => scales horizontally to width
+#     scaleHeight: int => scales vertically to height
+#     renderCallback: function => will call the function after the first render is completed
+#     forceRedraw: function => will call the function on every frame, if it returns true, will redraw
+
+svg = undefined
+
+canvg = (target, s, opts) ->
+  
+  # no parametrs
+  if not target? and not s? and not opts?
+    svgTags = document.getElementsByTagName("svg")
+    for eachTag in svgTags
+      svgTag = eachTag
+      c = document.createElement("canvas")
+      c.width = svgTag.clientWidth
+      c.height = svgTag.clientHeight
+      svgTag.parentNode.insertBefore c, svgTag
+      svgTag.parentNode.removeChild svgTag
+      div = document.createElement("div")
+      div.appendChild svgTag
+      canvg c, div.innerHTML
+    return
+  opts = opts or {}
+  console.log 'initialed opts to: ' + opts 
+  target = document.getElementById(target)  if typeof target == "string"
+  
+  # store class on canvas
+  target.svg.stop()  if target.svg?
+  
+  console.log 'about to create svg and opts is: ' + opts         
+  svg = new svSVGgContainerElement opts
+  console.log 'just created svg and opts is: ' + svg.opts         
+  target.svg = svg
+  ctx = target.getContext("2d")
+  unless typeof (s.documentElement) == "undefined"
+    console.log 'about to call loadXmlDoc and opts is: ' + svg.opts 
+    # load from xml doc
+    svg.loadXmlDoc ctx, s
+  else if s.substr(0, 1) == "<"
+    console.log 'about to call loadXml and opts is: ' + svg.opts     
+    # load from xml string
+    svg.loadXml ctx, s
+  else
+    console.log 'about to call load and opts is: ' + svg.opts         
+    # load from url
+    svg.load ctx, s
+
+class svSVGgContainerElement
+  @uniqueId: 0
+  isFirstRender: true
+
+  constructor: (@opts)->
+    @FRAMERATE = 30
+    @MAX_VIRTUAL_PIXELS = 30000
+    console.log 'constructing svg and opts is: ' + @opts
+
+  UniqueId: ->
+    @constructor.uniqueId++
+    "canvg" + @constructor.uniqueId
+
+  # globals
+  init: (ctx) ->
+
+    @Definitions = {}
+    @Styles = {}
+    @Animations = []
+    @Images = []
+    @ctx = ctx
+    @ViewPort = new SVGViewPort
+
+
+    # fonts
+    @Font = new SVGFont
+
+
+    # elements
+    @Element = {}
+    @EmptyProperty = new SVGProperty("EMPTY", "")
+
+
+    # Elements. Each element has its
+    # own class. The reason they are kept
+    # in this structure is that we create the
+    # objects dynamically by doing a
+    #   new @Element[elementname]
+    # later on.
+
+    @Element.svg = SVGElement
+    @Element.rect = SVGrectGraphicsElement
+    @Element.circle = SVGcircleGraphicsElement
+    @Element.ellipse = SVGellipseGraphicsElement
+    @Element.line = SVGlineGraphicsElement
+    @Element.polyline = SVGpolylineGraphicsElement
+    @Element.polygon = SVGpolygonGraphicsElement
+    @Element.path = SVGpathGraphicsElement
+    @Element.pattern = SVGpatternContainerElement
+    @Element.marker = SVGmarkerContainerElement
+    @Element.defs = SVGdefsContainerElement
+    @Element.linearGradient = SVGlinearGradientGradientElement
+    @Element.radialGradient = SVGradialGradientGradientElement
+    @Element.stop = SVGStopElement
+    @Element.animate = SVGanimateAnimationElement
+    @Element.animateColor = SVGanimateColorAnimationElement
+    @Element.animateTransform = SVGanimateTransformAnimationElement
+    @Element.font = SVGfontElement
+    @Element.fontface = SVGfontfaceElement
+    @Element.missingglyph = SVGmissingglyphContainerElement
+    @Element.glyph = SVGglyphContainerElement
+    @Element.text = SVGtextTextContentElement
+    @Element.tspan = SVGtspanTextContentElement
+    @Element.tref = SVGtrefTextContentElement
+    @Element.a = SVGaContainerElement
+    @Element.image = SVGimageGraphicsElement
+    @Element.g = SVGgContainerElement
+    @Element.symbol = SVGsymbolStructuralElement
+    @Element.style = SVGElementStyle
+    @Element.use = SVGuseGraphicsElement
+    @Element.mask = SVGmaskContainerElement
+    @Element.clipPath = SVGclipPathElement
+    @Element.filter = SVGfilterElement
+    @Element.feMorphology = SVGfeMorphologyFilterPrimitiveElement
+    @Element.feColorMatrix = SVGfeColorMatrixFilterPrimitiveElement
+    @Element.feGaussianBlur = SVGfeGaussianBlurFilterPrimitiveElement
+    @Element.title = SVGtitleDescriptiveElement
+    @Element.desc = SVGdescDescriptiveElement
+    @SVGMouse = new SVGMouse
+    return
+
+  AspectRatio: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
+    # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
+    aspectRatio = svg.compressSpaces(aspectRatio)
+    aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
+    align = aspectRatio.split(" ")[0] or "xMidYMid"
+    meetOrSlice = aspectRatio.split(" ")[1] or "meet"
+    
+    # calculate scale
+    scaleX = width / desiredWidth
+    scaleY = height / desiredHeight
+    scaleMin = Math.min(scaleX, scaleY)
+    scaleMax = Math.max(scaleX, scaleY)
+    if meetOrSlice == "meet"
+      desiredWidth *= scaleMin
+      desiredHeight *= scaleMin
+    if meetOrSlice == "slice"
+      desiredWidth *= scaleMax
+      desiredHeight *= scaleMax
+    refX = new SVGProperty("refX", refX)
+    refY = new SVGProperty("refY", refY)
+    if refX.hasValue() and refY.hasValue()
+      ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
+    else
+      
+      # align
+      ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
+      ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
+      ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
+      ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
+    
+    # scale
+    if align == "none"
+      ctx.scale scaleX, scaleY
+    else if meetOrSlice == "meet"
+      ctx.scale scaleMin, scaleMin
+    else ctx.scale scaleMax, scaleMax  if meetOrSlice == "slice"
+    
+    # translate
+    ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
+    return
+
+  # images loaded
+  ImagesLoaded: ->
+    for svgImage in @Images
+      return false  unless svgImage.loaded
+    true
+
+
+  # trim
+  trim: (s) ->
+    s.replace /^\s+|\s+$/g, ""
+
+
+  # compress spaces
+  compressSpaces: (s) ->
+    s.replace /[\s\r\t\n]+/g, " "
+
+
+  # ajax
+  ajax: (url) ->
+    AJAX = undefined
+    if window.XMLHttpRequest
+      AJAX = new XMLHttpRequest()
+    else
+      AJAX = new ActiveXObject("Microsoft.XMLHTTP")
+    if AJAX
+      AJAX.open "GET", url, false
+      AJAX.send null
+      return AJAX.responseText
+    null
+
+
+  # parse xml
+  parseXml: (xml) ->
+    if window.DOMParser
+      parser = new DOMParser()
+      parser.parseFromString xml, "text/xml"
+    else
+      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "")
+      xmlDoc = new ActiveXObject("Microsoft.XMLDOM")
+      xmlDoc.async = "false"
+      xmlDoc.loadXML xml
+      xmlDoc
+
+
+  # points and paths
+  ToNumberArray: (s) ->
+    a = @trim(@compressSpaces((s or "").replace(/,/g, " "))).split(" ")
+    result = (parseFloat(item) for item in a)
+
+
+  # element factory
+  CreateElement: (node) ->
+    className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
+    # remove dashes so for example the font-face element
+    # becomes fontface
+    className = className.replace(/\-/g, "")
+    e = null
+    unless typeof (@Element[className]) == "undefined"
+      console.log 'attempting to create a ' + className
+      e = new @Element[className](node)
+    else
+      e = new SVGmissingElement(node)
+    e.type = node.nodeName
+    e
+
+
+  # load from url
+  load: (ctx, url) ->
+    @loadXml ctx, @ajax(url)
+
+
+  # load from xml
+  loadXml: (ctx, xml) ->
+    @loadXmlDoc ctx, @parseXml(xml)
+
+  stop: ->
+    clearInterval @intervalID  if @intervalID
+
+  mapXY: (p, ctx) ->
+    e = ctx.canvas
+    while e
+      p.x -= e.offsetLeft
+      p.y -= e.offsetTop
+      e = e.offsetParent
+    p.x += window.scrollX  if window.scrollX
+    p.y += window.scrollY  if window.scrollY
+    p
+
+  draw: ->
+    ctx = @ctxFromLoadXMLDoc
+    e = @eFromLoadXMLDoc
+
+    @ViewPort.Clear()
+    @ViewPort.SetCurrent ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight  if ctx.canvas.parentNode
+    unless @opts["ignoreDimensions"] is true
+      
+      # set canvas size
+      if e.style("width").hasValue()
+        ctx.canvas.width = e.style("width").toPixels("x")
+        ctx.canvas.style.width = ctx.canvas.width + "px"
+      if e.style("height").hasValue()
+        ctx.canvas.height = e.style("height").toPixels("y")
+        ctx.canvas.style.height = ctx.canvas.height + "px"
+    cWidth = ctx.canvas.clientWidth or ctx.canvas.width
+    cHeight = ctx.canvas.clientHeight or ctx.canvas.height
+    if @opts["ignoreDimensions"] is true and e.style("width").hasValue() and e.style("height").hasValue()
+      cWidth = e.style("width").toPixels("x")
+      cHeight = e.style("height").toPixels("y")
+    @ViewPort.SetCurrent cWidth, cHeight
+    e.attribute("x", true).value = @opts["offsetX"]  if @opts["offsetX"]?
+    e.attribute("y", true).value = @opts["offsetY"]  if @opts["offsetY"]?
+    if @opts["scaleWidth"]? and @opts["scaleHeight"]?
+      xRatio = 1
+      yRatio = 1
+      viewBox = @ToNumberArray(e.attribute("viewBox").value)
+      if e.attribute("width").hasValue()
+        xRatio = e.attribute("width").toPixels("x") / @opts["scaleWidth"]
+      else xRatio = viewBox[2] / @opts["scaleWidth"]  unless isNaN(viewBox[2])
+      if e.attribute("height").hasValue()
+        yRatio = e.attribute("height").toPixels("y") / @opts["scaleHeight"]
+      else yRatio = viewBox[3] / @opts["scaleHeight"]  unless isNaN(viewBox[3])
+      e.attribute("width", true).value = @opts["scaleWidth"]
+      e.attribute("height", true).value = @opts["scaleHeight"]
+      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio)
+      e.attribute("preserveAspectRatio", true).value = "none"
+    
+    # clear and render
+    ctx.clearRect 0, 0, cWidth, cHeight  unless @opts["ignoreClear"] is true
+    e.render ctx
+    if @isFirstRender
+      @isFirstRender = false
+      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
+
+
+
+  loadXmlDoc: (ctx, dom) ->
+    @init ctx
+
+    # bind mouse
+    console.log "opts: " + @opts
+    console.log "opts ignoreSVGMouse: " + @opts["ignoreSVGMouse"]
+    unless @opts["ignoreSVGMouse"] is true
+      ctx.canvas.onclick = (e) =>
+        p = @mapXY(new SVGPoint((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        @SVGMouse.onclick p.x, p.y
+
+      ctx.canvas.onmousemove = (e) =>
+        p = @mapXY(new SVGPoint((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
+        @SVGMouse.onmousemove p.x, p.y
+
+    e = @CreateElement(dom.documentElement)
+    console.log "*** svgCreateElement from dom: " + dom.documentElement
+    #alert  "svgCreateElement from dom"
+    e.root = true
+    
+    console.log 'assigning @ctxFromLoadXMLDoc'
+    @ctxFromLoadXMLDoc = ctx
+    @eFromLoadXMLDoc = e
+    
+    waitingForImages = true
+    if @ImagesLoaded()
+      waitingForImages = false
+      @draw()
+
+    @intervalID = setInterval(=>
+      needUpdate = false
+      if waitingForImages and @ImagesLoaded()
+        waitingForImages = false
+        needUpdate = true
+      
+      # need update from mouse events?
+      needUpdate = needUpdate | @SVGMouse.hasEvents()  unless @opts["ignoreSVGMouse"] is true
+      
+      # need update from animations?
+      unless @opts["ignoreAnimation"] is true
+        for animation in @Animations
+          needUpdate = needUpdate | animation.update(1000 / @FRAMERATE)
+      
+      # need update from redraw?
+      needUpdate = true  if @opts["forceRedraw"]() is true  if typeof (@opts["forceRedraw"]) == "function"
+      
+      # render if needed
+      if needUpdate
+        @draw()
+        @SVGMouse.runEvents() # run and clear our events
+    , 1000 / @FRAMERATE)
+
+# Adds a "drawSvg" method to the Canvas
+# context prototype.
+if CanvasRenderingContext2D
+  CanvasRenderingContext2D::drawSvg = (s, dx, dy, dw, dh) ->
+    canvg @canvas, s,
+      ignoreSVGMouse: true
+      ignoreAnimation: true
+      ignoreDimensions: true
+      ignoreClear: true
+      offsetX: dx
+      offsetY: dy
+      scaleWidth: dw
+      scaleHeight: dh
+
+class SVGMouse
 
   constructor: ->
     @events = []
@@ -18,7 +409,7 @@ class Mouse
 
   onmousemove: (x, y) ->
     @events.push
-      type: "onmousemove"
+      type: "onmouseove"
       x: x
       y: y
       run: (e) ->
@@ -50,7 +441,7 @@ class Mouse
     @events = []
     @eventElements = []
 
-class ElementBase
+class SVGElement
 
   constructor: (node) ->
     @attributes = {}
@@ -66,15 +457,13 @@ class ElementBase
     if node? and node.nodeType is 1 #ELEMENT_NODE
       # add children
       #alert 'adding child ' + node.nodeType
-      for i in [0...node.childNodes.length]
-        childNode = node.childNodes[i]
+      for childNode in node.childNodes
         @addChild childNode, true  if childNode.nodeType is 1 #ELEMENT_NODE
-        @addChild new svg.Element.tspan(childNode), false  if @captureTextNodes and childNode.nodeType is 3 # TEXT_NODE
+        @addChild new SVGtspanTextContentElement(childNode), false  if @captureTextNodes and childNode.nodeType is 3 # TEXT_NODE
       
       # add attributes
-      for i in [0...node.attributes.length]
-        attribute = node.attributes[i]
-        @attributes[attribute.nodeName] = new Property(attribute.nodeName, attribute.nodeValue)
+      for attribute in node.attributes
+        @attributes[attribute.nodeName] = new SVGProperty(attribute.nodeName, attribute.nodeValue)
       
       # add tag styles
       styles = svg.Styles[node.nodeName]
@@ -110,7 +499,7 @@ class ElementBase
             style = styles[i].split(":")
             name = svg.trim(style[0])
             value = svg.trim(style[1])
-            @styles[name] = new Property(name, value)
+            @styles[name] = new SVGProperty(name, value)
 
       
       # add id
@@ -122,7 +511,7 @@ class ElementBase
     a = @attributes[name]
     return a  if a?
     if createIfNotExists is true
-      a = new Property(name, "")
+      a = new SVGProperty(name, "")
       @attributes[name] = a
     a or svg.EmptyProperty
 
@@ -148,7 +537,7 @@ class ElementBase
       ps = p.style(name)
       return ps  if ps? and ps.hasValue()
     if createIfNotExists is true
-      s = new Property(name, "")
+      s = new SVGProperty(name, "")
       @styles[name] = s
     s or svg.EmptyProperty
 
@@ -189,8 +578,8 @@ class ElementBase
   
   # base render children
   renderChildren: (ctx) ->
-    for i in [0...@children.length]
-      @children[i].render ctx
+    for child in @children
+      child.render ctx
     return
 
   addChild: (childNode, create) ->
@@ -203,21 +592,21 @@ class ElementBase
     @children.push child
 
 
-class title extends ElementBase
+class SVGtitleDescriptiveElement extends SVGElement
   constructor: (node) ->
     super node
 
-class desc extends ElementBase
+class SVGdescDescriptiveElement extends SVGElement
   constructor: (node) ->
     super node
 
-class MISSING extends ElementBase
+class SVGmissingElement extends SVGElement
   constructor: (node) ->
     super node
     console.log "ERROR: Element '" + node.nodeName + "' not yet implemented."  if console
 
 
-class feColorMatrix extends ElementBase
+class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
   constructor: (node) ->
     super node
 
@@ -247,7 +636,7 @@ class feColorMatrix extends ElementBase
 
 
 
-class feMorphology extends ElementBase
+class SVGfeMorphologyFilterPrimitiveElement extends SVGElement
   constructor: (node) ->
     super node
   
@@ -255,7 +644,7 @@ class feMorphology extends ElementBase
   # TODO: implement
 
 
-class filterClass extends ElementBase
+class SVGfilterElement extends SVGElement
   constructor: (node) ->
     super node
   
@@ -274,8 +663,8 @@ class filterClass extends ElementBase
     px = 0
     py = 0
 
-    for i in [0...@children.length]
-      efd = @children[i].extraFilterDistance or 0
+    for child in @children
+      efd = child.extraFilterDistance or 0
       px = Math.max(px, efd)
       py = Math.max(py, efd)
     c = document.createElement("canvas")
@@ -287,8 +676,8 @@ class filterClass extends ElementBase
     
     # apply filters
 
-    for i in [0...@children.length]
-      @children[i].apply tempCtx, 0, 0, width + 2 * px, height + 2 * py
+    for child in @children
+      child.apply tempCtx, 0, 0, width + 2 * px, height + 2 * py
     
     # render on me
     ctx.drawImage c, 0, 0, width + 2 * px, height + 2 * py, x - px, y - py, width + 2 * px, height + 2 * py
@@ -301,23 +690,23 @@ class filterClass extends ElementBase
 
 
 
-class clipPath extends ElementBase
+class SVGclipPathElement extends SVGElement
   constructor: (node) ->
     #alert 'constructing clippath'
     super node
 
   apply: (ctx) ->
     #alert 'clipping'
-    for i in [0...@children.length]
-      if @children[i].path
-        @children[i].path ctx
+    for child in @children
+      if child.path
+        child.path ctx
         ctx.clip()
     return
 
   render: (ctx) ->
   # NO RENDER
 
-class maskClass extends ElementBase
+class SVGmaskContainerElement extends SVGElement
   constructor: (node) ->
     super node
 
@@ -354,55 +743,58 @@ class maskClass extends ElementBase
   render: (ctx) ->
   # NO RENDER
 
-class ElementBaseStyle extends ElementBase
+class SVGElementStyle extends SVGElement
 
   constructor: (node) ->
-    #alert 'building an ElementBaseStyle'
+    #alert 'building an SVGElementStyle'
     super node
     # text, or spaces then CDATA
     css = ""
 
-    for i in [0...node.childNodes.length]
-      css += node.childNodes[i].nodeValue
+    for childNode in node.childNodes
+      css += childNode.nodeValue
     css = css.replace(/(\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/)|(^[\s]*\/\/.*)/g, "") # remove comments
     css = svg.compressSpaces(css) # replace whitespace
     cssDefs = css.split("}")
 
-    for i in [0...cssDefs.length]
-      unless svg.trim(cssDefs[i]) == ""
-        cssDef = cssDefs[i].split("{")
+    for eachCssDef in cssDefs
+      unless svg.trim(eachCssDef) == ""
+        cssDef = eachCssDef.split("{")
         cssClasses = cssDef[0].split(",")
         cssProps = cssDef[1].split(";")
 
-        for j in [0...cssClasses.length]
-          cssClass = svg.trim(cssClasses[j])
+        for cssClass in cssClasses
+          cssClass = svg.trim(cssClass)
           unless cssClass == ""
             props = {}
 
-            for k in [0...cssProps.length]
-              prop = cssProps[k].indexOf(":")
-              name = cssProps[k].substr(0, prop)
-              value = cssProps[k].substr(prop + 1, cssProps[k].length - prop)
-              props[svg.trim(name)] = new Property(svg.trim(name), svg.trim(value))  if name? and value?
+            for cssProp in cssProps
+              prop = cssProp.indexOf(":")
+              name = cssProp.substr(0, prop)
+              value = cssProp.substr(prop + 1, cssProp.length - prop)
+              props[svg.trim(name)] = new SVGProperty(svg.trim(name), svg.trim(value))  if name? and value?
             svg.Styles[cssClass] = props
             if cssClass == "@font-face"
               fontFamily = props["font-family"].value.replace(/"/g, "")
               srcs = props["src"].value.split(",")
 
-              for s in [0...srcs.length]
-                if srcs[s].indexOf("format(\"svg\")") > 0
-                  urlStart = srcs[s].indexOf("url")
-                  urlEnd = srcs[s].indexOf(")", urlStart)
-                  url = srcs[s].substr(urlStart + 5, urlEnd - urlStart - 6)
+              for src in srcs
+                if src.indexOf("format(\"svg\")") > 0
+                  urlStart = src.indexOf("url")
+                  urlEnd = src.indexOf(")", urlStart)
+                  url = src.substr(urlStart + 5, urlEnd - urlStart - 6)
                   doc = svg.parseXml(svg.ajax(url))
                   fonts = doc.getElementsByTagName("font")
 
-                  for f in [0...fonts.length]
-                    font = svg.CreateElement(fonts[f])
-                    svg.Definitions[fontFamily] = font
+                  for font in fonts
+                    fontDef = svg.CreateElement(font)
+                    svg.Definitions[fontFamily] = fontDef
 
 
-class fontface extends ElementBase
+# note that the fontface Element is actually
+# called font-face
+# see http://www.w3.org/TR/SVG/fonts.html#FontFaceElement
+class SVGfontfaceElement extends SVGElement
   constructor: (node) ->
     #alert 'creating a font'
     super node
@@ -410,7 +802,7 @@ class fontface extends ElementBase
     @descent = @attribute("descent").value
     @unitsPerEm = @attribute("units-per-em").numValue()
 
-class font extends ElementBase
+class SVGfontElement extends SVGElement
 
   constructor: (node) ->
     #alert 'constructing a font'
@@ -441,7 +833,14 @@ class font extends ElementBase
 
 
 
-class AnimateBase extends ElementBase
+# note that "Animation" is not an SVG element
+# it's just a superclass for all the proper
+# animation-related SVG elements:
+# ‘animateColor’, ‘animateMotion’,
+# ‘animateTransform’, ‘animate’ and ‘set’
+# (of which ‘animateColor’, ‘animateTransform’
+# ‘animate’ are currently implemented)
+class SVGAnimationElement extends SVGElement
 
   duration: 0.0
   initialValue: null
@@ -512,8 +911,8 @@ class AnimateBase extends ElementBase
       p = ret.progress * (@values.value.length - 1)
       lb = Math.floor(p)
       ub = Math.ceil(p)
-      ret.from = new Property("from", parseFloat(@values.value[lb]))
-      ret.to = new Property("to", parseFloat(@values.value[ub]))
+      ret.from = new SVGProperty("from", parseFloat(@values.value[lb]))
+      ret.to = new SVGProperty("to", parseFloat(@values.value[ub]))
       ret.progress = (p - lb) / (ub - lb)
     else
       ret.from = @from
@@ -521,7 +920,7 @@ class AnimateBase extends ElementBase
     ret
 
 
-class animateTransform extends AnimateBase
+class SVGanimateTransformAnimationElement extends SVGAnimationElement
   constructor: (node) ->
     super node
 
@@ -538,15 +937,15 @@ class animateTransform extends AnimateBase
     newValue
 
 
-class animateColor extends AnimateBase
+class SVGanimateColorAnimationElement extends SVGAnimationElement
 
   constructor: (node) ->
     super node
   
   calcValue: ->
     p = @progress()
-    from = new RGBColor(p.from.value)
-    to = new RGBColor(p.to.value)
+    from = new SVGRGBColor(p.from.value)
+    to = new SVGRGBColor(p.to.value)
     if from.ok and to.ok
       
       # tween color linearly
@@ -556,7 +955,7 @@ class animateColor extends AnimateBase
       return "rgb(" + parseInt(r, 10) + "," + parseInt(g, 10) + "," + parseInt(b, 10) + ")"
     @attribute("from").value
 
-class animate extends AnimateBase
+class SVGanimateAnimationElement extends SVGAnimationElement
   constructor: (node) ->
     super node
   
@@ -568,7 +967,7 @@ class animate extends AnimateBase
     newValue = p.from.numValue() + (p.to.numValue() - p.from.numValue()) * p.progress
     newValue + @initialUnits
 
-class GradientBase extends ElementBase
+class SVGGradientElement extends SVGElement
   constructor: (node) ->
     @stops = []
     super node
@@ -586,7 +985,7 @@ class GradientBase extends ElementBase
     stopsContainer = @getHrefAttribute().getDefinition()  if @getHrefAttribute().hasValue()
     addParentOpacity = (color) ->
       if parentOpacityProp.hasValue()
-        p = new Property("color", color)
+        p = new SVGProperty("color", color)
         return p.addOpacity(parentOpacityProp.value).value
       color
 
@@ -598,19 +997,19 @@ class GradientBase extends ElementBase
     if @attribute("gradientTransform").hasValue()      
       # render as transformed pattern on temporary canvas
       rootView = svg.ViewPort.viewPorts[0]
-      rect = new svg.Element.rect()
-      rect.attributes["x"] = new Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0)
-      rect.attributes["y"] = new Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0)
-      rect.attributes["width"] = new Property("width", svg.MAX_VIRTUAL_PIXELS)
-      rect.attributes["height"] = new Property("height", svg.MAX_VIRTUAL_PIXELS)
-      group = new svg.Element.g()
-      group.attributes["transform"] = new Property("transform", @attribute("gradientTransform").value)
+      rect = new SVGrectGraphicsElement()
+      rect.attributes["x"] = new SVGProperty("x", -svg.MAX_VIRTUAL_PIXELS / 3.0)
+      rect.attributes["y"] = new SVGProperty("y", -svg.MAX_VIRTUAL_PIXELS / 3.0)
+      rect.attributes["width"] = new SVGProperty("width", svg.MAX_VIRTUAL_PIXELS)
+      rect.attributes["height"] = new SVGProperty("height", svg.MAX_VIRTUAL_PIXELS)
+      group = new SVGgContainerElement()
+      group.attributes["transform"] = new SVGProperty("transform", @attribute("gradientTransform").value)
       group.children = [rect]
-      tempSvg = new svg.Element.svg()
-      tempSvg.attributes["x"] = new Property("x", 0)
-      tempSvg.attributes["y"] = new Property("y", 0)
-      tempSvg.attributes["width"] = new Property("width", rootView.width)
-      tempSvg.attributes["height"] = new Property("height", rootView.height)
+      tempSvg = new SVGElement()
+      tempSvg.attributes["x"] = new SVGProperty("x", 0)
+      tempSvg.attributes["y"] = new SVGProperty("y", 0)
+      tempSvg.attributes["width"] = new SVGProperty("width", rootView.width)
+      tempSvg.attributes["height"] = new SVGProperty("height", rootView.height)
       tempSvg.children = [group]
       c = document.createElement("canvas")
       c.width = rootView.width
@@ -622,7 +1021,7 @@ class GradientBase extends ElementBase
     g
 
 
-class radialGradient extends GradientBase
+class SVGradialGradientGradientElement extends SVGGradientElement
 
   constructor: (node) ->
     super node
@@ -642,7 +1041,7 @@ class radialGradient extends GradientBase
     ctx.createRadialGradient fx, fy, 0, cx, cy, r
 
 
-class linearGradient extends GradientBase
+class SVGlinearGradientGradientElement extends SVGGradientElement
   constructor: (node) ->
     super node
 
@@ -661,7 +1060,7 @@ class linearGradient extends GradientBase
     ctx.createLinearGradient x1, y1, x2, y2
 
 
-class RenderedElementBase extends ElementBase
+class SVGRenderedElement extends SVGElement
   constructor: (node) ->
     super node
   
@@ -673,10 +1072,60 @@ class RenderedElementBase extends ElementBase
       ctx.fillStyle = fs  if fs?
     else if @style("fill").hasValue()
       fillStyle = @style("fill")
-      fillStyle.value = @style("color").value  if fillStyle.value == "currentColor"
+      if fillStyle.value == "currentColor"
+        fillStyle.value = @style("color").value
+      
+      #sabotage!
+      randomSabotage = Math.random()
+      
+      #if randomSabotage > 1-1/3
+      #  fillStyle.value = "red"
+      #else if randomSabotage > 1-2/3
+      #  fillStyle.value = "black"
+      #else if randomSabotage > 1-3/3
+      #  fillStyle.value = "yellow"
+
+      #if randomSabotage > 1-1/3
+      #  fillStyle.value = "#01dd85" # Caribbean Green
+      #else if randomSabotage > 1-2/3
+      #  fillStyle.value = "red"
+      #else if randomSabotage > 1-3/3
+      #  fillStyle.value = "#b271c3" # Amethyst
+
+
+      if randomSabotage > 1-1/8
+        fillStyle.value = "#01dd85" # Caribbean Green
+      else if randomSabotage > 1-2/8
+        fillStyle.value = "red"
+      else if randomSabotage > 1-3/8
+        fillStyle.value = "#b271c3" # Amethyst
+      else if randomSabotage > 1-4/8
+        fillStyle.value = "37a2da" # curious blue
+      else if randomSabotage > 1-5/8
+        fillStyle.value = "b40d91" # red violet
+      else if randomSabotage > 1-6/8
+        fillStyle.value = "EB038B" # Hollywood Cerise
+      else if randomSabotage > 1-7/8
+        fillStyle.value = "f0e905" # Turbo (i.e. a yellow)
+      else if randomSabotage > 1-8/8
+        fillStyle.value = "black"
+
+
+
+
+      #if randomSabotage > 1-1/2
+      #  fillStyle.value = "black"
+      #else if randomSabotage > 1-2/2
+      #  fillStyle.value = "white"
+
+      #if randomSabotage > 1-1/2
+      #  fillStyle.value = "black"
+      #else if randomSabotage > 1-2/2
+      #  fillStyle.value = "red"
+
       ctx.fillStyle = ((if fillStyle.value == "none" then "rgba(0,0,0,0)" else fillStyle.value))
     if @style("fill-opacity").hasValue()
-      fillStyle = new Property("fill", ctx.fillStyle)
+      fillStyle = new SVGProperty("fill", ctx.fillStyle)
       fillStyle = fillStyle.addOpacity(@style("fill-opacity").value)
       ctx.fillStyle = fillStyle.value
     
@@ -687,9 +1136,16 @@ class RenderedElementBase extends ElementBase
     else if @style("stroke").hasValue()
       strokeStyle = @style("stroke")
       strokeStyle.value = @style("color").value  if strokeStyle.value == "currentColor"
+
+      #if randomSabotage > 1-1/2
+      #  strokeStyle.value = "black"
+      #else if randomSabotage > 1-2/2
+      #  strokeStyle.value = "red"
+      
       ctx.strokeStyle = ((if strokeStyle.value == "none" then "rgba(0,0,0,0)" else strokeStyle.value))
+
     if @style("stroke-opacity").hasValue()
-      strokeStyle = new Property("stroke", ctx.strokeStyle)
+      strokeStyle = new SVGProperty("stroke", ctx.strokeStyle)
       strokeStyle = strokeStyle.addOpacity(@style("stroke-opacity").value)
       ctx.strokeStyle = strokeStyle.value
     if @style("stroke-width").hasValue()
@@ -703,7 +1159,7 @@ class RenderedElementBase extends ElementBase
       ctx.miterLimit = @style("stroke-miterlimit").value  
     
     # font
-    daFont = new Font
+    daFont = new SVGFont
     #alert 'typeof(ctx.font): ' + typeof(ctx.font)
     if typeof(ctx.font) != "undefined"
       #alert 'creating a font'
@@ -711,7 +1167,7 @@ class RenderedElementBase extends ElementBase
     
     # transform
     if @attribute("transform").hasValue()
-      transform = new svg.Transform(@attribute("transform").value)
+      transform = new TransformsList(@attribute("transform").value)
       transform.apply ctx
     
     # clip
@@ -722,11 +1178,12 @@ class RenderedElementBase extends ElementBase
     # opacity
     ctx.globalAlpha = @style("opacity").numValue()  if @style("opacity").hasValue()
 
-class use extends RenderedElementBase
+# 'use' is both a graphics and and a structural element,
+# see http://www.w3.org/TR/SVG/struct.html#UseElement, picking one.
+class SVGuseGraphicsElement extends SVGRenderedElement
 
   contructor: (node) ->
     super node
-    #@baseSetContext = @setContext
   
   setContext: (ctx) ->
     super ctx
@@ -758,22 +1215,21 @@ class use extends RenderedElementBase
     return
 
 
-class gClass extends RenderedElementBase
+class SVGgContainerElement extends SVGRenderedElement
   constructor: (node) ->
     super node
 
   getBoundingBox: ->
-    bb = new BoundingBox()
+    bb = new SVGBoundingBox()
 
     for i in [0...@children.length]
       bb.addBoundingBox @children[i].getBoundingBox()
     bb
 
 
-class symbol extends RenderedElementBase
+class SVGsymbolStructuralElement extends SVGRenderedElement
   constructor: (node) ->
     super node
-    #@baseSetContext = @setContext
   
   setContext: (ctx) ->
     super ctx
@@ -788,7 +1244,7 @@ class symbol extends RenderedElementBase
       svg.AspectRatio ctx, @attribute("preserveAspectRatio").value, @attribute("width").toPixels("x"), width, @attribute("height").toPixels("y"), height, minX, minY
       svg.ViewPort.SetCurrent viewBox[2], viewBox[3]
 
-class image extends RenderedElementBase
+class SVGimageGraphicsElement extends SVGRenderedElement
   constructor: (node) ->
     super node
     href = @getHrefAttribute().value
@@ -829,10 +1285,10 @@ class image extends RenderedElementBase
     y = @attribute("y").toPixels("y")
     width = @attribute("width").toPixels("x")
     height = @attribute("height").toPixels("y")
-    new BoundingBox(x, y, x + width, y + height)
+    new SVGBoundingBox(x, y, x + width, y + height)
 
 
-class TextElementBase extends RenderedElementBase
+class SVGTextContentElement extends SVGRenderedElement
   constructor:(node) ->
     super node
 
@@ -910,7 +1366,8 @@ class TextElementBase extends RenderedElementBase
     ctx.restore()
     width
 
-class aClass extends TextElementBase
+# in theory, 'a' is a container element though
+class SVGaContainerElement extends SVGTextContentElement
   constructor: (node) ->
     super node
     @hasText = true
@@ -926,7 +1383,6 @@ class aClass extends TextElementBase
     
     # this might contain text
     @text = (if @hasText then node.childNodes[0].nodeValue else "")
-    #@baseRenderChildren = @renderChildren
 
   getText: ->
     @text
@@ -936,12 +1392,12 @@ class aClass extends TextElementBase
       
       # render as text element
       super ctx
-      fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
-      svg.Mouse.checkBoundingBox this, new BoundingBox(@x, @y - fontSize.toPixels("y"), @x + @measureText(ctx), @y)
+      fontSize = new SVGProperty("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
+      svg.SVGMouse.checkBoundingBox this, new SVGBoundingBox(@x, @y - fontSize.toPixels("y"), @x + @measureText(ctx), @y)
     else
       
       # render as temporary group
-      g = new svg.Element.g()
+      g = new SVGgContainerElement()
       g.children = @children
       g.parent = this
       g.render ctx
@@ -953,7 +1409,7 @@ class aClass extends TextElementBase
     svg.ctx.canvas.style.cursor = "pointer"
 
 
-class tref extends TextElementBase
+class SVGtrefTextContentElement extends SVGTextContentElement
   constructor: (node) ->
     super node
   
@@ -962,7 +1418,7 @@ class tref extends TextElementBase
     element.children[0].getText()  if element?
 
 
-class tspan extends TextElementBase
+class SVGtspanTextContentElement extends SVGTextContentElement
   constructor: (node) ->
     @captureTextNodes = true
     super node
@@ -972,11 +1428,10 @@ class tspan extends TextElementBase
     @text
 
 
-class text extends RenderedElementBase
+class SVGtextTextContentElement extends SVGRenderedElement
   constructor: (node) ->
     @captureTextNodes = true
     super node
-    #@baseSetContext = @setContext
   
   setContext: (ctx) ->
     #alert 'text.setContext'
@@ -987,7 +1442,7 @@ class text extends RenderedElementBase
 
   getBoundingBox: ->
     # TODO: implement
-    new BoundingBox(@attribute("x").toPixels("x"), @attribute("y").toPixels("y"), 0, 0)
+    new SVGBoundingBox(@attribute("x").toPixels("x"), @attribute("y").toPixels("y"), 0, 0)
 
   renderChildren: (ctx) ->
     @textAnchor = @style("text-anchor").valueOrDefault("start")
@@ -1031,11 +1486,9 @@ class text extends RenderedElementBase
     return
 
 
-class svgElement extends RenderedElementBase
+class SVGElement extends SVGRenderedElement
   constructor: (node) ->
     super node
-    #@baseClearContext = @clearContext
-    #@baseSetContext = @setContext
   
   clearContext: (ctx) ->
     super ctx
@@ -1087,17 +1540,17 @@ class svgElement extends RenderedElementBase
       svg.ViewPort.SetCurrent viewBox[2], viewBox[3]
 
 
-class PathElementBase extends RenderedElementBase
+class SVGGraphicsElement extends SVGRenderedElement
   constructor: (node) ->
     super node
 
   path: (ctx) ->
     ctx.beginPath()  if ctx?
-    new BoundingBox()
+    new SVGBoundingBox()
 
   renderChildren: (ctx) ->
     @path ctx
-    svg.Mouse.checkPath this, ctx
+    svg.SVGMouse.checkPath this, ctx
     ctx.fill()  unless ctx.fillStyle == ""
     ctx.stroke()  unless ctx.strokeStyle == ""
     markers = @getMarkers()
@@ -1119,7 +1572,7 @@ class PathElementBase extends RenderedElementBase
   getMarkers: ->
     null
 
-class PathParser
+class SVGPathParser
   constructor: (d) ->
     @tokens = d.split(" ")
 
@@ -1127,9 +1580,9 @@ class PathParser
     @i = -1
     @command = ""
     @previousCommand = ""
-    @start = new Point(0, 0)
-    @control = new Point(0, 0)
-    @current = new Point(0, 0)
+    @start = new SVGPoint(0, 0)
+    @control = new SVGPoint(0, 0)
+    @current = new SVGPoint(0, 0)
     @points = []
     @angles = []
 
@@ -1159,7 +1612,7 @@ class PathParser
     return
 
   getPoint: ->
-    p = new Point(@getScalar(), @getScalar())
+    p = new SVGPoint(@getScalar(), @getScalar())
     @makeAbsolute p
 
   getAsControlPoint: ->
@@ -1176,7 +1629,7 @@ class PathParser
     return @current  if @previousCommand.toLowerCase() != "c" and @previousCommand.toLowerCase() != "s" and @previousCommand.toLowerCase() != "q" and @previousCommand.toLowerCase() != "t"
     
     # reflect point
-    p = new Point(2 * @current.x - @control.x, 2 * @current.y - @control.y)
+    p = new SVGPoint(2 * @current.x - @control.x, 2 * @current.y - @control.y)
     p
 
   makeAbsolute: (p) ->
@@ -1207,11 +1660,11 @@ class PathParser
             break
     @angles
 
-class path extends PathElementBase
+class SVGpathGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
-    console.log 'creating a path'
+    console.log 'creating a SVGpathGraphicsElement'
     super node
-    console.log 'created a PathElementBase'
+    console.log 'created a SVGGraphicsElement'
     d = @attribute("d").value
     
     # TODO: convert to real lexer based on http://www.w3.org/TR/SVG11/paths.html#PathDataBNF
@@ -1229,10 +1682,10 @@ class path extends PathElementBase
     console.log 'finished creating a path'
 
   path: (ctx) ->
-    pp = new PathParser(@d)
+    pp = new SVGPathParser(@d)
     @pp = pp
     pp.reset()
-    bb = new BoundingBox()
+    bb = new SVGBoundingBox()
     ctx.beginPath()  if ctx?
     until pp.isEnd()
       pp.nextCommand()
@@ -1257,14 +1710,14 @@ class path extends PathElementBase
             ctx.lineTo p.x, p.y  if ctx?
         when "H", "h"
           until pp.isCommandOrEnd()
-            newP = new Point(((if pp.isRelativeCommand() then pp.current.x else 0)) + pp.getScalar(), pp.current.y)
+            newP = new SVGPoint(((if pp.isRelativeCommand() then pp.current.x else 0)) + pp.getScalar(), pp.current.y)
             pp.addMarker newP, pp.current
             pp.current = newP
             bb.addPoint pp.current.x, pp.current.y
             ctx.lineTo pp.current.x, pp.current.y  if ctx?
         when "V", "v"
           until pp.isCommandOrEnd()
-            newP = new Point(pp.current.x, ((if pp.isRelativeCommand() then pp.current.y else 0)) + pp.getScalar())
+            newP = new SVGPoint(pp.current.x, ((if pp.isRelativeCommand() then pp.current.y else 0)) + pp.getScalar())
             pp.addMarker newP, pp.current
             pp.current = newP
             bb.addPoint pp.current.x, pp.current.y
@@ -1317,7 +1770,7 @@ class path extends PathElementBase
             # Conversion from endpoint to center parameterization
             # http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
             # x1', y1'
-            currp = new Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0)
+            currp = new SVGPoint(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0)
             
             # adjust radii
             l = Math.pow(currp.x, 2) / Math.pow(rx, 2) + Math.pow(currp.y, 2) / Math.pow(ry, 2)
@@ -1328,10 +1781,10 @@ class path extends PathElementBase
             # cx', cy'
             s = ((if largeArcFlag is sweepFlag then -1 else 1)) * Math.sqrt(((Math.pow(rx, 2) * Math.pow(ry, 2)) - (Math.pow(rx, 2) * Math.pow(currp.y, 2)) - (Math.pow(ry, 2) * Math.pow(currp.x, 2))) / (Math.pow(rx, 2) * Math.pow(currp.y, 2) + Math.pow(ry, 2) * Math.pow(currp.x, 2)))
             s = 0  if isNaN(s)
-            cpp = new Point(s * rx * currp.y / ry, s * -ry * currp.x / rx)
+            cpp = new SVGPoint(s * rx * currp.y / ry, s * -ry * currp.x / rx)
             
             # cx, cy
-            centp = new Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y)
+            centp = new SVGPoint((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y)
             
             # vector magnitude
             m = (v) ->
@@ -1361,7 +1814,7 @@ class path extends PathElementBase
             # for markers
             dir = (if 1 - sweepFlag then 1.0 else -1.0)
             ah = a1 + dir * (ad / 2.0)
-            halfWay = new Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah))
+            halfWay = new SVGPoint(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah))
             pp.addMarkerAngle halfWay, ah - dir * Math.PI / 2
             pp.addMarkerAngle cp, ah - dir * Math.PI
             bb.addPoint cp.x, cp.y # TODO: this is too naive, make it better
@@ -1389,7 +1842,9 @@ class path extends PathElementBase
       markers.push [points[i], angles[i]]
     markers
 
-class glyph extends path
+# note that a SVGglyphContainerElement would actually be a container
+# element
+class SVGglyphContainerElement extends SVGpathGraphicsElement
   constructor: (node) ->
     super node
     @horizAdvX = @attribute("horiz-adv-x").numValue()
@@ -1397,20 +1852,31 @@ class glyph extends path
     @arabicForm = @attribute("arabic-form").value
     return
 
-class missingglyph extends path
+###
+From http://www.w3.org/TR/SVG/fonts.html#MissingGlyphElement:
+The ‘missing-glyph’ element defines the graphics to use
+if there is an attempt to draw a glyph from a given font
+and the given glyph has not been defined. The attributes
+on the ‘missing-glyph’ element have the same meaning as
+the corresponding attributes on the ‘glyph’ element.
+###
+
+# Note that is would be missing-glyph, but we remove
+# the dashes in the parsing process.
+class SVGmissingglyphContainerElement extends SVGpathGraphicsElement
   constructor: (node) ->
     super node
     @horizAdvX = 0
     return
 
 
-class polyline extends PathElementBase
+class SVGpolylineGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
     super node
-    @points = Point.pointsArrayFromNumberArray(@attribute("points").value)
+    @points = SVGPoint.pointsArrayFromNumberArray(@attribute("points").value)
   
   path: (ctx) ->
-    bb = new BoundingBox(@points[0].x, @points[0].y)
+    bb = new SVGBoundingBox(@points[0].x, @points[0].y)
     if ctx?
       ctx.beginPath()
       ctx.moveTo @points[0].x, @points[0].y
@@ -1427,10 +1893,9 @@ class polyline extends PathElementBase
     markers.push [@points[@points.length - 1], markers[markers.length - 1][1]]
     markers
 
-class polygon extends polyline
+class SVGpolygonGraphicsElement extends SVGpolylineGraphicsElement
   constructor: (node) ->
     super node
-    #@basePath = @path
   
   path: (ctx) ->
     bb = super(ctx)
@@ -1439,12 +1904,12 @@ class polygon extends polyline
       ctx.closePath()
     bb
 
-class line extends PathElementBase
+class SVGlineGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
     super node
   
   getPoints: ->
-    [new Point(@attribute("x1").toPixels("x"), @attribute("y1").toPixels("y")), new Point(@attribute("x2").toPixels("x"), @attribute("y2").toPixels("y"))]
+    [new SVGPoint(@attribute("x1").toPixels("x"), @attribute("y1").toPixels("y")), new SVGPoint(@attribute("x2").toPixels("x"), @attribute("y2").toPixels("y"))]
 
   path: (ctx) ->
     points = @getPoints()
@@ -1452,7 +1917,7 @@ class line extends PathElementBase
       ctx.beginPath()
       ctx.moveTo points[0].x, points[0].y
       ctx.lineTo points[1].x, points[1].y
-    new BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y)
+    new SVGBoundingBox(points[0].x, points[0].y, points[1].x, points[1].y)
 
   getMarkers: ->
     points = @getPoints()
@@ -1460,7 +1925,7 @@ class line extends PathElementBase
     [[points[0], a], [points[1], a]]
 
 
-class ellipse extends PathElementBase
+class SVGellipseGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
     super node
   
@@ -1478,9 +1943,9 @@ class ellipse extends PathElementBase
       ctx.bezierCurveTo cx - (KAPPA * rx), cy + ry, cx - rx, cy + (KAPPA * ry), cx - rx, cy
       ctx.bezierCurveTo cx - rx, cy - (KAPPA * ry), cx - (KAPPA * rx), cy - ry, cx, cy - ry
       ctx.closePath()
-    new BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry)
+    new SVGBoundingBox(cx - rx, cy - ry, cx + rx, cy + ry)
 
-class circle extends PathElementBase
+class SVGcircleGraphicsElement extends SVGGraphicsElement
 
   constructor: (node) ->
     super node
@@ -1493,10 +1958,10 @@ class circle extends PathElementBase
       ctx.beginPath()
       ctx.arc cx, cy, r, 0, Math.PI * 2, true
       ctx.closePath()
-    new BoundingBox(cx - r, cy - r, cx + r, cy + r)
+    new SVGBoundingBox(cx - r, cy - r, cx + r, cy + r)
 
 
-class rect extends PathElementBase
+class SVGrectGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
     super node
   
@@ -1523,10 +1988,10 @@ class rect extends PathElementBase
       ctx.lineTo x, y + ry
       ctx.quadraticCurveTo x, y, x + rx, y
       ctx.closePath()
-    new BoundingBox(x, y, x + width, y + height)
+    new SVGBoundingBox(x, y, x + width, y + height)
 
 
-class stop extends ElementBase
+class SVGStopElement extends SVGElement
   constructor: (node) ->
     super node
     @offset = @attribute("offset").numValue()
@@ -1537,13 +2002,13 @@ class stop extends ElementBase
     @color = stopColor.value
     return
 
-class defs extends ElementBase
+class SVGdefsContainerElement extends SVGElement
   constructor: (node) ->
     super node
   render: (ctx) ->
     return
 
-class marker extends ElementBase
+class SVGmarkerContainerElement extends SVGElement
   constructor: (node) ->
     super node
 
@@ -1554,14 +2019,14 @@ class marker extends ElementBase
     ctx.save()
     
     # render me using a temporary svg element
-    tempSvg = new svg.Element.svg()
-    tempSvg.attributes["viewBox"] = new Property("viewBox", @attribute("viewBox").value)
-    tempSvg.attributes["refX"] = new Property("refX", @attribute("refX").value)
-    tempSvg.attributes["refY"] = new Property("refY", @attribute("refY").value)
-    tempSvg.attributes["width"] = new Property("width", @attribute("markerWidth").value)
-    tempSvg.attributes["height"] = new Property("height", @attribute("markerHeight").value)
-    tempSvg.attributes["fill"] = new Property("fill", @attribute("fill").valueOrDefault("black"))
-    tempSvg.attributes["stroke"] = new Property("stroke", @attribute("stroke").valueOrDefault("none"))
+    tempSvg = new SVGElement()
+    tempSvg.attributes["viewBox"] = new SVGProperty("viewBox", @attribute("viewBox").value)
+    tempSvg.attributes["refX"] = new SVGProperty("refX", @attribute("refX").value)
+    tempSvg.attributes["refY"] = new SVGProperty("refY", @attribute("refY").value)
+    tempSvg.attributes["width"] = new SVGProperty("width", @attribute("markerWidth").value)
+    tempSvg.attributes["height"] = new SVGProperty("height", @attribute("markerHeight").value)
+    tempSvg.attributes["fill"] = new SVGProperty("fill", @attribute("fill").valueOrDefault("black"))
+    tempSvg.attributes["stroke"] = new SVGProperty("stroke", @attribute("stroke").valueOrDefault("none"))
     tempSvg.children = @children
     tempSvg.render ctx
     ctx.restore()
@@ -1570,7 +2035,7 @@ class marker extends ElementBase
     ctx.translate -point.x, -point.y
     return
 
-class pattern extends ElementBase
+class SVGpatternContainerElement extends SVGElement
   constructor: (node) ->
     super node
 
@@ -1579,11 +2044,11 @@ class pattern extends ElementBase
     height = @attribute("height").toPixels("y", true)
 
     # render me using a temporary svg element
-    tempSvg = new svg.Element.svg()
-    tempSvg.attributes["viewBox"] = new Property("viewBox", @attribute("viewBox").value)
-    tempSvg.attributes["width"] = new Property("width", width + "px")
-    tempSvg.attributes["height"] = new Property("height", height + "px")
-    tempSvg.attributes["transform"] = new Property("transform", @attribute("patternTransform").value)
+    tempSvg = new SVGElement()
+    tempSvg.attributes["viewBox"] = new SVGProperty("viewBox", @attribute("viewBox").value)
+    tempSvg.attributes["width"] = new SVGProperty("width", width + "px")
+    tempSvg.attributes["height"] = new SVGProperty("height", height + "px")
+    tempSvg.attributes["transform"] = new SVGProperty("transform", @attribute("patternTransform").value)
     tempSvg.children = @children
     c = document.createElement("canvas")
     c.width = width
@@ -1603,7 +2068,7 @@ class pattern extends ElementBase
 
 
 
-class feGaussianBlur extends ElementBase
+class SVGfeGaussianBlurFilterPrimitiveElement extends SVGElement
   constructor: (node) ->
     super node
     @blurRadius = Math.floor(@attribute("stdDeviation").numValue())
@@ -1624,16 +2089,16 @@ class feGaussianBlur extends ElementBase
 
 
 
-class Transform
+class TransformsList
   constructor: (v) ->
     @Type = {}
     
-    @Type.translate = translate
-    @Type.rotate = rotate
-    @Type.scale = scale
-    @Type.matrix = matrix
-    @Type.skewX = skewX
-    @Type.skewY = skewY
+    @Type.translate = SVGtranslateTransformType
+    @Type.rotate = SVGrotateTransformType
+    @Type.scale = SVGscaleTransformType
+    @Type.matrix = SVGmatrixTransformType
+    @Type.skewX = SVGskewXTransformType
+    @Type.skewY = SVGskewYTransformType
 
     @transforms = []
 
@@ -1657,9 +2122,9 @@ class Transform
     return
 
 
-class scale
+class SVGscaleTransformType
   constructor: (s) ->
-    @p = Point.pointsFromNumberArray(s)
+    @p = SVGPoint.pointsFromNumberArray(s)
   apply: (ctx) ->
     ctx.scale @p.x or 1.0, @p.y or @p.x or 1.0
     return
@@ -1668,7 +2133,7 @@ class scale
     p.applyTransform [@p.x or 0.0, 0, 0, @p.y or 0.0, 0, 0]
     return
 
-class matrix
+class SVGmatrixTransformType
   constructor: (s) ->
     @m = svg.ToNumberArray(s)
   apply: (ctx) ->
@@ -1679,28 +2144,28 @@ class matrix
     p.applyTransform @m
     return
 
-class SkewBase extends matrix
+class SVGSkewsTransformType extends SVGmatrixTransformType
   constructor: (s) ->
     super s
-    @angle = new Property("angle", s)
+    @angle = new SVGProperty("angle", s)
     return
 
-class skewX extends SkewBase
+class SVGskewXTransformType extends SVGSkewsTransformType
   constructor: (s) ->
     super s
     @m = [1, 0, Math.tan(@angle.toRadians()), 1, 0, 0]
     return
 
-class skewY extends SkewBase
+class SVGskewYTransformType extends SVGSkewsTransformType
   constructor: (s) ->
     super s
     @m = [1, Math.tan(@angle.toRadians()), 0, 1, 0, 0]
     return
 
-class rotate
+class SVGrotateTransformType
   constructor: (s) ->
     a = svg.ToNumberArray(s)
-    @angle = new Property("angle", a[0])
+    @angle = new SVGProperty("angle", a[0])
     @cx = a[1] or 0
     @cy = a[2] or 0
   
@@ -1718,9 +2183,9 @@ class rotate
     return
 
 
-class translate
+class SVGtranslateTransformType
   constructor: (s) ->
-    @p = Point.pointsFromNumberArray(s)
+    @p = SVGPoint.pointsFromNumberArray(s)
   apply: (ctx) ->
     ctx.translate @p.x or 0.0, @p.y or 0.0
     return
@@ -1730,7 +2195,7 @@ class translate
 
 
 # bounding box
-class BoundingBox
+class SVGBoundingBox
 
   x1: Number.NaN
   y1: Number.NaN
@@ -1825,7 +2290,7 @@ class BoundingBox
     @x1 <= x and x <= @x2 and @y1 <= y and y <= @y2
 
 
-class ViewPort
+class SVGViewPort
   constructor: ->
     @viewPorts= []
 
@@ -1858,7 +2323,7 @@ class ViewPort
     return @height()  if d == "y"
     Math.sqrt(Math.pow(@width(), 2) + Math.pow(@height(), 2)) / Math.sqrt(2)
 
-class Point
+class SVGPoint
 
   constructor: (x, y) ->
     @x = x
@@ -1868,7 +2333,7 @@ class Point
   @pointsFromNumberArray: (s) -> 
     if arguments.length == 1
       a = svg.ToNumberArray(s)
-      return new Point(a[0], a[1])  
+      return new SVGPoint(a[0], a[1])  
 
 
   @pointsArrayFromNumberArray: (s) ->
@@ -1876,7 +2341,7 @@ class Point
     pathOfPoints = []
 
     for i in [0...a.length] by 2
-      pathOfPoints.push new Point(a[i], a[i + 1])
+      pathOfPoints.push new SVGPoint(a[i], a[i + 1])
     pathOfPoints
 
   angleTo: (p) ->
@@ -1889,7 +2354,7 @@ class Point
     @y = yp
     return
 
-class Font
+class SVGFont
 
   Styles: "normal|italic|oblique|inherit"
   Variants: "normal|small-caps|inherit"
@@ -1934,7 +2399,7 @@ class Font
     f
 
 
-class Property
+class SVGProperty
   constructor: (@name, @value) ->
 
   getValue: ->
@@ -1965,9 +2430,9 @@ class Property
   addOpacity: (opacity) ->
     newValue = @value
     if opacity? and opacity != "" and typeof (@value) == "string" # can only add opacity to colors, not patterns
-      color = new RGBColor(@value)
+      color = new SVGRGBColor(@value)
       newValue = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", " + opacity + ")"  if color.ok
-    new Property(@name, newValue)
+    new SVGProperty(@name, newValue)
 
 
   # definition extensions
@@ -1999,7 +2464,7 @@ class Property
 
   getEM: (viewPort) ->
     em = 12
-    fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
+    fontSize = new SVGProperty("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
     em = fontSize.toPixels(viewPort)  if fontSize.hasValue()
     em
 
@@ -2054,7 +2519,7 @@ A class to parse color values
 @link   http://www.phpied.com/rgb-color-parser-in-javascript/
 @license Use it if you like it
 ###
-RGBColor = (color_string) ->
+SVGRGBColor = (color_string) ->
   @ok = false
   
   # strip any leading #
@@ -2218,17 +2683,17 @@ RGBColor = (color_string) ->
   # array of color definition objects
   color_defs = [
     re: /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/
-    example: ["rgb(123, 234, 45)", "rgb(255,234,245)"]
+    #example: ["rgb(123, 234, 45)", "rgb(255,234,245)"]
     process: (bits) ->
       [parseInt(bits[1]), parseInt(bits[2]), parseInt(bits[3])]
   ,
     re: /^(\w{2})(\w{2})(\w{2})$/
-    example: ["#00ff00", "336699"]
+    #example: ["#00ff00", "336699"]
     process: (bits) ->
       [parseInt(bits[1], 16), parseInt(bits[2], 16), parseInt(bits[3], 16)]
   ,
     re: /^(\w{1})(\w{1})(\w{1})$/
-    example: ["#fb0", "f0f"]
+    #example: ["#fb0", "f0f"]
     process: (bits) ->
       [parseInt(bits[1] + bits[1], 16), parseInt(bits[2] + bits[2], 16), parseInt(bits[3] + bits[3], 16)]
   ]
@@ -2249,11 +2714,23 @@ RGBColor = (color_string) ->
   @r = (if (@r < 0 or isNaN(@r)) then 0 else ((if (@r > 255) then 255 else @r)))
   @g = (if (@g < 0 or isNaN(@g)) then 0 else ((if (@g > 255) then 255 else @g)))
   @b = (if (@b < 0 or isNaN(@b)) then 0 else ((if (@b > 255) then 255 else @b)))
-  
+
+  #sabotage!
+  #if Math.random() > 0.5
+  #  @r = 255
+  #  @g = 255
+  #  @b = 255
+  #else
+  #  @r = 0
+  #  @g = 0
+  #  @b = 0
+
   # some getters
+  # not used
   @toRGB = ->
     "rgb(" + @r + ", " + @g + ", " + @b + ")"
 
+  # not used
   @toHex = ->
     r = @r.toString(16)
     g = @g.toString(16)
@@ -2263,404 +2740,4 @@ RGBColor = (color_string) ->
     b = "0" + b  if b.length is 1
     "#" + r + g + b
 
-  
-  # help
-  @getHelpXML = ->
-    examples = new Array()
-    
-    # add regexps
-    for color_def in color_defs
-      example = color_def.example
-      for j in example
-        examples[examples.length] = j
-    
-    # add type-in colors
-    for sc of simple_colors
-      examples[examples.length] = sc
-    xml = document.createElement("ul")
-    xml.setAttribute "id", "rgbcolor-examples"
 
-    for i in examples
-      try
-        list_item = document.createElement("li")
-        list_color = new RGBColor(i)
-        example_div = document.createElement("div")
-        example_div.style.cssText = "margin: 3px; " + "border: 1px solid black; " + "background:" + list_color.toHex() + "; " + "color:" + list_color.toHex()
-        example_div.appendChild document.createTextNode("test")
-        list_item_value = document.createTextNode(" " + i + " -> " + list_color.toRGB() + " -> " + list_color.toHex())
-        list_item.appendChild example_div
-        list_item.appendChild list_item_value
-        xml.appendChild list_item
-    xml
-
-svg = undefined
-canvg = (target, s, opts) ->
-  
-  # no parametrs
-  if not target? and not s? and not opts?
-    svgTags = document.getElementsByTagName("svg")
-    for eachTag in svgTags
-      svgTag = eachTag
-      c = document.createElement("canvas")
-      c.width = svgTag.clientWidth
-      c.height = svgTag.clientHeight
-      svgTag.parentNode.insertBefore c, svgTag
-      svgTag.parentNode.removeChild svgTag
-      div = document.createElement("div")
-      div.appendChild svgTag
-      canvg c, div.innerHTML
-    return
-  opts = opts or {}
-  console.log 'initialed opts to: ' + opts 
-  target = document.getElementById(target)  if typeof target == "string"
-  
-  # store class on canvas
-  target.svg.stop()  if target.svg?
-  
-  console.log 'about to create svg and opts is: ' + opts         
-  svg = new svgClass opts
-  console.log 'just created svg and opts is: ' + svg.opts         
-  # on i.e. 8 for flash canvas, we can't assign the property so check for it
-  target.svg = svg  unless target.childNodes.length is 1 and target.childNodes[0].nodeName == "OBJECT"
-  ctx = target.getContext("2d")
-  unless typeof (s.documentElement) == "undefined"
-    console.log 'about to call loadXmlDoc and opts is: ' + svg.opts 
-    # load from xml doc
-    svg.loadXmlDoc ctx, s
-  else if s.substr(0, 1) == "<"
-    console.log 'about to call loadXml and opts is: ' + svg.opts     
-    # load from xml string
-    svg.loadXml ctx, s
-  else
-    console.log 'about to call load and opts is: ' + svg.opts         
-    # load from url
-    svg.load ctx, s
-
-class svgClass
-  @uniqueId: 0
-  isFirstRender: true
-
-  constructor: (@opts)->
-    @FRAMERATE = 30
-    @MAX_VIRTUAL_PIXELS = 30000
-    console.log 'constructing svg and opts is: ' + @opts
-
-  UniqueId: ->
-    @constructor.uniqueId++
-    "canvg" + @constructor.uniqueId
-
-  # globals
-  init: (ctx) ->
-
-    @Definitions = {}
-    @Styles = {}
-    @Animations = []
-    @Images = []
-    @ctx = ctx
-    @ViewPort = new ViewPort
-    # transforms
-    @Transform = Transform
-
-
-    # fonts
-    @Font = new Font
-
-
-    # elements
-    @Element = {}
-    @EmptyProperty = new Property("EMPTY", "")
-
-
-    # Elements. Each element has its
-    # own class. The reason they are kept
-    # in this structure is that we create the
-    # objects dynamically by doing a
-    #   new @Element[elementname]
-    # later on.
-
-    @Element.svg = svgElement
-    @Element.rect = rect
-    @Element.circle = circle
-    @Element.ellipse = ellipse
-    @Element.line = line
-    @Element.polyline = polyline
-    @Element.polygon = polygon
-    @Element.path = path
-    @Element.pattern = pattern
-    @Element.marker = marker
-    @Element.defs = defs
-    @Element.GradientBase = GradientBase
-    @Element.linearGradient = linearGradient
-    @Element.radialGradient = radialGradient
-    @Element.stop = stop
-    @Element.AnimateBase = AnimateBase
-    @Element.animate = animate
-    @Element.animateColor = animateColor
-    @Element.animateTransform = animateTransform
-    @Element.font = font
-    @Element.fontface = fontface
-    @Element.missingglyph = missingglyph
-    @Element.glyph = glyph
-    @Element.text = text
-    @Element.TextElementBase = TextElementBase
-    @Element.tspan = tspan
-    @Element.tref = tref
-    @Element.a = aClass
-    @Element.image = image
-    @Element.g = gClass
-    @Element.symbol = symbol
-    @Element.style = ElementBaseStyle
-    @Element.use = use
-    @Element.mask = maskClass
-    @Element.clipPath = clipPath
-    @Element.filter = filterClass
-    @Element.feMorphology = feMorphology
-    @Element.feColorMatrix = feColorMatrix
-    @Element.feGaussianBlur = feGaussianBlur
-    @Element.MISSING = MISSING
-    # title element, do nothing
-    @Element.title = title
-    # desc element, do nothing
-    @Element.desc = desc
-    @Mouse = new Mouse
-    return
-
-  AspectRatio: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
-    # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
-    aspectRatio = svg.compressSpaces(aspectRatio)
-    aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
-    align = aspectRatio.split(" ")[0] or "xMidYMid"
-    meetOrSlice = aspectRatio.split(" ")[1] or "meet"
-    
-    # calculate scale
-    scaleX = width / desiredWidth
-    scaleY = height / desiredHeight
-    scaleMin = Math.min(scaleX, scaleY)
-    scaleMax = Math.max(scaleX, scaleY)
-    if meetOrSlice == "meet"
-      desiredWidth *= scaleMin
-      desiredHeight *= scaleMin
-    if meetOrSlice == "slice"
-      desiredWidth *= scaleMax
-      desiredHeight *= scaleMax
-    refX = new Property("refX", refX)
-    refY = new Property("refY", refY)
-    if refX.hasValue() and refY.hasValue()
-      ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
-    else
-      
-      # align
-      ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
-      ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
-      ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
-      ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
-    
-    # scale
-    if align == "none"
-      ctx.scale scaleX, scaleY
-    else if meetOrSlice == "meet"
-      ctx.scale scaleMin, scaleMin
-    else ctx.scale scaleMax, scaleMax  if meetOrSlice == "slice"
-    
-    # translate
-    ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
-    return
-
-  # images loaded
-  ImagesLoaded: ->
-    for svgImage in @Images
-      return false  unless svgImage.loaded
-    true
-
-
-  # trim
-  trim: (s) ->
-    s.replace /^\s+|\s+$/g, ""
-
-
-  # compress spaces
-  compressSpaces: (s) ->
-    s.replace /[\s\r\t\n]+/g, " "
-
-
-  # ajax
-  ajax: (url) ->
-    AJAX = undefined
-    if window.XMLHttpRequest
-      AJAX = new XMLHttpRequest()
-    else
-      AJAX = new ActiveXObject("Microsoft.XMLHTTP")
-    if AJAX
-      AJAX.open "GET", url, false
-      AJAX.send null
-      return AJAX.responseText
-    null
-
-
-  # parse xml
-  parseXml: (xml) ->
-    if window.DOMParser
-      parser = new DOMParser()
-      parser.parseFromString xml, "text/xml"
-    else
-      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "")
-      xmlDoc = new ActiveXObject("Microsoft.XMLDOM")
-      xmlDoc.async = "false"
-      xmlDoc.loadXML xml
-      xmlDoc
-
-
-  # points and paths
-  ToNumberArray: (s) ->
-    a = @trim(@compressSpaces((s or "").replace(/,/g, " "))).split(" ")
-    for i in [0...a.length]
-      a[i] = parseFloat(a[i])
-    a
-
-
-  # element factory
-  CreateElement: (node) ->
-    className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
-    className = className.replace(/\-/g, "") # remove dashes
-    e = null
-    unless typeof (@Element[className]) == "undefined"
-      console.log 'attempting to create a ' + className
-      e = new @Element[className](node)
-    else
-      e = new @Element.MISSING(node)
-    e.type = node.nodeName
-    e
-
-
-  # load from url
-  load: (ctx, url) ->
-    @loadXml ctx, @ajax(url)
-
-
-  # load from xml
-  loadXml: (ctx, xml) ->
-    @loadXmlDoc ctx, @parseXml(xml)
-
-  stop: ->
-    clearInterval @intervalID  if @intervalID
-
-  mapXY: (p, ctx) ->
-    e = ctx.canvas
-    while e
-      p.x -= e.offsetLeft
-      p.y -= e.offsetTop
-      e = e.offsetParent
-    p.x += window.scrollX  if window.scrollX
-    p.y += window.scrollY  if window.scrollY
-    p
-
-  draw: ->
-    ctx = @ctxFromLoadXMLDoc
-    e = @eFromLoadXMLDoc
-
-    @ViewPort.Clear()
-    @ViewPort.SetCurrent ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight  if ctx.canvas.parentNode
-    unless @opts["ignoreDimensions"] is true
-      
-      # set canvas size
-      if e.style("width").hasValue()
-        ctx.canvas.width = e.style("width").toPixels("x")
-        ctx.canvas.style.width = ctx.canvas.width + "px"
-      if e.style("height").hasValue()
-        ctx.canvas.height = e.style("height").toPixels("y")
-        ctx.canvas.style.height = ctx.canvas.height + "px"
-    cWidth = ctx.canvas.clientWidth or ctx.canvas.width
-    cHeight = ctx.canvas.clientHeight or ctx.canvas.height
-    if @opts["ignoreDimensions"] is true and e.style("width").hasValue() and e.style("height").hasValue()
-      cWidth = e.style("width").toPixels("x")
-      cHeight = e.style("height").toPixels("y")
-    @ViewPort.SetCurrent cWidth, cHeight
-    e.attribute("x", true).value = @opts["offsetX"]  if @opts["offsetX"]?
-    e.attribute("y", true).value = @opts["offsetY"]  if @opts["offsetY"]?
-    if @opts["scaleWidth"]? and @opts["scaleHeight"]?
-      xRatio = 1
-      yRatio = 1
-      viewBox = @ToNumberArray(e.attribute("viewBox").value)
-      if e.attribute("width").hasValue()
-        xRatio = e.attribute("width").toPixels("x") / @opts["scaleWidth"]
-      else xRatio = viewBox[2] / @opts["scaleWidth"]  unless isNaN(viewBox[2])
-      if e.attribute("height").hasValue()
-        yRatio = e.attribute("height").toPixels("y") / @opts["scaleHeight"]
-      else yRatio = viewBox[3] / @opts["scaleHeight"]  unless isNaN(viewBox[3])
-      e.attribute("width", true).value = @opts["scaleWidth"]
-      e.attribute("height", true).value = @opts["scaleHeight"]
-      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio)
-      e.attribute("preserveAspectRatio", true).value = "none"
-    
-    # clear and render
-    ctx.clearRect 0, 0, cWidth, cHeight  unless @opts["ignoreClear"] is true
-    e.render ctx
-    if @isFirstRender
-      @isFirstRender = false
-      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
-
-
-
-  loadXmlDoc: (ctx, dom) ->
-    @init ctx
-
-    # bind mouse
-    console.log "opts: " + @opts
-    console.log "opts ignoreMouse: " + @opts["ignoreMouse"]
-    unless @opts["ignoreMouse"] is true
-      ctx.canvas.onclick = (e) =>
-        p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
-        @Mouse.onclick p.x, p.y
-
-      ctx.canvas.onmousemove = (e) =>
-        p = @mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)), ctx)
-        @Mouse.onmousemove p.x, p.y
-
-    e = @CreateElement(dom.documentElement)
-    console.log "*** svgCreateElement from dom: " + dom.documentElement
-    #alert  "svgCreateElement from dom"
-    e.root = true
-    
-    console.log 'assigning @ctxFromLoadXMLDoc'
-    @ctxFromLoadXMLDoc = ctx
-    @eFromLoadXMLDoc = e
-    
-    waitingForImages = true
-    if @ImagesLoaded()
-      waitingForImages = false
-      @draw()
-
-    @intervalID = setInterval(=>
-      needUpdate = false
-      if waitingForImages and @ImagesLoaded()
-        waitingForImages = false
-        needUpdate = true
-      
-      # need update from mouse events?
-      needUpdate = needUpdate | @Mouse.hasEvents()  unless @opts["ignoreMouse"] is true
-      
-      # need update from animations?
-      unless @opts["ignoreAnimation"] is true
-        for i in [0...@Animations.length]
-          needUpdate = needUpdate | @Animations[i].update(1000 / @FRAMERATE)
-      
-      # need update from redraw?
-      needUpdate = true  if @opts["forceRedraw"]() is true  if typeof (@opts["forceRedraw"]) == "function"
-      
-      # render if needed
-      if needUpdate
-        @draw()
-        @Mouse.runEvents() # run and clear our events
-    , 1000 / @FRAMERATE)
-
-if CanvasRenderingContext2D
-  CanvasRenderingContext2D::drawSvg = (s, dx, dy, dw, dh) ->
-    canvg @canvas, s,
-      ignoreMouse: true
-      ignoreAnimation: true
-      ignoreDimensions: true
-      ignoreClear: true
-      offsetX: dx
-      offsetY: dy
-      scaleWidth: dw
-      scaleHeight: dh

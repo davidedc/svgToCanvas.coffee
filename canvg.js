@@ -1,19 +1,445 @@
-var AnimateBase, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, aClass, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filterClass, font, fontface, gClass, glyph, image, line, linearGradient, marker, maskClass, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgClass, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
+var SVGAnimationElement, SVGBoundingBox, SVGElement, SVGElementStyle, SVGFont, SVGGradientElement, SVGGraphicsElement, SVGMouse, SVGPathParser, SVGPoint, SVGProperty, SVGRGBColor, SVGRenderedElement, SVGSkewsTransformType, SVGStopElement, SVGTextContentElement, SVGViewPort, SVGaContainerElement, SVGanimateAnimationElement, SVGanimateColorAnimationElement, SVGanimateTransformAnimationElement, SVGcircleGraphicsElement, SVGclipPathElement, SVGdefsContainerElement, SVGdescDescriptiveElement, SVGellipseGraphicsElement, SVGfeColorMatrixFilterPrimitiveElement, SVGfeGaussianBlurFilterPrimitiveElement, SVGfeMorphologyFilterPrimitiveElement, SVGfilterElement, SVGfontElement, SVGfontfaceElement, SVGgContainerElement, SVGglyphContainerElement, SVGimageGraphicsElement, SVGlineGraphicsElement, SVGlinearGradientGradientElement, SVGmarkerContainerElement, SVGmaskContainerElement, SVGmatrixTransformType, SVGmissingElement, SVGmissingglyphContainerElement, SVGpathGraphicsElement, SVGpatternContainerElement, SVGpolygonGraphicsElement, SVGpolylineGraphicsElement, SVGradialGradientGradientElement, SVGrectGraphicsElement, SVGrotateTransformType, SVGscaleTransformType, SVGskewXTransformType, SVGskewYTransformType, SVGsymbolStructuralElement, SVGtextTextContentElement, SVGtitleDescriptiveElement, SVGtranslateTransformType, SVGtrefTextContentElement, SVGtspanTextContentElement, SVGuseGraphicsElement, TransformsList, canvg, svSVGgContainerElement, svg, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-Mouse = (function() {
-  function Mouse() {
+svg = void 0;
+
+canvg = function(target, s, opts) {
+  var c, ctx, div, eachTag, svgTag, svgTags, _i, _len;
+
+  if ((target == null) && (s == null) && (opts == null)) {
+    svgTags = document.getElementsByTagName("svg");
+    for (_i = 0, _len = svgTags.length; _i < _len; _i++) {
+      eachTag = svgTags[_i];
+      svgTag = eachTag;
+      c = document.createElement("canvas");
+      c.width = svgTag.clientWidth;
+      c.height = svgTag.clientHeight;
+      svgTag.parentNode.insertBefore(c, svgTag);
+      svgTag.parentNode.removeChild(svgTag);
+      div = document.createElement("div");
+      div.appendChild(svgTag);
+      canvg(c, div.innerHTML);
+    }
+    return;
+  }
+  opts = opts || {};
+  console.log('initialed opts to: ' + opts);
+  if (typeof target === "string") {
+    target = document.getElementById(target);
+  }
+  if (target.svg != null) {
+    target.svg.stop();
+  }
+  console.log('about to create svg and opts is: ' + opts);
+  svg = new svSVGgContainerElement(opts);
+  console.log('just created svg and opts is: ' + svg.opts);
+  target.svg = svg;
+  ctx = target.getContext("2d");
+  if (typeof s.documentElement !== "undefined") {
+    console.log('about to call loadXmlDoc and opts is: ' + svg.opts);
+    return svg.loadXmlDoc(ctx, s);
+  } else if (s.substr(0, 1) === "<") {
+    console.log('about to call loadXml and opts is: ' + svg.opts);
+    return svg.loadXml(ctx, s);
+  } else {
+    console.log('about to call load and opts is: ' + svg.opts);
+    return svg.load(ctx, s);
+  }
+};
+
+svSVGgContainerElement = (function() {
+  svSVGgContainerElement.uniqueId = 0;
+
+  svSVGgContainerElement.prototype.isFirstRender = true;
+
+  function svSVGgContainerElement(opts) {
+    this.opts = opts;
+    this.FRAMERATE = 30;
+    this.MAX_VIRTUAL_PIXELS = 30000;
+    console.log('constructing svg and opts is: ' + this.opts);
+  }
+
+  svSVGgContainerElement.prototype.UniqueId = function() {
+    this.constructor.uniqueId++;
+    return "canvg" + this.constructor.uniqueId;
+  };
+
+  svSVGgContainerElement.prototype.init = function(ctx) {
+    this.Definitions = {};
+    this.Styles = {};
+    this.Animations = [];
+    this.Images = [];
+    this.ctx = ctx;
+    this.ViewPort = new SVGViewPort;
+    this.Font = new SVGFont;
+    this.Element = {};
+    this.EmptyProperty = new SVGProperty("EMPTY", "");
+    this.Element.svg = SVGElement;
+    this.Element.rect = SVGrectGraphicsElement;
+    this.Element.circle = SVGcircleGraphicsElement;
+    this.Element.ellipse = SVGellipseGraphicsElement;
+    this.Element.line = SVGlineGraphicsElement;
+    this.Element.polyline = SVGpolylineGraphicsElement;
+    this.Element.polygon = SVGpolygonGraphicsElement;
+    this.Element.path = SVGpathGraphicsElement;
+    this.Element.pattern = SVGpatternContainerElement;
+    this.Element.marker = SVGmarkerContainerElement;
+    this.Element.defs = SVGdefsContainerElement;
+    this.Element.linearGradient = SVGlinearGradientGradientElement;
+    this.Element.radialGradient = SVGradialGradientGradientElement;
+    this.Element.stop = SVGStopElement;
+    this.Element.animate = SVGanimateAnimationElement;
+    this.Element.animateColor = SVGanimateColorAnimationElement;
+    this.Element.animateTransform = SVGanimateTransformAnimationElement;
+    this.Element.font = SVGfontElement;
+    this.Element.fontface = SVGfontfaceElement;
+    this.Element.missingglyph = SVGmissingglyphContainerElement;
+    this.Element.glyph = SVGglyphContainerElement;
+    this.Element.text = SVGtextTextContentElement;
+    this.Element.tspan = SVGtspanTextContentElement;
+    this.Element.tref = SVGtrefTextContentElement;
+    this.Element.a = SVGaContainerElement;
+    this.Element.image = SVGimageGraphicsElement;
+    this.Element.g = SVGgContainerElement;
+    this.Element.symbol = SVGsymbolStructuralElement;
+    this.Element.style = SVGElementStyle;
+    this.Element.use = SVGuseGraphicsElement;
+    this.Element.mask = SVGmaskContainerElement;
+    this.Element.clipPath = SVGclipPathElement;
+    this.Element.filter = SVGfilterElement;
+    this.Element.feMorphology = SVGfeMorphologyFilterPrimitiveElement;
+    this.Element.feColorMatrix = SVGfeColorMatrixFilterPrimitiveElement;
+    this.Element.feGaussianBlur = SVGfeGaussianBlurFilterPrimitiveElement;
+    this.Element.title = SVGtitleDescriptiveElement;
+    this.Element.desc = SVGdescDescriptiveElement;
+    this.SVGMouse = new SVGMouse;
+  };
+
+  svSVGgContainerElement.prototype.AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
+    var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
+
+    aspectRatio = svg.compressSpaces(aspectRatio);
+    aspectRatio = aspectRatio.replace(/^defer\s/, "");
+    align = aspectRatio.split(" ")[0] || "xMidYMid";
+    meetOrSlice = aspectRatio.split(" ")[1] || "meet";
+    scaleX = width / desiredWidth;
+    scaleY = height / desiredHeight;
+    scaleMin = Math.min(scaleX, scaleY);
+    scaleMax = Math.max(scaleX, scaleY);
+    if (meetOrSlice === "meet") {
+      desiredWidth *= scaleMin;
+      desiredHeight *= scaleMin;
+    }
+    if (meetOrSlice === "slice") {
+      desiredWidth *= scaleMax;
+      desiredHeight *= scaleMax;
+    }
+    refX = new SVGProperty("refX", refX);
+    refY = new SVGProperty("refY", refY);
+    if (refX.hasValue() && refY.hasValue()) {
+      ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
+    } else {
+      if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+        ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
+      }
+      if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+        ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
+      }
+      if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+        ctx.translate(width - desiredWidth, 0);
+      }
+      if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+        ctx.translate(0, height - desiredHeight);
+      }
+    }
+    if (align === "none") {
+      ctx.scale(scaleX, scaleY);
+    } else if (meetOrSlice === "meet") {
+      ctx.scale(scaleMin, scaleMin);
+    } else {
+      if (meetOrSlice === "slice") {
+        ctx.scale(scaleMax, scaleMax);
+      }
+    }
+    ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
+  };
+
+  svSVGgContainerElement.prototype.ImagesLoaded = function() {
+    var svgImage, _i, _len, _ref;
+
+    _ref = this.Images;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      svgImage = _ref[_i];
+      if (!svgImage.loaded) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  svSVGgContainerElement.prototype.trim = function(s) {
+    return s.replace(/^\s+|\s+$/g, "");
+  };
+
+  svSVGgContainerElement.prototype.compressSpaces = function(s) {
+    return s.replace(/[\s\r\t\n]+/g, " ");
+  };
+
+  svSVGgContainerElement.prototype.ajax = function(url) {
+    var AJAX;
+
+    AJAX = void 0;
+    if (window.XMLHttpRequest) {
+      AJAX = new XMLHttpRequest();
+    } else {
+      AJAX = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    if (AJAX) {
+      AJAX.open("GET", url, false);
+      AJAX.send(null);
+      return AJAX.responseText;
+    }
+    return null;
+  };
+
+  svSVGgContainerElement.prototype.parseXml = function(xml) {
+    var parser, xmlDoc;
+
+    if (window.DOMParser) {
+      parser = new DOMParser();
+      return parser.parseFromString(xml, "text/xml");
+    } else {
+      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "");
+      xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+      xmlDoc.async = "false";
+      xmlDoc.loadXML(xml);
+      return xmlDoc;
+    }
+  };
+
+  svSVGgContainerElement.prototype.ToNumberArray = function(s) {
+    var a, item, result;
+
+    a = this.trim(this.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
+    return result = (function() {
+      var _i, _len, _results;
+
+      _results = [];
+      for (_i = 0, _len = a.length; _i < _len; _i++) {
+        item = a[_i];
+        _results.push(parseFloat(item));
+      }
+      return _results;
+    })();
+  };
+
+  svSVGgContainerElement.prototype.CreateElement = function(node) {
+    var className, e;
+
+    className = node.nodeName.replace(/^[^:]+:/, "");
+    className = className.replace(/\-/g, "");
+    e = null;
+    if (typeof this.Element[className] !== "undefined") {
+      console.log('attempting to create a ' + className);
+      e = new this.Element[className](node);
+    } else {
+      e = new SVGmissingElement(node);
+    }
+    e.type = node.nodeName;
+    return e;
+  };
+
+  svSVGgContainerElement.prototype.load = function(ctx, url) {
+    return this.loadXml(ctx, this.ajax(url));
+  };
+
+  svSVGgContainerElement.prototype.loadXml = function(ctx, xml) {
+    return this.loadXmlDoc(ctx, this.parseXml(xml));
+  };
+
+  svSVGgContainerElement.prototype.stop = function() {
+    if (this.intervalID) {
+      return clearInterval(this.intervalID);
+    }
+  };
+
+  svSVGgContainerElement.prototype.mapXY = function(p, ctx) {
+    var e;
+
+    e = ctx.canvas;
+    while (e) {
+      p.x -= e.offsetLeft;
+      p.y -= e.offsetTop;
+      e = e.offsetParent;
+    }
+    if (window.scrollX) {
+      p.x += window.scrollX;
+    }
+    if (window.scrollY) {
+      p.y += window.scrollY;
+    }
+    return p;
+  };
+
+  svSVGgContainerElement.prototype.draw = function() {
+    var cHeight, cWidth, ctx, e, viewBox, xRatio, yRatio;
+
+    ctx = this.ctxFromLoadXMLDoc;
+    e = this.eFromLoadXMLDoc;
+    this.ViewPort.Clear();
+    if (ctx.canvas.parentNode) {
+      this.ViewPort.SetCurrent(ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight);
+    }
+    if (this.opts["ignoreDimensions"] !== true) {
+      if (e.style("width").hasValue()) {
+        ctx.canvas.width = e.style("width").toPixels("x");
+        ctx.canvas.style.width = ctx.canvas.width + "px";
+      }
+      if (e.style("height").hasValue()) {
+        ctx.canvas.height = e.style("height").toPixels("y");
+        ctx.canvas.style.height = ctx.canvas.height + "px";
+      }
+    }
+    cWidth = ctx.canvas.clientWidth || ctx.canvas.width;
+    cHeight = ctx.canvas.clientHeight || ctx.canvas.height;
+    if (this.opts["ignoreDimensions"] === true && e.style("width").hasValue() && e.style("height").hasValue()) {
+      cWidth = e.style("width").toPixels("x");
+      cHeight = e.style("height").toPixels("y");
+    }
+    this.ViewPort.SetCurrent(cWidth, cHeight);
+    if (this.opts["offsetX"] != null) {
+      e.attribute("x", true).value = this.opts["offsetX"];
+    }
+    if (this.opts["offsetY"] != null) {
+      e.attribute("y", true).value = this.opts["offsetY"];
+    }
+    if ((this.opts["scaleWidth"] != null) && (this.opts["scaleHeight"] != null)) {
+      xRatio = 1;
+      yRatio = 1;
+      viewBox = this.ToNumberArray(e.attribute("viewBox").value);
+      if (e.attribute("width").hasValue()) {
+        xRatio = e.attribute("width").toPixels("x") / this.opts["scaleWidth"];
+      } else {
+        if (!isNaN(viewBox[2])) {
+          xRatio = viewBox[2] / this.opts["scaleWidth"];
+        }
+      }
+      if (e.attribute("height").hasValue()) {
+        yRatio = e.attribute("height").toPixels("y") / this.opts["scaleHeight"];
+      } else {
+        if (!isNaN(viewBox[3])) {
+          yRatio = viewBox[3] / this.opts["scaleHeight"];
+        }
+      }
+      e.attribute("width", true).value = this.opts["scaleWidth"];
+      e.attribute("height", true).value = this.opts["scaleHeight"];
+      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio);
+      e.attribute("preserveAspectRatio", true).value = "none";
+    }
+    if (this.opts["ignoreClear"] !== true) {
+      ctx.clearRect(0, 0, cWidth, cHeight);
+    }
+    e.render(ctx);
+    if (this.isFirstRender) {
+      this.isFirstRender = false;
+      if (typeof this.opts["renderCallback"] === "function") {
+        return this.opts["renderCallback"]();
+      }
+    }
+  };
+
+  svSVGgContainerElement.prototype.loadXmlDoc = function(ctx, dom) {
+    var e, waitingForImages,
+      _this = this;
+
+    this.init(ctx);
+    console.log("opts: " + this.opts);
+    console.log("opts ignoreSVGMouse: " + this.opts["ignoreSVGMouse"]);
+    if (this.opts["ignoreSVGMouse"] !== true) {
+      ctx.canvas.onclick = function(e) {
+        var p;
+
+        p = _this.mapXY(new SVGPoint((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return _this.SVGMouse.onclick(p.x, p.y);
+      };
+      ctx.canvas.onmousemove = function(e) {
+        var p;
+
+        p = _this.mapXY(new SVGPoint((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
+        return _this.SVGMouse.onmousemove(p.x, p.y);
+      };
+    }
+    e = this.CreateElement(dom.documentElement);
+    console.log("*** svgCreateElement from dom: " + dom.documentElement);
+    e.root = true;
+    console.log('assigning @ctxFromLoadXMLDoc');
+    this.ctxFromLoadXMLDoc = ctx;
+    this.eFromLoadXMLDoc = e;
+    waitingForImages = true;
+    if (this.ImagesLoaded()) {
+      waitingForImages = false;
+      this.draw();
+    }
+    return this.intervalID = setInterval(function() {
+      var animation, needUpdate, _i, _len, _ref;
+
+      needUpdate = false;
+      if (waitingForImages && _this.ImagesLoaded()) {
+        waitingForImages = false;
+        needUpdate = true;
+      }
+      if (_this.opts["ignoreSVGMouse"] !== true) {
+        needUpdate = needUpdate | _this.SVGMouse.hasEvents();
+      }
+      if (_this.opts["ignoreAnimation"] !== true) {
+        _ref = _this.Animations;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          animation = _ref[_i];
+          needUpdate = needUpdate | animation.update(1000 / _this.FRAMERATE);
+        }
+      }
+      if (typeof _this.opts["forceRedraw"] === "function" ? _this.opts["forceRedraw"]() === true : void 0) {
+        needUpdate = true;
+      }
+      if (needUpdate) {
+        _this.draw();
+        return _this.SVGMouse.runEvents();
+      }
+    }, 1000 / this.FRAMERATE);
+  };
+
+  return svSVGgContainerElement;
+
+})();
+
+if (CanvasRenderingContext2D) {
+  CanvasRenderingContext2D.prototype.drawSvg = function(s, dx, dy, dw, dh) {
+    return canvg(this.canvas, s, {
+      ignoreSVGMouse: true,
+      ignoreAnimation: true,
+      ignoreDimensions: true,
+      ignoreClear: true,
+      offsetX: dx,
+      offsetY: dy,
+      scaleWidth: dw,
+      scaleHeight: dh
+    });
+  };
+}
+
+SVGMouse = (function() {
+  function SVGMouse() {
     this.events = [];
     this.eventElements = [];
   }
 
-  Mouse.prototype.hasEvents = function() {
+  SVGMouse.prototype.hasEvents = function() {
     return this.events.length !== 0;
   };
 
-  Mouse.prototype.onclick = function(x, y) {
+  SVGMouse.prototype.onclick = function(x, y) {
     return this.events.push({
       type: "onclick",
       x: x,
@@ -26,9 +452,9 @@ Mouse = (function() {
     });
   };
 
-  Mouse.prototype.onmousemove = function(x, y) {
+  SVGMouse.prototype.onmousemove = function(x, y) {
     return this.events.push({
-      type: "onmousemove",
+      type: "onmouseove",
       x: x,
       y: y,
       run: function(e) {
@@ -39,7 +465,7 @@ Mouse = (function() {
     });
   };
 
-  Mouse.prototype.checkPath = function(element, ctx) {
+  SVGMouse.prototype.checkPath = function(element, ctx) {
     var e, i, _i, _ref, _results;
 
     _results = [];
@@ -54,7 +480,7 @@ Mouse = (function() {
     return _results;
   };
 
-  Mouse.prototype.checkBoundingBox = function(element, bb) {
+  SVGMouse.prototype.checkBoundingBox = function(element, bb) {
     var e, i, _i, _ref, _results;
 
     _results = [];
@@ -69,7 +495,7 @@ Mouse = (function() {
     return _results;
   };
 
-  Mouse.prototype.runEvents = function() {
+  SVGMouse.prototype.runEvents = function() {
     var e, element, i, _i, _ref;
 
     svg.ctx.canvas.style.cursor = "";
@@ -85,30 +511,32 @@ Mouse = (function() {
     return this.eventElements = [];
   };
 
-  return Mouse;
+  return SVGMouse;
 
 })();
 
-ElementBase = (function() {
-  function ElementBase(node) {
-    var attribute, childNode, classes, i, j, name, style, styles, value, _i, _j, _k, _l, _ref, _ref1, _ref2, _ref3;
+SVGElement = (function() {
+  function SVGElement(node) {
+    var attribute, childNode, classes, i, j, name, style, styles, value, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3;
 
     this.attributes = {};
     this.styles = {};
     this.children = [];
     if ((node != null) && node.nodeType === 1) {
-      for (i = _i = 0, _ref = node.childNodes.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-        childNode = node.childNodes[i];
+      _ref = node.childNodes;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        childNode = _ref[_i];
         if (childNode.nodeType === 1) {
           this.addChild(childNode, true);
         }
         if (this.captureTextNodes && childNode.nodeType === 3) {
-          this.addChild(new svg.Element.tspan(childNode), false);
+          this.addChild(new SVGtspanTextContentElement(childNode), false);
         }
       }
-      for (i = _j = 0, _ref1 = node.attributes.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-        attribute = node.attributes[i];
-        this.attributes[attribute.nodeName] = new Property(attribute.nodeName, attribute.nodeValue);
+      _ref1 = node.attributes;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        attribute = _ref1[_j];
+        this.attributes[attribute.nodeName] = new SVGProperty(attribute.nodeName, attribute.nodeValue);
       }
       styles = svg.Styles[node.nodeName];
       if (styles != null) {
@@ -148,7 +576,7 @@ ElementBase = (function() {
             style = styles[i].split(":");
             name = svg.trim(style[0]);
             value = svg.trim(style[1]);
-            this.styles[name] = new Property(name, value);
+            this.styles[name] = new SVGProperty(name, value);
           }
         }
       }
@@ -159,7 +587,7 @@ ElementBase = (function() {
     return;
   }
 
-  ElementBase.prototype.attribute = function(name, createIfNotExists) {
+  SVGElement.prototype.attribute = function(name, createIfNotExists) {
     var a;
 
     a = this.attributes[name];
@@ -167,13 +595,13 @@ ElementBase = (function() {
       return a;
     }
     if (createIfNotExists === true) {
-      a = new Property(name, "");
+      a = new SVGProperty(name, "");
       this.attributes[name] = a;
     }
     return a || svg.EmptyProperty;
   };
 
-  ElementBase.prototype.getHrefAttribute = function() {
+  SVGElement.prototype.getHrefAttribute = function() {
     var a;
 
     for (a in this.attributes) {
@@ -184,7 +612,7 @@ ElementBase = (function() {
     return svg.EmptyProperty;
   };
 
-  ElementBase.prototype.style = function(name, createIfNotExists) {
+  SVGElement.prototype.style = function(name, createIfNotExists) {
     var a, p, ps, s;
 
     console.log("name, createIfNotExists " + name + " " + createIfNotExists);
@@ -209,13 +637,13 @@ ElementBase = (function() {
       }
     }
     if (createIfNotExists === true) {
-      s = new Property(name, "");
+      s = new SVGProperty(name, "");
       this.styles[name] = s;
     }
     return s || svg.EmptyProperty;
   };
 
-  ElementBase.prototype.render = function(ctx) {
+  SVGElement.prototype.render = function(ctx) {
     var filter, mask;
 
     if (this.style("display").value === "none") {
@@ -243,19 +671,21 @@ ElementBase = (function() {
     return ctx.restore();
   };
 
-  ElementBase.prototype.setContext = function(ctx) {};
+  SVGElement.prototype.setContext = function(ctx) {};
 
-  ElementBase.prototype.clearContext = function(ctx) {};
+  SVGElement.prototype.clearContext = function(ctx) {};
 
-  ElementBase.prototype.renderChildren = function(ctx) {
-    var i, _i, _ref;
+  SVGElement.prototype.renderChildren = function(ctx) {
+    var child, _i, _len, _ref;
 
-    for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      this.children[i].render(ctx);
+    _ref = this.children;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      child = _ref[_i];
+      child.render(ctx);
     }
   };
 
-  ElementBase.prototype.addChild = function(childNode, create) {
+  SVGElement.prototype.addChild = function(childNode, create) {
     var child;
 
     console.log("addchild childNode: " + childNode);
@@ -271,62 +701,62 @@ ElementBase = (function() {
     return this.children.push(child);
   };
 
-  return ElementBase;
+  return SVGElement;
 
 })();
 
-title = (function(_super) {
-  __extends(title, _super);
+SVGtitleDescriptiveElement = (function(_super) {
+  __extends(SVGtitleDescriptiveElement, _super);
 
-  function title(node) {
-    title.__super__.constructor.call(this, node);
+  function SVGtitleDescriptiveElement(node) {
+    SVGtitleDescriptiveElement.__super__.constructor.call(this, node);
   }
 
-  return title;
+  return SVGtitleDescriptiveElement;
 
-})(ElementBase);
+})(SVGElement);
 
-desc = (function(_super) {
-  __extends(desc, _super);
+SVGdescDescriptiveElement = (function(_super) {
+  __extends(SVGdescDescriptiveElement, _super);
 
-  function desc(node) {
-    desc.__super__.constructor.call(this, node);
+  function SVGdescDescriptiveElement(node) {
+    SVGdescDescriptiveElement.__super__.constructor.call(this, node);
   }
 
-  return desc;
+  return SVGdescDescriptiveElement;
 
-})(ElementBase);
+})(SVGElement);
 
-MISSING = (function(_super) {
-  __extends(MISSING, _super);
+SVGmissingElement = (function(_super) {
+  __extends(SVGmissingElement, _super);
 
-  function MISSING(node) {
-    MISSING.__super__.constructor.call(this, node);
+  function SVGmissingElement(node) {
+    SVGmissingElement.__super__.constructor.call(this, node);
     if (console) {
       console.log("ERROR: Element '" + node.nodeName + "' not yet implemented.");
     }
   }
 
-  return MISSING;
+  return SVGmissingElement;
 
-})(ElementBase);
+})(SVGElement);
 
-feColorMatrix = (function(_super) {
-  __extends(feColorMatrix, _super);
+SVGfeColorMatrixFilterPrimitiveElement = (function(_super) {
+  __extends(SVGfeColorMatrixFilterPrimitiveElement, _super);
 
-  function feColorMatrix(node) {
-    feColorMatrix.__super__.constructor.call(this, node);
+  function SVGfeColorMatrixFilterPrimitiveElement(node) {
+    SVGfeColorMatrixFilterPrimitiveElement.__super__.constructor.call(this, node);
   }
 
-  feColorMatrix.prototype.imGet = function(img, x, y, width, height, rgba) {
+  SVGfeColorMatrixFilterPrimitiveElement.prototype.imGet = function(img, x, y, width, height, rgba) {
     return img[y * width * 4 + x * 4 + rgba];
   };
 
-  feColorMatrix.prototype.imSet = function(img, x, y, width, height, rgba, val) {
+  SVGfeColorMatrixFilterPrimitiveElement.prototype.imSet = function(img, x, y, width, height, rgba, val) {
     return img[y * width * 4 + x * 4 + rgba] = val;
   };
 
-  feColorMatrix.prototype.apply = function(ctx, x, y, width, height) {
+  SVGfeColorMatrixFilterPrimitiveElement.prototype.apply = function(ctx, x, y, width, height) {
     var b, g, gray, r, srcData, _i, _j;
 
     srcData = ctx.getImageData(0, 0, width, height);
@@ -345,32 +775,32 @@ feColorMatrix = (function(_super) {
     ctx.putImageData(srcData, 0, 0);
   };
 
-  return feColorMatrix;
+  return SVGfeColorMatrixFilterPrimitiveElement;
 
-})(ElementBase);
+})(SVGElement);
 
-feMorphology = (function(_super) {
-  __extends(feMorphology, _super);
+SVGfeMorphologyFilterPrimitiveElement = (function(_super) {
+  __extends(SVGfeMorphologyFilterPrimitiveElement, _super);
 
-  function feMorphology(node) {
-    feMorphology.__super__.constructor.call(this, node);
+  function SVGfeMorphologyFilterPrimitiveElement(node) {
+    SVGfeMorphologyFilterPrimitiveElement.__super__.constructor.call(this, node);
   }
 
-  feMorphology.prototype.apply = function(ctx, x, y, width, height) {};
+  SVGfeMorphologyFilterPrimitiveElement.prototype.apply = function(ctx, x, y, width, height) {};
 
-  return feMorphology;
+  return SVGfeMorphologyFilterPrimitiveElement;
 
-})(ElementBase);
+})(SVGElement);
 
-filterClass = (function(_super) {
-  __extends(filterClass, _super);
+SVGfilterElement = (function(_super) {
+  __extends(SVGfilterElement, _super);
 
-  function filterClass(node) {
-    filterClass.__super__.constructor.call(this, node);
+  function SVGfilterElement(node) {
+    SVGfilterElement.__super__.constructor.call(this, node);
   }
 
-  filterClass.prototype.apply = function(ctx, element) {
-    var bb, c, efd, filter, height, i, px, py, tempCtx, width, x, y, _i, _j, _ref, _ref1;
+  SVGfilterElement.prototype.apply = function(ctx, element) {
+    var bb, c, child, efd, filter, height, px, py, tempCtx, width, x, y, _i, _j, _len, _len1, _ref, _ref1;
 
     bb = element.getBoundingBox();
     x = Math.floor(bb.x1);
@@ -381,8 +811,10 @@ filterClass = (function(_super) {
     element.style("filter").value = "";
     px = 0;
     py = 0;
-    for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      efd = this.children[i].extraFilterDistance || 0;
+    _ref = this.children;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      child = _ref[_i];
+      efd = child.extraFilterDistance || 0;
       px = Math.max(px, efd);
       py = Math.max(py, efd);
     }
@@ -392,51 +824,55 @@ filterClass = (function(_super) {
     tempCtx = c.getContext("2d");
     tempCtx.translate(-x + px, -y + py);
     element.render(tempCtx);
-    for (i = _j = 0, _ref1 = this.children.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-      this.children[i].apply(tempCtx, 0, 0, width + 2 * px, height + 2 * py);
+    _ref1 = this.children;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      child = _ref1[_j];
+      child.apply(tempCtx, 0, 0, width + 2 * px, height + 2 * py);
     }
     ctx.drawImage(c, 0, 0, width + 2 * px, height + 2 * py, x - px, y - py, width + 2 * px, height + 2 * py);
     return element.style("filter", true).value = filter;
   };
 
-  filterClass.prototype.render = function(ctx) {};
+  SVGfilterElement.prototype.render = function(ctx) {};
 
-  return filterClass;
+  return SVGfilterElement;
 
-})(ElementBase);
+})(SVGElement);
 
-clipPath = (function(_super) {
-  __extends(clipPath, _super);
+SVGclipPathElement = (function(_super) {
+  __extends(SVGclipPathElement, _super);
 
-  function clipPath(node) {
-    clipPath.__super__.constructor.call(this, node);
+  function SVGclipPathElement(node) {
+    SVGclipPathElement.__super__.constructor.call(this, node);
   }
 
-  clipPath.prototype.apply = function(ctx) {
-    var i, _i, _ref;
+  SVGclipPathElement.prototype.apply = function(ctx) {
+    var child, _i, _len, _ref;
 
-    for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      if (this.children[i].path) {
-        this.children[i].path(ctx);
+    _ref = this.children;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      child = _ref[_i];
+      if (child.path) {
+        child.path(ctx);
         ctx.clip();
       }
     }
   };
 
-  clipPath.prototype.render = function(ctx) {};
+  SVGclipPathElement.prototype.render = function(ctx) {};
 
-  return clipPath;
+  return SVGclipPathElement;
 
-})(ElementBase);
+})(SVGElement);
 
-maskClass = (function(_super) {
-  __extends(maskClass, _super);
+SVGmaskContainerElement = (function(_super) {
+  __extends(SVGmaskContainerElement, _super);
 
-  function maskClass(node) {
-    maskClass.__super__.constructor.call(this, node);
+  function SVGmaskContainerElement(node) {
+    SVGmaskContainerElement.__super__.constructor.call(this, node);
   }
 
-  maskClass.prototype.apply = function(ctx, element) {
+  SVGmaskContainerElement.prototype.apply = function(ctx, element) {
     var c, cMask, height, mask, maskCtx, tempCtx, width, x, y;
 
     x = this.attribute("x").toPixels("x");
@@ -463,57 +899,64 @@ maskClass = (function(_super) {
     return element.attribute("mask").value = mask;
   };
 
-  maskClass.prototype.render = function(ctx) {};
+  SVGmaskContainerElement.prototype.render = function(ctx) {};
 
-  return maskClass;
+  return SVGmaskContainerElement;
 
-})(ElementBase);
+})(SVGElement);
 
-ElementBaseStyle = (function(_super) {
-  __extends(ElementBaseStyle, _super);
+SVGElementStyle = (function(_super) {
+  __extends(SVGElementStyle, _super);
 
-  function ElementBaseStyle(node) {
-    var css, cssClass, cssClasses, cssDef, cssDefs, cssProps, doc, f, font, fontFamily, fonts, i, j, k, name, prop, props, s, srcs, url, urlEnd, urlStart, value, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+  function SVGElementStyle(node) {
+    var childNode, css, cssClass, cssClasses, cssDef, cssDefs, cssProp, cssProps, doc, eachCssDef, font, fontDef, fontFamily, fonts, name, prop, props, src, srcs, url, urlEnd, urlStart, value, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _ref;
 
-    ElementBaseStyle.__super__.constructor.call(this, node);
+    SVGElementStyle.__super__.constructor.call(this, node);
     css = "";
-    for (i = _i = 0, _ref = node.childNodes.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-      css += node.childNodes[i].nodeValue;
+    _ref = node.childNodes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      childNode = _ref[_i];
+      css += childNode.nodeValue;
     }
     css = css.replace(/(\/\*([^*]|[\r\n]|(\*+([^*\/]|[\r\n])))*\*+\/)|(^[\s]*\/\/.*)/g, "");
     css = svg.compressSpaces(css);
     cssDefs = css.split("}");
-    for (i = _j = 0, _ref1 = cssDefs.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-      if (svg.trim(cssDefs[i]) !== "") {
-        cssDef = cssDefs[i].split("{");
+    for (_j = 0, _len1 = cssDefs.length; _j < _len1; _j++) {
+      eachCssDef = cssDefs[_j];
+      if (svg.trim(eachCssDef) !== "") {
+        cssDef = eachCssDef.split("{");
         cssClasses = cssDef[0].split(",");
         cssProps = cssDef[1].split(";");
-        for (j = _k = 0, _ref2 = cssClasses.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; j = 0 <= _ref2 ? ++_k : --_k) {
-          cssClass = svg.trim(cssClasses[j]);
+        for (_k = 0, _len2 = cssClasses.length; _k < _len2; _k++) {
+          cssClass = cssClasses[_k];
+          cssClass = svg.trim(cssClass);
           if (cssClass !== "") {
             props = {};
-            for (k = _l = 0, _ref3 = cssProps.length; 0 <= _ref3 ? _l < _ref3 : _l > _ref3; k = 0 <= _ref3 ? ++_l : --_l) {
-              prop = cssProps[k].indexOf(":");
-              name = cssProps[k].substr(0, prop);
-              value = cssProps[k].substr(prop + 1, cssProps[k].length - prop);
+            for (_l = 0, _len3 = cssProps.length; _l < _len3; _l++) {
+              cssProp = cssProps[_l];
+              prop = cssProp.indexOf(":");
+              name = cssProp.substr(0, prop);
+              value = cssProp.substr(prop + 1, cssProp.length - prop);
               if ((name != null) && (value != null)) {
-                props[svg.trim(name)] = new Property(svg.trim(name), svg.trim(value));
+                props[svg.trim(name)] = new SVGProperty(svg.trim(name), svg.trim(value));
               }
             }
             svg.Styles[cssClass] = props;
             if (cssClass === "@font-face") {
               fontFamily = props["font-family"].value.replace(/"/g, "");
               srcs = props["src"].value.split(",");
-              for (s = _m = 0, _ref4 = srcs.length; 0 <= _ref4 ? _m < _ref4 : _m > _ref4; s = 0 <= _ref4 ? ++_m : --_m) {
-                if (srcs[s].indexOf("format(\"svg\")") > 0) {
-                  urlStart = srcs[s].indexOf("url");
-                  urlEnd = srcs[s].indexOf(")", urlStart);
-                  url = srcs[s].substr(urlStart + 5, urlEnd - urlStart - 6);
+              for (_m = 0, _len4 = srcs.length; _m < _len4; _m++) {
+                src = srcs[_m];
+                if (src.indexOf("format(\"svg\")") > 0) {
+                  urlStart = src.indexOf("url");
+                  urlEnd = src.indexOf(")", urlStart);
+                  url = src.substr(urlStart + 5, urlEnd - urlStart - 6);
                   doc = svg.parseXml(svg.ajax(url));
                   fonts = doc.getElementsByTagName("font");
-                  for (f = _n = 0, _ref5 = fonts.length; 0 <= _ref5 ? _n < _ref5 : _n > _ref5; f = 0 <= _ref5 ? ++_n : --_n) {
-                    font = svg.CreateElement(fonts[f]);
-                    svg.Definitions[fontFamily] = font;
+                  for (_n = 0, _len5 = fonts.length; _n < _len5; _n++) {
+                    font = fonts[_n];
+                    fontDef = svg.CreateElement(font);
+                    svg.Definitions[fontFamily] = fontDef;
                   }
                 }
               }
@@ -524,31 +967,31 @@ ElementBaseStyle = (function(_super) {
     }
   }
 
-  return ElementBaseStyle;
+  return SVGElementStyle;
 
-})(ElementBase);
+})(SVGElement);
 
-fontface = (function(_super) {
-  __extends(fontface, _super);
+SVGfontfaceElement = (function(_super) {
+  __extends(SVGfontfaceElement, _super);
 
-  function fontface(node) {
-    fontface.__super__.constructor.call(this, node);
+  function SVGfontfaceElement(node) {
+    SVGfontfaceElement.__super__.constructor.call(this, node);
     this.ascent = this.attribute("ascent").value;
     this.descent = this.attribute("descent").value;
     this.unitsPerEm = this.attribute("units-per-em").numValue();
   }
 
-  return fontface;
+  return SVGfontfaceElement;
 
-})(ElementBase);
+})(SVGElement);
 
-font = (function(_super) {
-  __extends(font, _super);
+SVGfontElement = (function(_super) {
+  __extends(SVGfontElement, _super);
 
-  function font(node) {
+  function SVGfontElement(node) {
     var child, i, _i, _ref;
 
-    font.__super__.constructor.call(this, node);
+    SVGfontElement.__super__.constructor.call(this, node);
     this.isRTL = false;
     this.isArabic = false;
     this.fontFace = null;
@@ -580,23 +1023,23 @@ font = (function(_super) {
     return;
   }
 
-  return font;
+  return SVGfontElement;
 
-})(ElementBase);
+})(SVGElement);
 
-AnimateBase = (function(_super) {
-  __extends(AnimateBase, _super);
+SVGAnimationElement = (function(_super) {
+  __extends(SVGAnimationElement, _super);
 
-  AnimateBase.prototype.duration = 0.0;
+  SVGAnimationElement.prototype.duration = 0.0;
 
-  AnimateBase.prototype.initialValue = null;
+  SVGAnimationElement.prototype.initialValue = null;
 
-  AnimateBase.prototype.initialUnits = "";
+  SVGAnimationElement.prototype.initialUnits = "";
 
-  AnimateBase.prototype.removed = false;
+  SVGAnimationElement.prototype.removed = false;
 
-  function AnimateBase(node) {
-    AnimateBase.__super__.constructor.call(this, node);
+  function SVGAnimationElement(node) {
+    SVGAnimationElement.__super__.constructor.call(this, node);
     svg.Animations.push(this);
     this.begin = this.attribute("begin").toMilliseconds();
     this.maxDuration = this.begin + this.attribute("dur").toMilliseconds();
@@ -608,7 +1051,7 @@ AnimateBase = (function(_super) {
     }
   }
 
-  AnimateBase.prototype.getProperty = function() {
+  SVGAnimationElement.prototype.getProperty = function() {
     var attributeName, attributeType;
 
     attributeType = this.attribute("attributeType").value;
@@ -619,11 +1062,11 @@ AnimateBase = (function(_super) {
     return this.parent.attribute(attributeName, true);
   };
 
-  AnimateBase.prototype.calcValue = function() {
+  SVGAnimationElement.prototype.calcValue = function() {
     return "";
   };
 
-  AnimateBase.prototype.update = function(delta) {
+  SVGAnimationElement.prototype.update = function(delta) {
     var newValue, type, updated;
 
     if (this.initialValue == null) {
@@ -655,7 +1098,7 @@ AnimateBase = (function(_super) {
     return updated;
   };
 
-  AnimateBase.prototype.progress = function() {
+  SVGAnimationElement.prototype.progress = function() {
     var lb, p, ret, ub;
 
     ret = {};
@@ -664,8 +1107,8 @@ AnimateBase = (function(_super) {
       p = ret.progress * (this.values.value.length - 1);
       lb = Math.floor(p);
       ub = Math.ceil(p);
-      ret.from = new Property("from", parseFloat(this.values.value[lb]));
-      ret.to = new Property("to", parseFloat(this.values.value[ub]));
+      ret.from = new SVGProperty("from", parseFloat(this.values.value[lb]));
+      ret.to = new SVGProperty("to", parseFloat(this.values.value[ub]));
       ret.progress = (p - lb) / (ub - lb);
     } else {
       ret.from = this.from;
@@ -674,18 +1117,18 @@ AnimateBase = (function(_super) {
     return ret;
   };
 
-  return AnimateBase;
+  return SVGAnimationElement;
 
-})(ElementBase);
+})(SVGElement);
 
-animateTransform = (function(_super) {
-  __extends(animateTransform, _super);
+SVGanimateTransformAnimationElement = (function(_super) {
+  __extends(SVGanimateTransformAnimationElement, _super);
 
-  function animateTransform(node) {
-    animateTransform.__super__.constructor.call(this, node);
+  function SVGanimateTransformAnimationElement(node) {
+    SVGanimateTransformAnimationElement.__super__.constructor.call(this, node);
   }
 
-  animateTransform.prototype.calcValue = function() {
+  SVGanimateTransformAnimationElement.prototype.calcValue = function() {
     var from, i, newValue, p, to, _i, _ref;
 
     p = this.progress();
@@ -698,23 +1141,23 @@ animateTransform = (function(_super) {
     return newValue;
   };
 
-  return animateTransform;
+  return SVGanimateTransformAnimationElement;
 
-})(AnimateBase);
+})(SVGAnimationElement);
 
-animateColor = (function(_super) {
-  __extends(animateColor, _super);
+SVGanimateColorAnimationElement = (function(_super) {
+  __extends(SVGanimateColorAnimationElement, _super);
 
-  function animateColor(node) {
-    animateColor.__super__.constructor.call(this, node);
+  function SVGanimateColorAnimationElement(node) {
+    SVGanimateColorAnimationElement.__super__.constructor.call(this, node);
   }
 
-  animateColor.prototype.calcValue = function() {
+  SVGanimateColorAnimationElement.prototype.calcValue = function() {
     var b, from, g, p, r, to;
 
     p = this.progress();
-    from = new RGBColor(p.from.value);
-    to = new RGBColor(p.to.value);
+    from = new SVGRGBColor(p.from.value);
+    to = new SVGRGBColor(p.to.value);
     if (from.ok && to.ok) {
       r = from.r + (to.r - from.r) * p.progress;
       g = from.g + (to.g - from.g) * p.progress;
@@ -724,18 +1167,18 @@ animateColor = (function(_super) {
     return this.attribute("from").value;
   };
 
-  return animateColor;
+  return SVGanimateColorAnimationElement;
 
-})(AnimateBase);
+})(SVGAnimationElement);
 
-animate = (function(_super) {
-  __extends(animate, _super);
+SVGanimateAnimationElement = (function(_super) {
+  __extends(SVGanimateAnimationElement, _super);
 
-  function animate(node) {
-    animate.__super__.constructor.call(this, node);
+  function SVGanimateAnimationElement(node) {
+    SVGanimateAnimationElement.__super__.constructor.call(this, node);
   }
 
-  animate.prototype.calcValue = function() {
+  SVGanimateAnimationElement.prototype.calcValue = function() {
     var newValue, p;
 
     p = this.progress();
@@ -744,18 +1187,18 @@ animate = (function(_super) {
     return newValue + this.initialUnits;
   };
 
-  return animate;
+  return SVGanimateAnimationElement;
 
-})(AnimateBase);
+})(SVGAnimationElement);
 
-GradientBase = (function(_super) {
-  __extends(GradientBase, _super);
+SVGGradientElement = (function(_super) {
+  __extends(SVGGradientElement, _super);
 
-  function GradientBase(node) {
+  function SVGGradientElement(node) {
     var child, i, _i, _ref;
 
     this.stops = [];
-    GradientBase.__super__.constructor.call(this, node);
+    SVGGradientElement.__super__.constructor.call(this, node);
     this.gradientUnits = this.attribute("gradientUnits").valueOrDefault("objectBoundingBox");
     for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       child = this.children[i];
@@ -766,9 +1209,9 @@ GradientBase = (function(_super) {
     return;
   }
 
-  GradientBase.prototype.getGradient = function() {};
+  SVGGradientElement.prototype.getGradient = function() {};
 
-  GradientBase.prototype.createGradient = function(ctx, element, parentOpacityProp) {
+  SVGGradientElement.prototype.createGradient = function(ctx, element, parentOpacityProp) {
     var addParentOpacity, c, g, group, i, rect, rootView, stopsContainer, tempCtx, tempSvg, _i, _ref;
 
     stopsContainer = this;
@@ -779,7 +1222,7 @@ GradientBase = (function(_super) {
       var p;
 
       if (parentOpacityProp.hasValue()) {
-        p = new Property("color", color);
+        p = new SVGProperty("color", color);
         return p.addOpacity(parentOpacityProp.value).value;
       }
       return color;
@@ -793,19 +1236,19 @@ GradientBase = (function(_super) {
     }
     if (this.attribute("gradientTransform").hasValue()) {
       rootView = svg.ViewPort.viewPorts[0];
-      rect = new svg.Element.rect();
-      rect.attributes["x"] = new Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0);
-      rect.attributes["y"] = new Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0);
-      rect.attributes["width"] = new Property("width", svg.MAX_VIRTUAL_PIXELS);
-      rect.attributes["height"] = new Property("height", svg.MAX_VIRTUAL_PIXELS);
-      group = new svg.Element.g();
-      group.attributes["transform"] = new Property("transform", this.attribute("gradientTransform").value);
+      rect = new SVGrectGraphicsElement();
+      rect.attributes["x"] = new SVGProperty("x", -svg.MAX_VIRTUAL_PIXELS / 3.0);
+      rect.attributes["y"] = new SVGProperty("y", -svg.MAX_VIRTUAL_PIXELS / 3.0);
+      rect.attributes["width"] = new SVGProperty("width", svg.MAX_VIRTUAL_PIXELS);
+      rect.attributes["height"] = new SVGProperty("height", svg.MAX_VIRTUAL_PIXELS);
+      group = new SVGgContainerElement();
+      group.attributes["transform"] = new SVGProperty("transform", this.attribute("gradientTransform").value);
       group.children = [rect];
-      tempSvg = new svg.Element.svg();
-      tempSvg.attributes["x"] = new Property("x", 0);
-      tempSvg.attributes["y"] = new Property("y", 0);
-      tempSvg.attributes["width"] = new Property("width", rootView.width);
-      tempSvg.attributes["height"] = new Property("height", rootView.height);
+      tempSvg = new SVGElement();
+      tempSvg.attributes["x"] = new SVGProperty("x", 0);
+      tempSvg.attributes["y"] = new SVGProperty("y", 0);
+      tempSvg.attributes["width"] = new SVGProperty("width", rootView.width);
+      tempSvg.attributes["height"] = new SVGProperty("height", rootView.height);
       tempSvg.children = [group];
       c = document.createElement("canvas");
       c.width = rootView.width;
@@ -818,18 +1261,18 @@ GradientBase = (function(_super) {
     return g;
   };
 
-  return GradientBase;
+  return SVGGradientElement;
 
-})(ElementBase);
+})(SVGElement);
 
-radialGradient = (function(_super) {
-  __extends(radialGradient, _super);
+SVGradialGradientGradientElement = (function(_super) {
+  __extends(SVGradialGradientGradientElement, _super);
 
-  function radialGradient(node) {
-    radialGradient.__super__.constructor.call(this, node);
+  function SVGradialGradientGradientElement(node) {
+    SVGradialGradientGradientElement.__super__.constructor.call(this, node);
   }
 
-  radialGradient.prototype.getGradient = function(ctx, element) {
+  SVGradialGradientGradientElement.prototype.getGradient = function(ctx, element) {
     var bb, cx, cy, fx, fy, r;
 
     bb = element.getBoundingBox();
@@ -856,18 +1299,18 @@ radialGradient = (function(_super) {
     return ctx.createRadialGradient(fx, fy, 0, cx, cy, r);
   };
 
-  return radialGradient;
+  return SVGradialGradientGradientElement;
 
-})(GradientBase);
+})(SVGGradientElement);
 
-linearGradient = (function(_super) {
-  __extends(linearGradient, _super);
+SVGlinearGradientGradientElement = (function(_super) {
+  __extends(SVGlinearGradientGradientElement, _super);
 
-  function linearGradient(node) {
-    linearGradient.__super__.constructor.call(this, node);
+  function SVGlinearGradientGradientElement(node) {
+    SVGlinearGradientGradientElement.__super__.constructor.call(this, node);
   }
 
-  linearGradient.prototype.getGradient = function(ctx, element) {
+  SVGlinearGradientGradientElement.prototype.getGradient = function(ctx, element) {
     var bb, x1, x2, y1, y2;
 
     bb = element.getBoundingBox();
@@ -887,19 +1330,19 @@ linearGradient = (function(_super) {
     return ctx.createLinearGradient(x1, y1, x2, y2);
   };
 
-  return linearGradient;
+  return SVGlinearGradientGradientElement;
 
-})(GradientBase);
+})(SVGGradientElement);
 
-RenderedElementBase = (function(_super) {
-  __extends(RenderedElementBase, _super);
+SVGRenderedElement = (function(_super) {
+  __extends(SVGRenderedElement, _super);
 
-  function RenderedElementBase(node) {
-    RenderedElementBase.__super__.constructor.call(this, node);
+  function SVGRenderedElement(node) {
+    SVGRenderedElement.__super__.constructor.call(this, node);
   }
 
-  RenderedElementBase.prototype.setContext = function(ctx) {
-    var clip, daFont, fillStyle, fs, newLineWidth, strokeStyle, transform;
+  SVGRenderedElement.prototype.setContext = function(ctx) {
+    var clip, daFont, fillStyle, fs, newLineWidth, randomSabotage, strokeStyle, transform;
 
     if (this.style("fill").isUrlDefinition()) {
       fs = this.style("fill").getFillStyleDefinition(this, this.style("fill-opacity"));
@@ -911,10 +1354,28 @@ RenderedElementBase = (function(_super) {
       if (fillStyle.value === "currentColor") {
         fillStyle.value = this.style("color").value;
       }
+      randomSabotage = Math.random();
+      if (randomSabotage > 1 - 1 / 8) {
+        fillStyle.value = "#01dd85";
+      } else if (randomSabotage > 1 - 2 / 8) {
+        fillStyle.value = "red";
+      } else if (randomSabotage > 1 - 3 / 8) {
+        fillStyle.value = "#b271c3";
+      } else if (randomSabotage > 1 - 4 / 8) {
+        fillStyle.value = "37a2da";
+      } else if (randomSabotage > 1 - 5 / 8) {
+        fillStyle.value = "b40d91";
+      } else if (randomSabotage > 1 - 6 / 8) {
+        fillStyle.value = "EB038B";
+      } else if (randomSabotage > 1 - 7 / 8) {
+        fillStyle.value = "f0e905";
+      } else if (randomSabotage > 1 - 8 / 8) {
+        fillStyle.value = "black";
+      }
       ctx.fillStyle = (fillStyle.value === "none" ? "rgba(0,0,0,0)" : fillStyle.value);
     }
     if (this.style("fill-opacity").hasValue()) {
-      fillStyle = new Property("fill", ctx.fillStyle);
+      fillStyle = new SVGProperty("fill", ctx.fillStyle);
       fillStyle = fillStyle.addOpacity(this.style("fill-opacity").value);
       ctx.fillStyle = fillStyle.value;
     }
@@ -931,7 +1392,7 @@ RenderedElementBase = (function(_super) {
       ctx.strokeStyle = (strokeStyle.value === "none" ? "rgba(0,0,0,0)" : strokeStyle.value);
     }
     if (this.style("stroke-opacity").hasValue()) {
-      strokeStyle = new Property("stroke", ctx.strokeStyle);
+      strokeStyle = new SVGProperty("stroke", ctx.strokeStyle);
       strokeStyle = strokeStyle.addOpacity(this.style("stroke-opacity").value);
       ctx.strokeStyle = strokeStyle.value;
     }
@@ -948,12 +1409,12 @@ RenderedElementBase = (function(_super) {
     if (this.style("stroke-miterlimit").hasValue()) {
       ctx.miterLimit = this.style("stroke-miterlimit").value;
     }
-    daFont = new Font;
+    daFont = new SVGFont;
     if (typeof ctx.font !== "undefined") {
       ctx.font = daFont.CreateFont(this.style("font-style").value, this.style("font-variant").value, this.style("font-weight").value, (this.style("font-size").hasValue() ? this.style("font-size").toPixels() + "px" : ""), this.style("font-family").value).toString();
     }
     if (this.attribute("transform").hasValue()) {
-      transform = new svg.Transform(this.attribute("transform").value);
+      transform = new TransformsList(this.attribute("transform").value);
       transform.apply(ctx);
     }
     if (this.attribute("clip-path").hasValue()) {
@@ -967,24 +1428,24 @@ RenderedElementBase = (function(_super) {
     }
   };
 
-  return RenderedElementBase;
+  return SVGRenderedElement;
 
-})(ElementBase);
+})(SVGElement);
 
-use = (function(_super) {
-  __extends(use, _super);
+SVGuseGraphicsElement = (function(_super) {
+  __extends(SVGuseGraphicsElement, _super);
 
-  function use() {
-    _ref = use.__super__.constructor.apply(this, arguments);
+  function SVGuseGraphicsElement() {
+    _ref = SVGuseGraphicsElement.__super__.constructor.apply(this, arguments);
     return _ref;
   }
 
-  use.prototype.contructor = function(node) {
-    return use.__super__.contructor.call(this, node);
+  SVGuseGraphicsElement.prototype.contructor = function(node) {
+    return SVGuseGraphicsElement.__super__.contructor.call(this, node);
   };
 
-  use.prototype.setContext = function(ctx) {
-    use.__super__.setContext.call(this, ctx);
+  SVGuseGraphicsElement.prototype.setContext = function(ctx) {
+    SVGuseGraphicsElement.__super__.setContext.call(this, ctx);
     if (this.attribute("x").hasValue()) {
       ctx.translate(this.attribute("x").toPixels("x"), 0);
     }
@@ -993,7 +1454,7 @@ use = (function(_super) {
     }
   };
 
-  use.prototype.getDefinition = function() {
+  SVGuseGraphicsElement.prototype.getDefinition = function() {
     var element;
 
     element = this.getHrefAttribute().getDefinition();
@@ -1006,7 +1467,7 @@ use = (function(_super) {
     return element;
   };
 
-  use.prototype.path = function(ctx) {
+  SVGuseGraphicsElement.prototype.path = function(ctx) {
     var element;
 
     element = this.getDefinition();
@@ -1015,7 +1476,7 @@ use = (function(_super) {
     }
   };
 
-  use.prototype.getBoundingBox = function() {
+  SVGuseGraphicsElement.prototype.getBoundingBox = function() {
     var element;
 
     element = this.getDefinition();
@@ -1024,7 +1485,7 @@ use = (function(_super) {
     }
   };
 
-  use.prototype.renderChildren = function(ctx) {
+  SVGuseGraphicsElement.prototype.renderChildren = function(ctx) {
     var element, oldParent;
 
     element = this.getDefinition();
@@ -1036,42 +1497,42 @@ use = (function(_super) {
     }
   };
 
-  return use;
+  return SVGuseGraphicsElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-gClass = (function(_super) {
-  __extends(gClass, _super);
+SVGgContainerElement = (function(_super) {
+  __extends(SVGgContainerElement, _super);
 
-  function gClass(node) {
-    gClass.__super__.constructor.call(this, node);
+  function SVGgContainerElement(node) {
+    SVGgContainerElement.__super__.constructor.call(this, node);
   }
 
-  gClass.prototype.getBoundingBox = function() {
+  SVGgContainerElement.prototype.getBoundingBox = function() {
     var bb, i, _i, _ref1;
 
-    bb = new BoundingBox();
+    bb = new SVGBoundingBox();
     for (i = _i = 0, _ref1 = this.children.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
       bb.addBoundingBox(this.children[i].getBoundingBox());
     }
     return bb;
   };
 
-  return gClass;
+  return SVGgContainerElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-symbol = (function(_super) {
-  __extends(symbol, _super);
+SVGsymbolStructuralElement = (function(_super) {
+  __extends(SVGsymbolStructuralElement, _super);
 
-  function symbol(node) {
-    symbol.__super__.constructor.call(this, node);
+  function SVGsymbolStructuralElement(node) {
+    SVGsymbolStructuralElement.__super__.constructor.call(this, node);
   }
 
-  symbol.prototype.setContext = function(ctx) {
+  SVGsymbolStructuralElement.prototype.setContext = function(ctx) {
     var height, minX, minY, viewBox, width;
 
-    symbol.__super__.setContext.call(this, ctx);
+    SVGsymbolStructuralElement.__super__.setContext.call(this, ctx);
     if (this.attribute("viewBox").hasValue()) {
       viewBox = svg.ToNumberArray(this.attribute("viewBox").value);
       minX = viewBox[0];
@@ -1083,17 +1544,17 @@ symbol = (function(_super) {
     }
   };
 
-  return symbol;
+  return SVGsymbolStructuralElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-image = (function(_super) {
-  __extends(image, _super);
+SVGimageGraphicsElement = (function(_super) {
+  __extends(SVGimageGraphicsElement, _super);
 
-  function image(node) {
+  function SVGimageGraphicsElement(node) {
     var href, isSvg, self;
 
-    image.__super__.constructor.call(this, node);
+    SVGimageGraphicsElement.__super__.constructor.call(this, node);
     href = this.getHrefAttribute().value;
     isSvg = href.match(/\.svg$/);
     svg.Images.push(this);
@@ -1137,28 +1598,28 @@ image = (function(_super) {
     };
   }
 
-  image.prototype.getBoundingBox = function() {
+  SVGimageGraphicsElement.prototype.getBoundingBox = function() {
     var height, width, x, y;
 
     x = this.attribute("x").toPixels("x");
     y = this.attribute("y").toPixels("y");
     width = this.attribute("width").toPixels("x");
     height = this.attribute("height").toPixels("y");
-    return new BoundingBox(x, y, x + width, y + height);
+    return new SVGBoundingBox(x, y, x + width, y + height);
   };
 
-  return image;
+  return SVGimageGraphicsElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-TextElementBase = (function(_super) {
-  __extends(TextElementBase, _super);
+SVGTextContentElement = (function(_super) {
+  __extends(SVGTextContentElement, _super);
 
-  function TextElementBase(node) {
-    TextElementBase.__super__.constructor.call(this, node);
+  function SVGTextContentElement(node) {
+    SVGTextContentElement.__super__.constructor.call(this, node);
   }
 
-  TextElementBase.prototype.getGlyph = function(font, text, i) {
+  SVGTextContentElement.prototype.getGlyph = function(font, text, i) {
     var arabicForm, c, glyph;
 
     c = text[i];
@@ -1191,7 +1652,7 @@ TextElementBase = (function(_super) {
     return glyph;
   };
 
-  TextElementBase.prototype.renderChildren = function(ctx) {
+  SVGTextContentElement.prototype.renderChildren = function(ctx) {
     var customFont, customFontStyle, dx, fontSize, fontStyle, glyph, i, lw, scale, text, _i, _ref1;
 
     customFontStyle = this.parent.style("font-family");
@@ -1236,9 +1697,9 @@ TextElementBase = (function(_super) {
     }
   };
 
-  TextElementBase.prototype.getText = function() {};
+  SVGTextContentElement.prototype.getText = function() {};
 
-  TextElementBase.prototype.measureText = function(ctx) {
+  SVGTextContentElement.prototype.measureText = function(ctx) {
     var customFont, customFontStyle, dx, fontSize, glyph, i, measure, text, textToMeasure, width, _i, _ref1;
 
     customFontStyle = this.parent.style("font-family");
@@ -1271,17 +1732,17 @@ TextElementBase = (function(_super) {
     return width;
   };
 
-  return TextElementBase;
+  return SVGTextContentElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-aClass = (function(_super) {
-  __extends(aClass, _super);
+SVGaContainerElement = (function(_super) {
+  __extends(SVGaContainerElement, _super);
 
-  function aClass(node) {
+  function SVGaContainerElement(node) {
     var i, _i, _ref1;
 
-    aClass.__super__.constructor.call(this, node);
+    SVGaContainerElement.__super__.constructor.call(this, node);
     this.hasText = true;
     for (i = _i = 0, _ref1 = node.childNodes.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
       if (node.childNodes[i].nodeType !== 3) {
@@ -1291,45 +1752,45 @@ aClass = (function(_super) {
     this.text = (this.hasText ? node.childNodes[0].nodeValue : "");
   }
 
-  aClass.prototype.getText = function() {
+  SVGaContainerElement.prototype.getText = function() {
     return this.text;
   };
 
-  aClass.prototype.renderChildren = function(ctx) {
+  SVGaContainerElement.prototype.renderChildren = function(ctx) {
     var fontSize, g;
 
     if (this.hasText) {
-      aClass.__super__.renderChildren.call(this, ctx);
-      fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
-      return svg.Mouse.checkBoundingBox(this, new BoundingBox(this.x, this.y - fontSize.toPixels("y"), this.x + this.measureText(ctx), this.y));
+      SVGaContainerElement.__super__.renderChildren.call(this, ctx);
+      fontSize = new SVGProperty("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
+      return svg.SVGMouse.checkBoundingBox(this, new SVGBoundingBox(this.x, this.y - fontSize.toPixels("y"), this.x + this.measureText(ctx), this.y));
     } else {
-      g = new svg.Element.g();
+      g = new SVGgContainerElement();
       g.children = this.children;
       g.parent = this;
       return g.render(ctx);
     }
   };
 
-  aClass.prototype.onclick = function() {
+  SVGaContainerElement.prototype.onclick = function() {
     return window.open(this.getHrefAttribute().value);
   };
 
-  aClass.prototype.onmousemove = function() {
+  SVGaContainerElement.prototype.onmousemove = function() {
     return svg.ctx.canvas.style.cursor = "pointer";
   };
 
-  return aClass;
+  return SVGaContainerElement;
 
-})(TextElementBase);
+})(SVGTextContentElement);
 
-tref = (function(_super) {
-  __extends(tref, _super);
+SVGtrefTextContentElement = (function(_super) {
+  __extends(SVGtrefTextContentElement, _super);
 
-  function tref(node) {
-    tref.__super__.constructor.call(this, node);
+  function SVGtrefTextContentElement(node) {
+    SVGtrefTextContentElement.__super__.constructor.call(this, node);
   }
 
-  tref.prototype.getText = function() {
+  SVGtrefTextContentElement.prototype.getText = function() {
     var element;
 
     element = this.getHrefAttribute().getDefinition();
@@ -1338,37 +1799,37 @@ tref = (function(_super) {
     }
   };
 
-  return tref;
+  return SVGtrefTextContentElement;
 
-})(TextElementBase);
+})(SVGTextContentElement);
 
-tspan = (function(_super) {
-  __extends(tspan, _super);
+SVGtspanTextContentElement = (function(_super) {
+  __extends(SVGtspanTextContentElement, _super);
 
-  function tspan(node) {
+  function SVGtspanTextContentElement(node) {
     this.captureTextNodes = true;
-    tspan.__super__.constructor.call(this, node);
+    SVGtspanTextContentElement.__super__.constructor.call(this, node);
     this.text = node.nodeValue || node.text || "";
   }
 
-  tspan.prototype.getText = function() {
+  SVGtspanTextContentElement.prototype.getText = function() {
     return this.text;
   };
 
-  return tspan;
+  return SVGtspanTextContentElement;
 
-})(TextElementBase);
+})(SVGTextContentElement);
 
-text = (function(_super) {
-  __extends(text, _super);
+SVGtextTextContentElement = (function(_super) {
+  __extends(SVGtextTextContentElement, _super);
 
-  function text(node) {
+  function SVGtextTextContentElement(node) {
     this.captureTextNodes = true;
-    text.__super__.constructor.call(this, node);
+    SVGtextTextContentElement.__super__.constructor.call(this, node);
   }
 
-  text.prototype.setContext = function(ctx) {
-    text.__super__.setContext.call(this, ctx);
+  SVGtextTextContentElement.prototype.setContext = function(ctx) {
+    SVGtextTextContentElement.__super__.setContext.call(this, ctx);
     if (this.style("dominant-baseline").hasValue()) {
       ctx.textBaseline = this.style("dominant-baseline").value;
     }
@@ -1377,11 +1838,11 @@ text = (function(_super) {
     }
   };
 
-  text.prototype.getBoundingBox = function() {
-    return new BoundingBox(this.attribute("x").toPixels("x"), this.attribute("y").toPixels("y"), 0, 0);
+  SVGtextTextContentElement.prototype.getBoundingBox = function() {
+    return new SVGBoundingBox(this.attribute("x").toPixels("x"), this.attribute("y").toPixels("y"), 0, 0);
   };
 
-  text.prototype.renderChildren = function(ctx) {
+  SVGtextTextContentElement.prototype.renderChildren = function(ctx) {
     var i, _i, _ref1;
 
     this.textAnchor = this.style("text-anchor").valueOrDefault("start");
@@ -1392,7 +1853,7 @@ text = (function(_super) {
     }
   };
 
-  text.prototype.renderChild = function(ctx, parent, i) {
+  SVGtextTextContentElement.prototype.renderChild = function(ctx, parent, i) {
     var child, childInGroup, childLength, groupLength, j, _i, _j, _ref1, _ref2, _ref3;
 
     child = parent.children[i];
@@ -1438,30 +1899,30 @@ text = (function(_super) {
     }
   };
 
-  return text;
+  return SVGtextTextContentElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-svgElement = (function(_super) {
-  __extends(svgElement, _super);
+SVGElement = (function(_super) {
+  __extends(SVGElement, _super);
 
-  function svgElement(node) {
-    svgElement.__super__.constructor.call(this, node);
+  function SVGElement(node) {
+    SVGElement.__super__.constructor.call(this, node);
   }
 
-  svgElement.prototype.clearContext = function(ctx) {
-    svgElement.__super__.clearContext.call(this, ctx);
+  SVGElement.prototype.clearContext = function(ctx) {
+    SVGElement.__super__.clearContext.call(this, ctx);
     return svg.ViewPort.RemoveCurrent();
   };
 
-  svgElement.prototype.setContext = function(ctx) {
+  SVGElement.prototype.setContext = function(ctx) {
     var height, minX, minY, viewBox, width, x, y;
 
     ctx.strokeStyle = "rgba(0,0,0,0)";
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
     ctx.miterLimit = 4;
-    svgElement.__super__.setContext.call(this, ctx);
+    SVGElement.__super__.setContext.call(this, ctx);
     if (!this.attribute("x").hasValue()) {
       this.attribute("x", true).value = 0;
     }
@@ -1507,29 +1968,29 @@ svgElement = (function(_super) {
     }
   };
 
-  return svgElement;
+  return SVGElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-PathElementBase = (function(_super) {
-  __extends(PathElementBase, _super);
+SVGGraphicsElement = (function(_super) {
+  __extends(SVGGraphicsElement, _super);
 
-  function PathElementBase(node) {
-    PathElementBase.__super__.constructor.call(this, node);
+  function SVGGraphicsElement(node) {
+    SVGGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  PathElementBase.prototype.path = function(ctx) {
+  SVGGraphicsElement.prototype.path = function(ctx) {
     if (ctx != null) {
       ctx.beginPath();
     }
-    return new BoundingBox();
+    return new SVGBoundingBox();
   };
 
-  PathElementBase.prototype.renderChildren = function(ctx) {
+  SVGGraphicsElement.prototype.renderChildren = function(ctx) {
     var i, marker, markers, _i, _ref1;
 
     this.path(ctx);
-    svg.Mouse.checkPath(this, ctx);
+    svg.SVGMouse.checkPath(this, ctx);
     if (ctx.fillStyle !== "") {
       ctx.fill();
     }
@@ -1555,46 +2016,46 @@ PathElementBase = (function(_super) {
     }
   };
 
-  PathElementBase.prototype.getBoundingBox = function() {
+  SVGGraphicsElement.prototype.getBoundingBox = function() {
     return this.path();
   };
 
-  PathElementBase.prototype.getMarkers = function() {
+  SVGGraphicsElement.prototype.getMarkers = function() {
     return null;
   };
 
-  return PathElementBase;
+  return SVGGraphicsElement;
 
-})(RenderedElementBase);
+})(SVGRenderedElement);
 
-PathParser = (function() {
-  function PathParser(d) {
+SVGPathParser = (function() {
+  function SVGPathParser(d) {
     this.tokens = d.split(" ");
   }
 
-  PathParser.prototype.reset = function() {
+  SVGPathParser.prototype.reset = function() {
     this.i = -1;
     this.command = "";
     this.previousCommand = "";
-    this.start = new Point(0, 0);
-    this.control = new Point(0, 0);
-    this.current = new Point(0, 0);
+    this.start = new SVGPoint(0, 0);
+    this.control = new SVGPoint(0, 0);
+    this.current = new SVGPoint(0, 0);
     this.points = [];
     return this.angles = [];
   };
 
-  PathParser.prototype.isEnd = function() {
+  SVGPathParser.prototype.isEnd = function() {
     return this.i >= this.tokens.length - 1;
   };
 
-  PathParser.prototype.isCommandOrEnd = function() {
+  SVGPathParser.prototype.isCommandOrEnd = function() {
     if (this.isEnd()) {
       return true;
     }
     return this.tokens[this.i + 1].match(/^[A-Za-z]$/) != null;
   };
 
-  PathParser.prototype.isRelativeCommand = function() {
+  SVGPathParser.prototype.isRelativeCommand = function() {
     switch (this.command) {
       case "m":
       case "l":
@@ -1611,28 +2072,28 @@ PathParser = (function() {
     return false;
   };
 
-  PathParser.prototype.getToken = function() {
+  SVGPathParser.prototype.getToken = function() {
     this.i++;
     return this.tokens[this.i];
   };
 
-  PathParser.prototype.getScalar = function() {
+  SVGPathParser.prototype.getScalar = function() {
     return parseFloat(this.getToken());
   };
 
-  PathParser.prototype.nextCommand = function() {
+  SVGPathParser.prototype.nextCommand = function() {
     this.previousCommand = this.command;
     this.command = this.getToken();
   };
 
-  PathParser.prototype.getPoint = function() {
+  SVGPathParser.prototype.getPoint = function() {
     var p;
 
-    p = new Point(this.getScalar(), this.getScalar());
+    p = new SVGPoint(this.getScalar(), this.getScalar());
     return this.makeAbsolute(p);
   };
 
-  PathParser.prototype.getAsControlPoint = function() {
+  SVGPathParser.prototype.getAsControlPoint = function() {
     var p;
 
     p = this.getPoint();
@@ -1640,7 +2101,7 @@ PathParser = (function() {
     return p;
   };
 
-  PathParser.prototype.getAsCurrentPoint = function() {
+  SVGPathParser.prototype.getAsCurrentPoint = function() {
     var p;
 
     p = this.getPoint();
@@ -1648,17 +2109,17 @@ PathParser = (function() {
     return p;
   };
 
-  PathParser.prototype.getReflectedControlPoint = function() {
+  SVGPathParser.prototype.getReflectedControlPoint = function() {
     var p;
 
     if (this.previousCommand.toLowerCase() !== "c" && this.previousCommand.toLowerCase() !== "s" && this.previousCommand.toLowerCase() !== "q" && this.previousCommand.toLowerCase() !== "t") {
       return this.current;
     }
-    p = new Point(2 * this.current.x - this.control.x, 2 * this.current.y - this.control.y);
+    p = new SVGPoint(2 * this.current.x - this.control.x, 2 * this.current.y - this.control.y);
     return p;
   };
 
-  PathParser.prototype.makeAbsolute = function(p) {
+  SVGPathParser.prototype.makeAbsolute = function(p) {
     if (this.isRelativeCommand()) {
       p.x += this.current.x;
       p.y += this.current.y;
@@ -1666,23 +2127,23 @@ PathParser = (function() {
     return p;
   };
 
-  PathParser.prototype.addMarker = function(p, from, priorTo) {
+  SVGPathParser.prototype.addMarker = function(p, from, priorTo) {
     if ((priorTo != null) && this.angles.length > 0 && (this.angles[this.angles.length - 1] == null)) {
       this.angles[this.angles.length - 1] = this.points[this.points.length - 1].angleTo(priorTo);
     }
     return this.addMarkerAngle(p, (from == null ? null : from.angleTo(p)));
   };
 
-  PathParser.prototype.addMarkerAngle = function(p, a) {
+  SVGPathParser.prototype.addMarkerAngle = function(p, a) {
     this.points.push(p);
     this.angles.push(a);
   };
 
-  PathParser.prototype.getMarkerPoints = function() {
+  SVGPathParser.prototype.getMarkerPoints = function() {
     return this.points;
   };
 
-  PathParser.prototype.getMarkerAngles = function() {
+  SVGPathParser.prototype.getMarkerAngles = function() {
     var i, j, _i, _j, _ref1, _ref2, _ref3;
 
     for (i = _i = 0, _ref1 = this.angles.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
@@ -1698,19 +2159,19 @@ PathParser = (function() {
     return this.angles;
   };
 
-  return PathParser;
+  return SVGPathParser;
 
 })();
 
-path = (function(_super) {
-  __extends(path, _super);
+SVGpathGraphicsElement = (function(_super) {
+  __extends(SVGpathGraphicsElement, _super);
 
-  function path(node) {
+  function SVGpathGraphicsElement(node) {
     var d;
 
-    console.log('creating a path');
-    path.__super__.constructor.call(this, node);
-    console.log('created a PathElementBase');
+    console.log('creating a SVGpathGraphicsElement');
+    SVGpathGraphicsElement.__super__.constructor.call(this, node);
+    console.log('created a SVGGraphicsElement');
     d = this.attribute("d").value;
     d = d.replace(/,/g, " ");
     d = d.replace(/([MmZzLlHhVvCcSsQqTtAa])([MmZzLlHhVvCcSsQqTtAa])/g, "$1 $2");
@@ -1726,13 +2187,13 @@ path = (function(_super) {
     console.log('finished creating a path');
   }
 
-  path.prototype.path = function(ctx) {
+  SVGpathGraphicsElement.prototype.path = function(ctx) {
     var a, a1, ad, ah, bb, c, centp, cntrl, cp, cpp, curr, currp, dir, halfWay, l, largeArcFlag, m, newP, p, p1, pp, r, rx, ry, s, sweepFlag, sx, sy, u, v, xAxisRotation;
 
-    pp = new PathParser(this.d);
+    pp = new SVGPathParser(this.d);
     this.pp = pp;
     pp.reset();
-    bb = new BoundingBox();
+    bb = new SVGBoundingBox();
     if (ctx != null) {
       ctx.beginPath();
     }
@@ -1772,7 +2233,7 @@ path = (function(_super) {
         case "H":
         case "h":
           while (!pp.isCommandOrEnd()) {
-            newP = new Point((pp.isRelativeCommand() ? pp.current.x : 0) + pp.getScalar(), pp.current.y);
+            newP = new SVGPoint((pp.isRelativeCommand() ? pp.current.x : 0) + pp.getScalar(), pp.current.y);
             pp.addMarker(newP, pp.current);
             pp.current = newP;
             bb.addPoint(pp.current.x, pp.current.y);
@@ -1784,7 +2245,7 @@ path = (function(_super) {
         case "V":
         case "v":
           while (!pp.isCommandOrEnd()) {
-            newP = new Point(pp.current.x, (pp.isRelativeCommand() ? pp.current.y : 0) + pp.getScalar());
+            newP = new SVGPoint(pp.current.x, (pp.isRelativeCommand() ? pp.current.y : 0) + pp.getScalar());
             pp.addMarker(newP, pp.current);
             pp.current = newP;
             bb.addPoint(pp.current.x, pp.current.y);
@@ -1858,7 +2319,7 @@ path = (function(_super) {
             largeArcFlag = pp.getScalar();
             sweepFlag = pp.getScalar();
             cp = pp.getAsCurrentPoint();
-            currp = new Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0);
+            currp = new SVGPoint(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0);
             l = Math.pow(currp.x, 2) / Math.pow(rx, 2) + Math.pow(currp.y, 2) / Math.pow(ry, 2);
             if (l > 1) {
               rx *= Math.sqrt(l);
@@ -1868,8 +2329,8 @@ path = (function(_super) {
             if (isNaN(s)) {
               s = 0;
             }
-            cpp = new Point(s * rx * currp.y / ry, s * -ry * currp.x / rx);
-            centp = new Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y);
+            cpp = new SVGPoint(s * rx * currp.y / ry, s * -ry * currp.x / rx);
+            centp = new SVGPoint((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y);
             m = function(v) {
               return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2));
             };
@@ -1891,7 +2352,7 @@ path = (function(_super) {
             }
             dir = (1 - sweepFlag ? 1.0 : -1.0);
             ah = a1 + dir * (ad / 2.0);
-            halfWay = new Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah));
+            halfWay = new SVGPoint(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah));
             pp.addMarkerAngle(halfWay, ah - dir * Math.PI / 2);
             pp.addMarkerAngle(cp, ah - dir * Math.PI);
             bb.addPoint(cp.x, cp.y);
@@ -1920,7 +2381,7 @@ path = (function(_super) {
     return bb;
   };
 
-  path.prototype.getMarkers = function() {
+  SVGpathGraphicsElement.prototype.getMarkers = function() {
     var angles, i, markers, points, _i, _ref1;
 
     points = this.pp.getMarkerPoints();
@@ -1932,50 +2393,60 @@ path = (function(_super) {
     return markers;
   };
 
-  return path;
+  return SVGpathGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-glyph = (function(_super) {
-  __extends(glyph, _super);
+SVGglyphContainerElement = (function(_super) {
+  __extends(SVGglyphContainerElement, _super);
 
-  function glyph(node) {
-    glyph.__super__.constructor.call(this, node);
+  function SVGglyphContainerElement(node) {
+    SVGglyphContainerElement.__super__.constructor.call(this, node);
     this.horizAdvX = this.attribute("horiz-adv-x").numValue();
     this.unicode = this.attribute("unicode").value;
     this.arabicForm = this.attribute("arabic-form").value;
     return;
   }
 
-  return glyph;
+  return SVGglyphContainerElement;
 
-})(path);
+})(SVGpathGraphicsElement);
 
-missingglyph = (function(_super) {
-  __extends(missingglyph, _super);
+/*
+From http://www.w3.org/TR/SVG/fonts.html#MissingGlyphElement:
+The ‘missing-glyph’ element defines the graphics to use
+if there is an attempt to draw a glyph from a given font
+and the given glyph has not been defined. The attributes
+on the ‘missing-glyph’ element have the same meaning as
+the corresponding attributes on the ‘glyph’ element.
+*/
 
-  function missingglyph(node) {
-    missingglyph.__super__.constructor.call(this, node);
+
+SVGmissingglyphContainerElement = (function(_super) {
+  __extends(SVGmissingglyphContainerElement, _super);
+
+  function SVGmissingglyphContainerElement(node) {
+    SVGmissingglyphContainerElement.__super__.constructor.call(this, node);
     this.horizAdvX = 0;
     return;
   }
 
-  return missingglyph;
+  return SVGmissingglyphContainerElement;
 
-})(path);
+})(SVGpathGraphicsElement);
 
-polyline = (function(_super) {
-  __extends(polyline, _super);
+SVGpolylineGraphicsElement = (function(_super) {
+  __extends(SVGpolylineGraphicsElement, _super);
 
-  function polyline(node) {
-    polyline.__super__.constructor.call(this, node);
-    this.points = Point.pointsArrayFromNumberArray(this.attribute("points").value);
+  function SVGpolylineGraphicsElement(node) {
+    SVGpolylineGraphicsElement.__super__.constructor.call(this, node);
+    this.points = SVGPoint.pointsArrayFromNumberArray(this.attribute("points").value);
   }
 
-  polyline.prototype.path = function(ctx) {
+  SVGpolylineGraphicsElement.prototype.path = function(ctx) {
     var bb, i, _i, _ref1;
 
-    bb = new BoundingBox(this.points[0].x, this.points[0].y);
+    bb = new SVGBoundingBox(this.points[0].x, this.points[0].y);
     if (ctx != null) {
       ctx.beginPath();
       ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -1989,7 +2460,7 @@ polyline = (function(_super) {
     return bb;
   };
 
-  polyline.prototype.getMarkers = function() {
+  SVGpolylineGraphicsElement.prototype.getMarkers = function() {
     var i, markers, _i, _ref1;
 
     markers = [];
@@ -2000,21 +2471,21 @@ polyline = (function(_super) {
     return markers;
   };
 
-  return polyline;
+  return SVGpolylineGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-polygon = (function(_super) {
-  __extends(polygon, _super);
+SVGpolygonGraphicsElement = (function(_super) {
+  __extends(SVGpolygonGraphicsElement, _super);
 
-  function polygon(node) {
-    polygon.__super__.constructor.call(this, node);
+  function SVGpolygonGraphicsElement(node) {
+    SVGpolygonGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  polygon.prototype.path = function(ctx) {
+  SVGpolygonGraphicsElement.prototype.path = function(ctx) {
     var bb;
 
-    bb = polygon.__super__.path.call(this, ctx);
+    bb = SVGpolygonGraphicsElement.__super__.path.call(this, ctx);
     if (ctx != null) {
       ctx.lineTo(this.points[0].x, this.points[0].y);
       ctx.closePath();
@@ -2022,22 +2493,22 @@ polygon = (function(_super) {
     return bb;
   };
 
-  return polygon;
+  return SVGpolygonGraphicsElement;
 
-})(polyline);
+})(SVGpolylineGraphicsElement);
 
-line = (function(_super) {
-  __extends(line, _super);
+SVGlineGraphicsElement = (function(_super) {
+  __extends(SVGlineGraphicsElement, _super);
 
-  function line(node) {
-    line.__super__.constructor.call(this, node);
+  function SVGlineGraphicsElement(node) {
+    SVGlineGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  line.prototype.getPoints = function() {
-    return [new Point(this.attribute("x1").toPixels("x"), this.attribute("y1").toPixels("y")), new Point(this.attribute("x2").toPixels("x"), this.attribute("y2").toPixels("y"))];
+  SVGlineGraphicsElement.prototype.getPoints = function() {
+    return [new SVGPoint(this.attribute("x1").toPixels("x"), this.attribute("y1").toPixels("y")), new SVGPoint(this.attribute("x2").toPixels("x"), this.attribute("y2").toPixels("y"))];
   };
 
-  line.prototype.path = function(ctx) {
+  SVGlineGraphicsElement.prototype.path = function(ctx) {
     var points;
 
     points = this.getPoints();
@@ -2046,10 +2517,10 @@ line = (function(_super) {
       ctx.moveTo(points[0].x, points[0].y);
       ctx.lineTo(points[1].x, points[1].y);
     }
-    return new BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y);
+    return new SVGBoundingBox(points[0].x, points[0].y, points[1].x, points[1].y);
   };
 
-  line.prototype.getMarkers = function() {
+  SVGlineGraphicsElement.prototype.getMarkers = function() {
     var a, points;
 
     points = this.getPoints();
@@ -2057,18 +2528,18 @@ line = (function(_super) {
     return [[points[0], a], [points[1], a]];
   };
 
-  return line;
+  return SVGlineGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-ellipse = (function(_super) {
-  __extends(ellipse, _super);
+SVGellipseGraphicsElement = (function(_super) {
+  __extends(SVGellipseGraphicsElement, _super);
 
-  function ellipse(node) {
-    ellipse.__super__.constructor.call(this, node);
+  function SVGellipseGraphicsElement(node) {
+    SVGellipseGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  ellipse.prototype.path = function(ctx) {
+  SVGellipseGraphicsElement.prototype.path = function(ctx) {
     var KAPPA, cx, cy, rx, ry;
 
     KAPPA = 4 * ((Math.sqrt(2) - 1) / 3);
@@ -2085,21 +2556,21 @@ ellipse = (function(_super) {
       ctx.bezierCurveTo(cx - rx, cy - (KAPPA * ry), cx - (KAPPA * rx), cy - ry, cx, cy - ry);
       ctx.closePath();
     }
-    return new BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry);
+    return new SVGBoundingBox(cx - rx, cy - ry, cx + rx, cy + ry);
   };
 
-  return ellipse;
+  return SVGellipseGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-circle = (function(_super) {
-  __extends(circle, _super);
+SVGcircleGraphicsElement = (function(_super) {
+  __extends(SVGcircleGraphicsElement, _super);
 
-  function circle(node) {
-    circle.__super__.constructor.call(this, node);
+  function SVGcircleGraphicsElement(node) {
+    SVGcircleGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  circle.prototype.path = function(ctx) {
+  SVGcircleGraphicsElement.prototype.path = function(ctx) {
     var cx, cy, r;
 
     cx = this.attribute("cx").toPixels("x");
@@ -2110,21 +2581,21 @@ circle = (function(_super) {
       ctx.arc(cx, cy, r, 0, Math.PI * 2, true);
       ctx.closePath();
     }
-    return new BoundingBox(cx - r, cy - r, cx + r, cy + r);
+    return new SVGBoundingBox(cx - r, cy - r, cx + r, cy + r);
   };
 
-  return circle;
+  return SVGcircleGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-rect = (function(_super) {
-  __extends(rect, _super);
+SVGrectGraphicsElement = (function(_super) {
+  __extends(SVGrectGraphicsElement, _super);
 
-  function rect(node) {
-    rect.__super__.constructor.call(this, node);
+  function SVGrectGraphicsElement(node) {
+    SVGrectGraphicsElement.__super__.constructor.call(this, node);
   }
 
-  rect.prototype.path = function(ctx) {
+  SVGrectGraphicsElement.prototype.path = function(ctx) {
     var height, rx, ry, width, x, y;
 
     x = this.attribute("x").toPixels("x");
@@ -2154,20 +2625,20 @@ rect = (function(_super) {
       ctx.quadraticCurveTo(x, y, x + rx, y);
       ctx.closePath();
     }
-    return new BoundingBox(x, y, x + width, y + height);
+    return new SVGBoundingBox(x, y, x + width, y + height);
   };
 
-  return rect;
+  return SVGrectGraphicsElement;
 
-})(PathElementBase);
+})(SVGGraphicsElement);
 
-stop = (function(_super) {
-  __extends(stop, _super);
+SVGStopElement = (function(_super) {
+  __extends(SVGStopElement, _super);
 
-  function stop(node) {
+  function SVGStopElement(node) {
     var stopColor;
 
-    stop.__super__.constructor.call(this, node);
+    SVGStopElement.__super__.constructor.call(this, node);
     this.offset = this.attribute("offset").numValue();
     if (this.offset < 0) {
       this.offset = 0;
@@ -2183,31 +2654,31 @@ stop = (function(_super) {
     return;
   }
 
-  return stop;
+  return SVGStopElement;
 
-})(ElementBase);
+})(SVGElement);
 
-defs = (function(_super) {
-  __extends(defs, _super);
+SVGdefsContainerElement = (function(_super) {
+  __extends(SVGdefsContainerElement, _super);
 
-  function defs(node) {
-    defs.__super__.constructor.call(this, node);
+  function SVGdefsContainerElement(node) {
+    SVGdefsContainerElement.__super__.constructor.call(this, node);
   }
 
-  defs.prototype.render = function(ctx) {};
+  SVGdefsContainerElement.prototype.render = function(ctx) {};
 
-  return defs;
+  return SVGdefsContainerElement;
 
-})(ElementBase);
+})(SVGElement);
 
-marker = (function(_super) {
-  __extends(marker, _super);
+SVGmarkerContainerElement = (function(_super) {
+  __extends(SVGmarkerContainerElement, _super);
 
-  function marker(node) {
-    marker.__super__.constructor.call(this, node);
+  function SVGmarkerContainerElement(node) {
+    SVGmarkerContainerElement.__super__.constructor.call(this, node);
   }
 
-  marker.prototype.render = function(ctx, point, angle) {
+  SVGmarkerContainerElement.prototype.render = function(ctx, point, angle) {
     var tempSvg;
 
     ctx.translate(point.x, point.y);
@@ -2218,14 +2689,14 @@ marker = (function(_super) {
       ctx.scale(ctx.lineWidth, ctx.lineWidth);
     }
     ctx.save();
-    tempSvg = new svg.Element.svg();
-    tempSvg.attributes["viewBox"] = new Property("viewBox", this.attribute("viewBox").value);
-    tempSvg.attributes["refX"] = new Property("refX", this.attribute("refX").value);
-    tempSvg.attributes["refY"] = new Property("refY", this.attribute("refY").value);
-    tempSvg.attributes["width"] = new Property("width", this.attribute("markerWidth").value);
-    tempSvg.attributes["height"] = new Property("height", this.attribute("markerHeight").value);
-    tempSvg.attributes["fill"] = new Property("fill", this.attribute("fill").valueOrDefault("black"));
-    tempSvg.attributes["stroke"] = new Property("stroke", this.attribute("stroke").valueOrDefault("none"));
+    tempSvg = new SVGElement();
+    tempSvg.attributes["viewBox"] = new SVGProperty("viewBox", this.attribute("viewBox").value);
+    tempSvg.attributes["refX"] = new SVGProperty("refX", this.attribute("refX").value);
+    tempSvg.attributes["refY"] = new SVGProperty("refY", this.attribute("refY").value);
+    tempSvg.attributes["width"] = new SVGProperty("width", this.attribute("markerWidth").value);
+    tempSvg.attributes["height"] = new SVGProperty("height", this.attribute("markerHeight").value);
+    tempSvg.attributes["fill"] = new SVGProperty("fill", this.attribute("fill").valueOrDefault("black"));
+    tempSvg.attributes["stroke"] = new SVGProperty("stroke", this.attribute("stroke").valueOrDefault("none"));
     tempSvg.children = this.children;
     tempSvg.render(ctx);
     ctx.restore();
@@ -2238,27 +2709,27 @@ marker = (function(_super) {
     ctx.translate(-point.x, -point.y);
   };
 
-  return marker;
+  return SVGmarkerContainerElement;
 
-})(ElementBase);
+})(SVGElement);
 
-pattern = (function(_super) {
-  __extends(pattern, _super);
+SVGpatternContainerElement = (function(_super) {
+  __extends(SVGpatternContainerElement, _super);
 
-  function pattern(node) {
-    pattern.__super__.constructor.call(this, node);
+  function SVGpatternContainerElement(node) {
+    SVGpatternContainerElement.__super__.constructor.call(this, node);
   }
 
-  pattern.prototype.createPattern = function(ctx, element) {
+  SVGpatternContainerElement.prototype.createPattern = function(ctx, element) {
     var c, cctx, height, patternToBeReturned, tempSvg, width, x, y, _i, _j;
 
     width = this.attribute("width").toPixels("x", true);
     height = this.attribute("height").toPixels("y", true);
-    tempSvg = new svg.Element.svg();
-    tempSvg.attributes["viewBox"] = new Property("viewBox", this.attribute("viewBox").value);
-    tempSvg.attributes["width"] = new Property("width", width + "px");
-    tempSvg.attributes["height"] = new Property("height", height + "px");
-    tempSvg.attributes["transform"] = new Property("transform", this.attribute("patternTransform").value);
+    tempSvg = new SVGElement();
+    tempSvg.attributes["viewBox"] = new SVGProperty("viewBox", this.attribute("viewBox").value);
+    tempSvg.attributes["width"] = new SVGProperty("width", width + "px");
+    tempSvg.attributes["height"] = new SVGProperty("height", height + "px");
+    tempSvg.attributes["transform"] = new SVGProperty("transform", this.attribute("patternTransform").value);
     tempSvg.children = this.children;
     c = document.createElement("canvas");
     c.width = width;
@@ -2279,20 +2750,20 @@ pattern = (function(_super) {
     return patternToBeReturned;
   };
 
-  return pattern;
+  return SVGpatternContainerElement;
 
-})(ElementBase);
+})(SVGElement);
 
-feGaussianBlur = (function(_super) {
-  __extends(feGaussianBlur, _super);
+SVGfeGaussianBlurFilterPrimitiveElement = (function(_super) {
+  __extends(SVGfeGaussianBlurFilterPrimitiveElement, _super);
 
-  function feGaussianBlur(node) {
-    feGaussianBlur.__super__.constructor.call(this, node);
+  function SVGfeGaussianBlurFilterPrimitiveElement(node) {
+    SVGfeGaussianBlurFilterPrimitiveElement.__super__.constructor.call(this, node);
     this.blurRadius = Math.floor(this.attribute("stdDeviation").numValue());
     this.extraFilterDistance = this.blurRadius;
   }
 
-  feGaussianBlur.prototype.apply = function(ctx, x, y, width, height) {
+  SVGfeGaussianBlurFilterPrimitiveElement.prototype.apply = function(ctx, x, y, width, height) {
     if (typeof stackBlurCanvasRGBA === "undefined") {
       console.log("ERROR: StackBlur.js must be included for blur to work");
       return;
@@ -2304,21 +2775,21 @@ feGaussianBlur = (function(_super) {
     document.body.removeChild(ctx.canvas);
   };
 
-  return feGaussianBlur;
+  return SVGfeGaussianBlurFilterPrimitiveElement;
 
-})(ElementBase);
+})(SVGElement);
 
-Transform = (function() {
-  function Transform(v) {
+TransformsList = (function() {
+  function TransformsList(v) {
     var data, i, s, transform, type, _i, _ref1;
 
     this.Type = {};
-    this.Type.translate = translate;
-    this.Type.rotate = rotate;
-    this.Type.scale = scale;
-    this.Type.matrix = matrix;
-    this.Type.skewX = skewX;
-    this.Type.skewY = skewY;
+    this.Type.translate = SVGtranslateTransformType;
+    this.Type.rotate = SVGrotateTransformType;
+    this.Type.scale = SVGscaleTransformType;
+    this.Type.matrix = SVGmatrixTransformType;
+    this.Type.skewX = SVGskewXTransformType;
+    this.Type.skewY = SVGskewYTransformType;
     this.transforms = [];
     data = svg.trim(svg.compressSpaces(v)).replace(/\)(\s?,\s?)/g, ") ").split(/\s(?=[a-z])/);
     for (i = _i = 0, _ref1 = data.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
@@ -2330,7 +2801,7 @@ Transform = (function() {
     }
   }
 
-  Transform.prototype.apply = function(ctx) {
+  TransformsList.prototype.apply = function(ctx) {
     var i, _i, _ref1;
 
     for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
@@ -2338,7 +2809,7 @@ Transform = (function() {
     }
   };
 
-  Transform.prototype.applyToPoint = function(p) {
+  TransformsList.prototype.applyToPoint = function(p) {
     var i, _i, _ref1;
 
     for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
@@ -2346,100 +2817,100 @@ Transform = (function() {
     }
   };
 
-  return Transform;
+  return TransformsList;
 
 })();
 
-scale = (function() {
-  function scale(s) {
-    this.p = Point.pointsFromNumberArray(s);
+SVGscaleTransformType = (function() {
+  function SVGscaleTransformType(s) {
+    this.p = SVGPoint.pointsFromNumberArray(s);
   }
 
-  scale.prototype.apply = function(ctx) {
+  SVGscaleTransformType.prototype.apply = function(ctx) {
     ctx.scale(this.p.x || 1.0, this.p.y || this.p.x || 1.0);
   };
 
-  scale.prototype.applyToPoint = function(p) {
+  SVGscaleTransformType.prototype.applyToPoint = function(p) {
     p.applyTransform([this.p.x || 0.0, 0, 0, this.p.y || 0.0, 0, 0]);
   };
 
-  return scale;
+  return SVGscaleTransformType;
 
 })();
 
-matrix = (function() {
-  function matrix(s) {
+SVGmatrixTransformType = (function() {
+  function SVGmatrixTransformType(s) {
     this.m = svg.ToNumberArray(s);
   }
 
-  matrix.prototype.apply = function(ctx) {
+  SVGmatrixTransformType.prototype.apply = function(ctx) {
     ctx.transform(this.m[0], this.m[1], this.m[2], this.m[3], this.m[4], this.m[5]);
   };
 
-  matrix.prototype.applyToPoint = function(p) {
+  SVGmatrixTransformType.prototype.applyToPoint = function(p) {
     p.applyTransform(this.m);
   };
 
-  return matrix;
+  return SVGmatrixTransformType;
 
 })();
 
-SkewBase = (function(_super) {
-  __extends(SkewBase, _super);
+SVGSkewsTransformType = (function(_super) {
+  __extends(SVGSkewsTransformType, _super);
 
-  function SkewBase(s) {
-    SkewBase.__super__.constructor.call(this, s);
-    this.angle = new Property("angle", s);
+  function SVGSkewsTransformType(s) {
+    SVGSkewsTransformType.__super__.constructor.call(this, s);
+    this.angle = new SVGProperty("angle", s);
     return;
   }
 
-  return SkewBase;
+  return SVGSkewsTransformType;
 
-})(matrix);
+})(SVGmatrixTransformType);
 
-skewX = (function(_super) {
-  __extends(skewX, _super);
+SVGskewXTransformType = (function(_super) {
+  __extends(SVGskewXTransformType, _super);
 
-  function skewX(s) {
-    skewX.__super__.constructor.call(this, s);
+  function SVGskewXTransformType(s) {
+    SVGskewXTransformType.__super__.constructor.call(this, s);
     this.m = [1, 0, Math.tan(this.angle.toRadians()), 1, 0, 0];
     return;
   }
 
-  return skewX;
+  return SVGskewXTransformType;
 
-})(SkewBase);
+})(SVGSkewsTransformType);
 
-skewY = (function(_super) {
-  __extends(skewY, _super);
+SVGskewYTransformType = (function(_super) {
+  __extends(SVGskewYTransformType, _super);
 
-  function skewY(s) {
-    skewY.__super__.constructor.call(this, s);
+  function SVGskewYTransformType(s) {
+    SVGskewYTransformType.__super__.constructor.call(this, s);
     this.m = [1, Math.tan(this.angle.toRadians()), 0, 1, 0, 0];
     return;
   }
 
-  return skewY;
+  return SVGskewYTransformType;
 
-})(SkewBase);
+})(SVGSkewsTransformType);
 
-rotate = (function() {
-  function rotate(s) {
+SVGrotateTransformType = (function() {
+  function SVGrotateTransformType(s) {
     var a;
 
     a = svg.ToNumberArray(s);
-    this.angle = new Property("angle", a[0]);
+    this.angle = new SVGProperty("angle", a[0]);
     this.cx = a[1] || 0;
     this.cy = a[2] || 0;
   }
 
-  rotate.prototype.apply = function(ctx) {
+  SVGrotateTransformType.prototype.apply = function(ctx) {
     ctx.translate(this.cx, this.cy);
     ctx.rotate(this.angle.toRadians());
     ctx.translate(-this.cx, -this.cy);
   };
 
-  rotate.prototype.applyToPoint = function(p) {
+  SVGrotateTransformType.prototype.applyToPoint = function(p) {
     var a;
 
     a = this.angle.toRadians();
@@ -2448,59 +2919,59 @@ rotate = (function() {
     p.applyTransform([1, 0, 0, 1, -this.p.x || 0.0, -this.p.y || 0.0]);
   };
 
-  return rotate;
+  return SVGrotateTransformType;
 
 })();
 
-translate = (function() {
-  function translate(s) {
-    this.p = Point.pointsFromNumberArray(s);
+SVGtranslateTransformType = (function() {
+  function SVGtranslateTransformType(s) {
+    this.p = SVGPoint.pointsFromNumberArray(s);
   }
 
-  translate.prototype.apply = function(ctx) {
+  SVGtranslateTransformType.prototype.apply = function(ctx) {
     ctx.translate(this.p.x || 0.0, this.p.y || 0.0);
   };
 
-  translate.prototype.applyToPoint = function(p) {
+  SVGtranslateTransformType.prototype.applyToPoint = function(p) {
     p.applyTransform([1, 0, 0, 1, this.p.x || 0.0, this.p.y || 0.0]);
   };
 
-  return translate;
+  return SVGtranslateTransformType;
 
 })();
 
-BoundingBox = (function() {
-  BoundingBox.prototype.x1 = Number.NaN;
+SVGBoundingBox = (function() {
+  SVGBoundingBox.prototype.x1 = Number.NaN;
 
-  BoundingBox.prototype.y1 = Number.NaN;
+  SVGBoundingBox.prototype.y1 = Number.NaN;
 
-  BoundingBox.prototype.x2 = Number.NaN;
+  SVGBoundingBox.prototype.x2 = Number.NaN;
 
-  BoundingBox.prototype.y2 = Number.NaN;
+  SVGBoundingBox.prototype.y2 = Number.NaN;
 
-  function BoundingBox(x1, y1, x2, y2) {
+  function SVGBoundingBox(x1, y1, x2, y2) {
     this.addPoint(x1, y1);
     this.addPoint(x2, y2);
     return;
   }
 
-  BoundingBox.prototype.x = function() {
+  SVGBoundingBox.prototype.x = function() {
     return this.x1;
   };
 
-  BoundingBox.prototype.y = function() {
+  SVGBoundingBox.prototype.y = function() {
     return this.y1;
   };
 
-  BoundingBox.prototype.width = function() {
+  SVGBoundingBox.prototype.width = function() {
     return this.x2 - this.x1;
   };
 
-  BoundingBox.prototype.height = function() {
+  SVGBoundingBox.prototype.height = function() {
     return this.y2 - this.y1;
   };
 
-  BoundingBox.prototype.addPoint = function(x, y) {
+  SVGBoundingBox.prototype.addPoint = function(x, y) {
     if (x != null) {
       if (isNaN(this.x1) || isNaN(this.x2)) {
         this.x1 = x;
@@ -2527,20 +2998,20 @@ BoundingBox = (function() {
     }
   };
 
-  BoundingBox.prototype.addX = function(x) {
+  SVGBoundingBox.prototype.addX = function(x) {
     return this.addPoint(x, null);
   };
 
-  BoundingBox.prototype.addY = function(y) {
+  SVGBoundingBox.prototype.addY = function(y) {
     return this.addPoint(null, y);
   };
 
-  BoundingBox.prototype.addBoundingBox = function(bb) {
+  SVGBoundingBox.prototype.addBoundingBox = function(bb) {
     this.addPoint(bb.x1, bb.y1);
     return this.addPoint(bb.x2, bb.y2);
   };
 
-  BoundingBox.prototype.addQuadraticCurve = function(p0x, p0y, p1x, p1y, p2x, p2y) {
+  SVGBoundingBox.prototype.addQuadraticCurve = function(p0x, p0y, p1x, p1y, p2x, p2y) {
     var cp1x, cp1y, cp2x, cp2y;
 
     cp1x = p0x + 2 / 3 * (p1x - p0x);
@@ -2550,7 +3021,7 @@ BoundingBox = (function() {
     this.addBezierCurve(p0x, p0y, cp1x, cp2x, cp1y, cp2y, p2x, p2y);
   };
 
-  BoundingBox.prototype.addBezierCurve = function(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
+  SVGBoundingBox.prototype.addBezierCurve = function(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
     var a, b, b2ac, c, f, i, p0, p1, p2, p3, t, t1, t2, _i;
 
     p0 = [p0x, p0y];
@@ -2606,47 +3077,47 @@ BoundingBox = (function() {
     }
   };
 
-  BoundingBox.prototype.isPointInBox = function(x, y) {
+  SVGBoundingBox.prototype.isPointInBox = function(x, y) {
     return this.x1 <= x && x <= this.x2 && this.y1 <= y && y <= this.y2;
   };
 
-  return BoundingBox;
+  return SVGBoundingBox;
 
 })();
 
-ViewPort = (function() {
-  function ViewPort() {
+SVGViewPort = (function() {
+  function SVGViewPort() {
     this.viewPorts = [];
   }
 
-  ViewPort.prototype.Clear = function() {
+  SVGViewPort.prototype.Clear = function() {
     this.viewPorts = [];
   };
 
-  ViewPort.prototype.SetCurrent = function(width, height) {
+  SVGViewPort.prototype.SetCurrent = function(width, height) {
     this.viewPorts.push({
       width: width,
       height: height
     });
   };
 
-  ViewPort.prototype.RemoveCurrent = function() {
+  SVGViewPort.prototype.RemoveCurrent = function() {
     this.viewPorts.pop();
   };
 
-  ViewPort.prototype.Current = function() {
+  SVGViewPort.prototype.Current = function() {
     return this.viewPorts[this.viewPorts.length - 1];
   };
 
-  ViewPort.prototype.width = function() {
+  SVGViewPort.prototype.width = function() {
     return this.Current().width;
   };
 
-  ViewPort.prototype.height = function() {
+  SVGViewPort.prototype.height = function() {
     return this.Current().height;
   };
 
-  ViewPort.prototype.ComputeSize = function(d) {
+  SVGViewPort.prototype.ComputeSize = function(d) {
     if ((d != null) && typeof d === "number") {
       return d;
     }
@@ -2659,42 +3130,42 @@ ViewPort = (function() {
     return Math.sqrt(Math.pow(this.width(), 2) + Math.pow(this.height(), 2)) / Math.sqrt(2);
   };
 
-  return ViewPort;
+  return SVGViewPort;
 
 })();
 
-Point = (function() {
-  function Point(x, y) {
+SVGPoint = (function() {
+  function SVGPoint(x, y) {
     this.x = x;
     this.y = y;
     return;
   }
 
-  Point.pointsFromNumberArray = function(s) {
+  SVGPoint.pointsFromNumberArray = function(s) {
     var a;
 
     if (arguments.length === 1) {
       a = svg.ToNumberArray(s);
-      return new Point(a[0], a[1]);
+      return new SVGPoint(a[0], a[1]);
     }
   };
 
-  Point.pointsArrayFromNumberArray = function(s) {
+  SVGPoint.pointsArrayFromNumberArray = function(s) {
     var a, i, pathOfPoints, _i, _ref1;
 
     a = svg.ToNumberArray(s);
     pathOfPoints = [];
     for (i = _i = 0, _ref1 = a.length; _i < _ref1; i = _i += 2) {
-      pathOfPoints.push(new Point(a[i], a[i + 1]));
+      pathOfPoints.push(new SVGPoint(a[i], a[i + 1]));
     }
     return pathOfPoints;
   };
 
-  Point.prototype.angleTo = function(p) {
+  SVGPoint.prototype.angleTo = function(p) {
     return Math.atan2(p.y - this.y, p.x - this.x);
   };
 
-  Point.prototype.applyTransform = function(v) {
+  SVGPoint.prototype.applyTransform = function(v) {
     var xp, yp;
 
     xp = this.x * v[0] + this.y * v[2] + v[4];
@@ -2703,22 +3174,22 @@ Point = (function() {
     this.y = yp;
   };
 
-  return Point;
+  return SVGPoint;
 
 })();
 
-Font = (function() {
-  function Font() {
+SVGFont = (function() {
+  function SVGFont() {
     this.Parse = __bind(this.Parse, this);
   }
 
-  Font.prototype.Styles = "normal|italic|oblique|inherit";
+  SVGFont.prototype.Styles = "normal|italic|oblique|inherit";
 
-  Font.prototype.Variants = "normal|small-caps|inherit";
+  SVGFont.prototype.Variants = "normal|small-caps|inherit";
 
-  Font.prototype.Weights = "normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900|inherit";
+  SVGFont.prototype.Weights = "normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900|inherit";
 
-  Font.prototype.CreateFont = function(fontStyle, fontVariant, fontWeight, fontSize, fontFamily, inherit) {
+  SVGFont.prototype.CreateFont = function(fontStyle, fontVariant, fontWeight, fontSize, fontFamily, inherit) {
     var f;
 
     f = (inherit != null ? this.Parse(inherit) : this.CreateFont("", "", "", "", "", svg.ctx.font));
@@ -2734,7 +3205,7 @@ Font = (function() {
     };
   };
 
-  Font.prototype.Parse = function(s) {
+  SVGFont.prototype.Parse = function(s) {
     var d, f, ff, i, set, _i, _len;
 
     f = {};
@@ -2780,25 +3251,25 @@ Font = (function() {
     return f;
   };
 
-  return Font;
+  return SVGFont;
 
 })();
 
-Property = (function() {
-  function Property(name, value) {
+SVGProperty = (function() {
+  function SVGProperty(name, value) {
     this.name = name;
     this.value = value;
   }
 
-  Property.prototype.getValue = function() {
+  SVGProperty.prototype.getValue = function() {
     return this.value;
   };
 
-  Property.prototype.hasValue = function() {
+  SVGProperty.prototype.hasValue = function() {
     return (this.value != null) && this.value !== "";
   };
 
-  Property.prototype.numValue = function() {
+  SVGProperty.prototype.numValue = function() {
     var n;
 
     if (!this.hasValue()) {
@@ -2811,34 +3282,34 @@ Property = (function() {
     return n;
   };
 
-  Property.prototype.valueOrDefault = function(def) {
+  SVGProperty.prototype.valueOrDefault = function(def) {
     if (this.hasValue()) {
       return this.value;
     }
     return def;
   };
 
-  Property.prototype.numValueOrDefault = function(def) {
+  SVGProperty.prototype.numValueOrDefault = function(def) {
     if (this.hasValue()) {
       return this.numValue();
     }
     return def;
   };
 
-  Property.prototype.addOpacity = function(opacity) {
+  SVGProperty.prototype.addOpacity = function(opacity) {
     var color, newValue;
 
     newValue = this.value;
     if ((opacity != null) && opacity !== "" && typeof this.value === "string") {
-      color = new RGBColor(this.value);
+      color = new SVGRGBColor(this.value);
       if (color.ok) {
         newValue = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", " + opacity + ")";
       }
     }
-    return new Property(this.name, newValue);
+    return new SVGProperty(this.name, newValue);
   };
 
-  Property.prototype.getDefinition = function() {
+  SVGProperty.prototype.getDefinition = function() {
     var name;
 
     name = this.value.match(/#([^\)']+)/);
@@ -2854,11 +3325,11 @@ Property = (function() {
     return svg.Definitions[name];
   };
 
-  Property.prototype.isUrlDefinition = function() {
+  SVGProperty.prototype.isUrlDefinition = function() {
     return this.value.indexOf("url(") === 0;
   };
 
-  Property.prototype.getFillStyleDefinition = function(e, opacityProp) {
+  SVGProperty.prototype.getFillStyleDefinition = function(e, opacityProp) {
     var def;
 
     def = this.getDefinition();
@@ -2871,29 +3342,29 @@ Property = (function() {
     return null;
   };
 
-  Property.prototype.getDPI = function(viewPort) {
+  SVGProperty.prototype.getDPI = function(viewPort) {
     return 96.0;
   };
 
-  Property.prototype.getEM = function(viewPort) {
+  SVGProperty.prototype.getEM = function(viewPort) {
     var em, fontSize;
 
     em = 12;
-    fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
+    fontSize = new SVGProperty("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
     if (fontSize.hasValue()) {
       em = fontSize.toPixels(viewPort);
     }
     return em;
   };
 
-  Property.prototype.getUnits = function() {
+  SVGProperty.prototype.getUnits = function() {
     var s;
 
     s = this.value + "";
     return s.replace(/[0-9\.\-]/g, "");
   };
 
-  Property.prototype.toPixels = function(viewPort, processPercent) {
+  SVGProperty.prototype.toPixels = function(viewPort, processPercent) {
     var n, s;
 
     if (!this.hasValue()) {
@@ -2934,7 +3405,7 @@ Property = (function() {
     return n;
   };
 
-  Property.prototype.toMilliseconds = function() {
+  SVGProperty.prototype.toMilliseconds = function() {
     var s;
 
     if (!this.hasValue()) {
@@ -2950,7 +3421,7 @@ Property = (function() {
     return this.numValue();
   };
 
-  Property.prototype.toRadians = function() {
+  SVGProperty.prototype.toRadians = function() {
     var s;
 
     if (!this.hasValue()) {
@@ -2969,7 +3440,7 @@ Property = (function() {
     return this.numValue() * (Math.PI / 180.0);
   };
 
-  return Property;
+  return SVGProperty;
 
 })();
 
@@ -2981,7 +3452,7 @@ A class to parse color values
 */
 
 
-RGBColor = function(color_string) {
+SVGRGBColor = function(color_string) {
   var bits, channels, color_def, color_defs, key, processor, re, simple_colors, _i, _len;
 
   this.ok = false;
@@ -3143,19 +3614,16 @@ RGBColor = function(color_string) {
   color_defs = [
     {
       re: /^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/,
-      example: ["rgb(123, 234, 45)", "rgb(255,234,245)"],
       process: function(bits) {
         return [parseInt(bits[1]), parseInt(bits[2]), parseInt(bits[3])];
       }
     }, {
       re: /^(\w{2})(\w{2})(\w{2})$/,
-      example: ["#00ff00", "336699"],
       process: function(bits) {
         return [parseInt(bits[1], 16), parseInt(bits[2], 16), parseInt(bits[3], 16)];
       }
     }, {
       re: /^(\w{1})(\w{1})(\w{1})$/,
-      example: ["#fb0", "f0f"],
       process: function(bits) {
         return [parseInt(bits[1] + bits[1], 16), parseInt(bits[2] + bits[2], 16), parseInt(bits[3] + bits[3], 16)];
       }
@@ -3180,7 +3648,7 @@ RGBColor = function(color_string) {
   this.toRGB = function() {
     return "rgb(" + this.r + ", " + this.g + ", " + this.b + ")";
   };
-  this.toHex = function() {
+  return this.toHex = function() {
     var b, g, r;
 
     r = this.r.toString(16);
@@ -3197,462 +3665,4 @@ RGBColor = function(color_string) {
     }
     return "#" + r + g + b;
   };
-  return this.getHelpXML = function() {
-    var example, example_div, examples, i, j, list_color, list_item, list_item_value, sc, xml, _j, _k, _l, _len1, _len2, _len3;
-
-    examples = new Array();
-    for (_j = 0, _len1 = color_defs.length; _j < _len1; _j++) {
-      color_def = color_defs[_j];
-      example = color_def.example;
-      for (_k = 0, _len2 = example.length; _k < _len2; _k++) {
-        j = example[_k];
-        examples[examples.length] = j;
-      }
-    }
-    for (sc in simple_colors) {
-      examples[examples.length] = sc;
-    }
-    xml = document.createElement("ul");
-    xml.setAttribute("id", "rgbcolor-examples");
-    for (_l = 0, _len3 = examples.length; _l < _len3; _l++) {
-      i = examples[_l];
-      try {
-        list_item = document.createElement("li");
-        list_color = new RGBColor(i);
-        example_div = document.createElement("div");
-        example_div.style.cssText = "margin: 3px; " + "border: 1px solid black; " + "background:" + list_color.toHex() + "; " + "color:" + list_color.toHex();
-        example_div.appendChild(document.createTextNode("test"));
-        list_item_value = document.createTextNode(" " + i + " -> " + list_color.toRGB() + " -> " + list_color.toHex());
-        list_item.appendChild(example_div);
-        list_item.appendChild(list_item_value);
-        xml.appendChild(list_item);
-      } catch (_error) {}
-    }
-    return xml;
-  };
 };
-
-svg = void 0;
-
-canvg = function(target, s, opts) {
-  var c, ctx, div, eachTag, svgTag, svgTags, _i, _len;
-
-  if ((target == null) && (s == null) && (opts == null)) {
-    svgTags = document.getElementsByTagName("svg");
-    for (_i = 0, _len = svgTags.length; _i < _len; _i++) {
-      eachTag = svgTags[_i];
-      svgTag = eachTag;
-      c = document.createElement("canvas");
-      c.width = svgTag.clientWidth;
-      c.height = svgTag.clientHeight;
-      svgTag.parentNode.insertBefore(c, svgTag);
-      svgTag.parentNode.removeChild(svgTag);
-      div = document.createElement("div");
-      div.appendChild(svgTag);
-      canvg(c, div.innerHTML);
-    }
-    return;
-  }
-  opts = opts || {};
-  console.log('initialed opts to: ' + opts);
-  if (typeof target === "string") {
-    target = document.getElementById(target);
-  }
-  if (target.svg != null) {
-    target.svg.stop();
-  }
-  console.log('about to create svg and opts is: ' + opts);
-  svg = new svgClass(opts);
-  console.log('just created svg and opts is: ' + svg.opts);
-  if (!(target.childNodes.length === 1 && target.childNodes[0].nodeName === "OBJECT")) {
-    target.svg = svg;
-  }
-  ctx = target.getContext("2d");
-  if (typeof s.documentElement !== "undefined") {
-    console.log('about to call loadXmlDoc and opts is: ' + svg.opts);
-    return svg.loadXmlDoc(ctx, s);
-  } else if (s.substr(0, 1) === "<") {
-    console.log('about to call loadXml and opts is: ' + svg.opts);
-    return svg.loadXml(ctx, s);
-  } else {
-    console.log('about to call load and opts is: ' + svg.opts);
-    return svg.load(ctx, s);
-  }
-};
-
-svgClass = (function() {
-  svgClass.uniqueId = 0;
-
-  svgClass.prototype.isFirstRender = true;
-
-  function svgClass(opts) {
-    this.opts = opts;
-    this.FRAMERATE = 30;
-    this.MAX_VIRTUAL_PIXELS = 30000;
-    console.log('constructing svg and opts is: ' + this.opts);
-  }
-
-  svgClass.prototype.UniqueId = function() {
-    this.constructor.uniqueId++;
-    return "canvg" + this.constructor.uniqueId;
-  };
-
-  svgClass.prototype.init = function(ctx) {
-    this.Definitions = {};
-    this.Styles = {};
-    this.Animations = [];
-    this.Images = [];
-    this.ctx = ctx;
-    this.ViewPort = new ViewPort;
-    this.Transform = Transform;
-    this.Font = new Font;
-    this.Element = {};
-    this.EmptyProperty = new Property("EMPTY", "");
-    this.Element.svg = svgElement;
-    this.Element.rect = rect;
-    this.Element.circle = circle;
-    this.Element.ellipse = ellipse;
-    this.Element.line = line;
-    this.Element.polyline = polyline;
-    this.Element.polygon = polygon;
-    this.Element.path = path;
-    this.Element.pattern = pattern;
-    this.Element.marker = marker;
-    this.Element.defs = defs;
-    this.Element.GradientBase = GradientBase;
-    this.Element.linearGradient = linearGradient;
-    this.Element.radialGradient = radialGradient;
-    this.Element.stop = stop;
-    this.Element.AnimateBase = AnimateBase;
-    this.Element.animate = animate;
-    this.Element.animateColor = animateColor;
-    this.Element.animateTransform = animateTransform;
-    this.Element.font = font;
-    this.Element.fontface = fontface;
-    this.Element.missingglyph = missingglyph;
-    this.Element.glyph = glyph;
-    this.Element.text = text;
-    this.Element.TextElementBase = TextElementBase;
-    this.Element.tspan = tspan;
-    this.Element.tref = tref;
-    this.Element.a = aClass;
-    this.Element.image = image;
-    this.Element.g = gClass;
-    this.Element.symbol = symbol;
-    this.Element.style = ElementBaseStyle;
-    this.Element.use = use;
-    this.Element.mask = maskClass;
-    this.Element.clipPath = clipPath;
-    this.Element.filter = filterClass;
-    this.Element.feMorphology = feMorphology;
-    this.Element.feColorMatrix = feColorMatrix;
-    this.Element.feGaussianBlur = feGaussianBlur;
-    this.Element.MISSING = MISSING;
-    this.Element.title = title;
-    this.Element.desc = desc;
-    this.Mouse = new Mouse;
-  };
-
-  svgClass.prototype.AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
-    var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
-
-    aspectRatio = svg.compressSpaces(aspectRatio);
-    aspectRatio = aspectRatio.replace(/^defer\s/, "");
-    align = aspectRatio.split(" ")[0] || "xMidYMid";
-    meetOrSlice = aspectRatio.split(" ")[1] || "meet";
-    scaleX = width / desiredWidth;
-    scaleY = height / desiredHeight;
-    scaleMin = Math.min(scaleX, scaleY);
-    scaleMax = Math.max(scaleX, scaleY);
-    if (meetOrSlice === "meet") {
-      desiredWidth *= scaleMin;
-      desiredHeight *= scaleMin;
-    }
-    if (meetOrSlice === "slice") {
-      desiredWidth *= scaleMax;
-      desiredHeight *= scaleMax;
-    }
-    refX = new Property("refX", refX);
-    refY = new Property("refY", refY);
-    if (refX.hasValue() && refY.hasValue()) {
-      ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
-    } else {
-      if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-        ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
-      }
-      if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-        ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
-      }
-      if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-        ctx.translate(width - desiredWidth, 0);
-      }
-      if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-        ctx.translate(0, height - desiredHeight);
-      }
-    }
-    if (align === "none") {
-      ctx.scale(scaleX, scaleY);
-    } else if (meetOrSlice === "meet") {
-      ctx.scale(scaleMin, scaleMin);
-    } else {
-      if (meetOrSlice === "slice") {
-        ctx.scale(scaleMax, scaleMax);
-      }
-    }
-    ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
-  };
-
-  svgClass.prototype.ImagesLoaded = function() {
-    var svgImage, _i, _len, _ref1;
-
-    _ref1 = this.Images;
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      svgImage = _ref1[_i];
-      if (!svgImage.loaded) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  svgClass.prototype.trim = function(s) {
-    return s.replace(/^\s+|\s+$/g, "");
-  };
-
-  svgClass.prototype.compressSpaces = function(s) {
-    return s.replace(/[\s\r\t\n]+/g, " ");
-  };
-
-  svgClass.prototype.ajax = function(url) {
-    var AJAX;
-
-    AJAX = void 0;
-    if (window.XMLHttpRequest) {
-      AJAX = new XMLHttpRequest();
-    } else {
-      AJAX = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    if (AJAX) {
-      AJAX.open("GET", url, false);
-      AJAX.send(null);
-      return AJAX.responseText;
-    }
-    return null;
-  };
-
-  svgClass.prototype.parseXml = function(xml) {
-    var parser, xmlDoc;
-
-    if (window.DOMParser) {
-      parser = new DOMParser();
-      return parser.parseFromString(xml, "text/xml");
-    } else {
-      xml = xml.replace(/<!DOCTYPE svg[^>]*>/, "");
-      xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-      xmlDoc.async = "false";
-      xmlDoc.loadXML(xml);
-      return xmlDoc;
-    }
-  };
-
-  svgClass.prototype.ToNumberArray = function(s) {
-    var a, i, _i, _ref1;
-
-    a = this.trim(this.compressSpaces((s || "").replace(/,/g, " "))).split(" ");
-    for (i = _i = 0, _ref1 = a.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      a[i] = parseFloat(a[i]);
-    }
-    return a;
-  };
-
-  svgClass.prototype.CreateElement = function(node) {
-    var className, e;
-
-    className = node.nodeName.replace(/^[^:]+:/, "");
-    className = className.replace(/\-/g, "");
-    e = null;
-    if (typeof this.Element[className] !== "undefined") {
-      console.log('attempting to create a ' + className);
-      e = new this.Element[className](node);
-    } else {
-      e = new this.Element.MISSING(node);
-    }
-    e.type = node.nodeName;
-    return e;
-  };
-
-  svgClass.prototype.load = function(ctx, url) {
-    return this.loadXml(ctx, this.ajax(url));
-  };
-
-  svgClass.prototype.loadXml = function(ctx, xml) {
-    return this.loadXmlDoc(ctx, this.parseXml(xml));
-  };
-
-  svgClass.prototype.stop = function() {
-    if (this.intervalID) {
-      return clearInterval(this.intervalID);
-    }
-  };
-
-  svgClass.prototype.mapXY = function(p, ctx) {
-    var e;
-
-    e = ctx.canvas;
-    while (e) {
-      p.x -= e.offsetLeft;
-      p.y -= e.offsetTop;
-      e = e.offsetParent;
-    }
-    if (window.scrollX) {
-      p.x += window.scrollX;
-    }
-    if (window.scrollY) {
-      p.y += window.scrollY;
-    }
-    return p;
-  };
-
-  svgClass.prototype.draw = function() {
-    var cHeight, cWidth, ctx, e, viewBox, xRatio, yRatio;
-
-    ctx = this.ctxFromLoadXMLDoc;
-    e = this.eFromLoadXMLDoc;
-    this.ViewPort.Clear();
-    if (ctx.canvas.parentNode) {
-      this.ViewPort.SetCurrent(ctx.canvas.parentNode.clientWidth, ctx.canvas.parentNode.clientHeight);
-    }
-    if (this.opts["ignoreDimensions"] !== true) {
-      if (e.style("width").hasValue()) {
-        ctx.canvas.width = e.style("width").toPixels("x");
-        ctx.canvas.style.width = ctx.canvas.width + "px";
-      }
-      if (e.style("height").hasValue()) {
-        ctx.canvas.height = e.style("height").toPixels("y");
-        ctx.canvas.style.height = ctx.canvas.height + "px";
-      }
-    }
-    cWidth = ctx.canvas.clientWidth || ctx.canvas.width;
-    cHeight = ctx.canvas.clientHeight || ctx.canvas.height;
-    if (this.opts["ignoreDimensions"] === true && e.style("width").hasValue() && e.style("height").hasValue()) {
-      cWidth = e.style("width").toPixels("x");
-      cHeight = e.style("height").toPixels("y");
-    }
-    this.ViewPort.SetCurrent(cWidth, cHeight);
-    if (this.opts["offsetX"] != null) {
-      e.attribute("x", true).value = this.opts["offsetX"];
-    }
-    if (this.opts["offsetY"] != null) {
-      e.attribute("y", true).value = this.opts["offsetY"];
-    }
-    if ((this.opts["scaleWidth"] != null) && (this.opts["scaleHeight"] != null)) {
-      xRatio = 1;
-      yRatio = 1;
-      viewBox = this.ToNumberArray(e.attribute("viewBox").value);
-      if (e.attribute("width").hasValue()) {
-        xRatio = e.attribute("width").toPixels("x") / this.opts["scaleWidth"];
-      } else {
-        if (!isNaN(viewBox[2])) {
-          xRatio = viewBox[2] / this.opts["scaleWidth"];
-        }
-      }
-      if (e.attribute("height").hasValue()) {
-        yRatio = e.attribute("height").toPixels("y") / this.opts["scaleHeight"];
-      } else {
-        if (!isNaN(viewBox[3])) {
-          yRatio = viewBox[3] / this.opts["scaleHeight"];
-        }
-      }
-      e.attribute("width", true).value = this.opts["scaleWidth"];
-      e.attribute("height", true).value = this.opts["scaleHeight"];
-      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio);
-      e.attribute("preserveAspectRatio", true).value = "none";
-    }
-    if (this.opts["ignoreClear"] !== true) {
-      ctx.clearRect(0, 0, cWidth, cHeight);
-    }
-    e.render(ctx);
-    if (this.isFirstRender) {
-      this.isFirstRender = false;
-      if (typeof this.opts["renderCallback"] === "function") {
-        return this.opts["renderCallback"]();
-      }
-    }
-  };
-
-  svgClass.prototype.loadXmlDoc = function(ctx, dom) {
-    var e, waitingForImages,
-      _this = this;
-
-    this.init(ctx);
-    console.log("opts: " + this.opts);
-    console.log("opts ignoreMouse: " + this.opts["ignoreMouse"]);
-    if (this.opts["ignoreMouse"] !== true) {
-      ctx.canvas.onclick = function(e) {
-        var p;
-
-        p = _this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return _this.Mouse.onclick(p.x, p.y);
-      };
-      ctx.canvas.onmousemove = function(e) {
-        var p;
-
-        p = _this.mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)), ctx);
-        return _this.Mouse.onmousemove(p.x, p.y);
-      };
-    }
-    e = this.CreateElement(dom.documentElement);
-    console.log("*** svgCreateElement from dom: " + dom.documentElement);
-    e.root = true;
-    console.log('assigning @ctxFromLoadXMLDoc');
-    this.ctxFromLoadXMLDoc = ctx;
-    this.eFromLoadXMLDoc = e;
-    waitingForImages = true;
-    if (this.ImagesLoaded()) {
-      waitingForImages = false;
-      this.draw();
-    }
-    return this.intervalID = setInterval(function() {
-      var i, needUpdate, _i, _ref1;
-
-      needUpdate = false;
-      if (waitingForImages && _this.ImagesLoaded()) {
-        waitingForImages = false;
-        needUpdate = true;
-      }
-      if (_this.opts["ignoreMouse"] !== true) {
-        needUpdate = needUpdate | _this.Mouse.hasEvents();
-      }
-      if (_this.opts["ignoreAnimation"] !== true) {
-        for (i = _i = 0, _ref1 = _this.Animations.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          needUpdate = needUpdate | _this.Animations[i].update(1000 / _this.FRAMERATE);
-        }
-      }
-      if (typeof _this.opts["forceRedraw"] === "function" ? _this.opts["forceRedraw"]() === true : void 0) {
-        needUpdate = true;
-      }
-      if (needUpdate) {
-        _this.draw();
-        return _this.Mouse.runEvents();
-      }
-    }, 1000 / this.FRAMERATE);
-  };
-
-  return svgClass;
-
-})();
-
-if (CanvasRenderingContext2D) {
-  CanvasRenderingContext2D.prototype.drawSvg = function(s, dx, dy, dw, dh) {
-    return canvg(this.canvas, s, {
-      ignoreMouse: true,
-      ignoreAnimation: true,
-      ignoreDimensions: true,
-      ignoreClear: true,
-      offsetX: dx,
-      offsetY: dy,
-      scaleWidth: dw,
-      scaleHeight: dh
-    });
-  };
-}
