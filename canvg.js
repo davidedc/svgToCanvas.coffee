@@ -1,7 +1,93 @@
-var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, ViewPort, a, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
+var AnimateBase, AspectRatio, BoundingBox, ElementBase, ElementBaseStyle, Font, GradientBase, MISSING, Mouse, PathElementBase, PathParser, Point, Property, RGBColor, RenderedElementBase, SkewBase, TextElementBase, Transform, ViewPort, a, animate, animateColor, animateTransform, canvg, circle, clipPath, defs, desc, ellipse, feColorMatrix, feGaussianBlur, feMorphology, filter, font, fontface, g, glyph, image, line, linearGradient, marker, mask, matrix, missingglyph, path, pattern, polygon, polyline, radialGradient, rect, rotate, scale, skewX, skewY, stop, svg, svgElement, symbol, text, title, translate, tref, tspan, use, _ref,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Mouse = (function() {
+  function Mouse() {
+    this.events = [];
+    this.eventElements = [];
+  }
+
+  Mouse.prototype.hasEvents = function() {
+    return this.events.length !== 0;
+  };
+
+  Mouse.prototype.onclick = function(x, y) {
+    return this.events.push({
+      type: "onclick",
+      x: x,
+      y: y,
+      run: function(e) {
+        if (e.onclick) {
+          return e.onclick();
+        }
+      }
+    });
+  };
+
+  Mouse.prototype.onmousemove = function(x, y) {
+    return this.events.push({
+      type: "onmousemove",
+      x: x,
+      y: y,
+      run: function(e) {
+        if (e.onmousemove) {
+          return e.onmousemove();
+        }
+      }
+    });
+  };
+
+  Mouse.prototype.checkPath = function(element, ctx) {
+    var e, i, _i, _ref, _results;
+
+    _results = [];
+    for (i = _i = 0, _ref = this.events.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      e = this.events[i];
+      if (ctx.isPointInPath && ctx.isPointInPath(e.x, e.y)) {
+        _results.push(this.eventElements[i] = element);
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  Mouse.prototype.checkBoundingBox = function(element, bb) {
+    var e, i, _i, _ref, _results;
+
+    _results = [];
+    for (i = _i = 0, _ref = this.events.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      e = this.events[i];
+      if (bb.isPointInBox(e.x, e.y)) {
+        _results.push(this.eventElements[i] = element);
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  Mouse.prototype.runEvents = function() {
+    var e, element, i, _i, _ref;
+
+    svg.ctx.canvas.style.cursor = "";
+    for (i = _i = 0, _ref = this.events.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      e = this.events[i];
+      element = this.eventElements[i];
+      while (element) {
+        e.run(element);
+        element = element.parent;
+      }
+    }
+    this.events = [];
+    return this.eventElements = [];
+  };
+
+  return Mouse;
+
+})();
 
 ElementBase = (function() {
   function ElementBase(node) {
@@ -22,7 +108,7 @@ ElementBase = (function() {
       }
       for (i = _j = 0, _ref1 = node.attributes.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
         attribute = node.attributes[i];
-        this.attributes[attribute.nodeName] = new svg.Property(attribute.nodeName, attribute.nodeValue);
+        this.attributes[attribute.nodeName] = new Property(attribute.nodeName, attribute.nodeValue);
       }
       styles = svg.Styles[node.nodeName];
       if (styles != null) {
@@ -62,7 +148,7 @@ ElementBase = (function() {
             style = styles[i].split(":");
             name = svg.trim(style[0]);
             value = svg.trim(style[1]);
-            this.styles[name] = new svg.Property(name, value);
+            this.styles[name] = new Property(name, value);
           }
         }
       }
@@ -81,7 +167,7 @@ ElementBase = (function() {
       return a;
     }
     if (createIfNotExists === true) {
-      a = new svg.Property(name, "");
+      a = new Property(name, "");
       this.attributes[name] = a;
     }
     return a || svg.EmptyProperty;
@@ -103,8 +189,10 @@ ElementBase = (function() {
 
     console.log("name, createIfNotExists " + name + " " + createIfNotExists);
     console.log("@styles " + this.styles + " class name: " + this.constructor.name);
-    if (this.constructor.name === "title") {
+    if (this.constructor.name === "title" || this.constructor.name === "desc" || this.constructor.name === "MISSING") {
       console.log("for the break");
+      console.trace();
+      return svg.EmptyProperty;
     }
     if (this.styles === void 0) {
       console.trace();
@@ -126,7 +214,7 @@ ElementBase = (function() {
       }
     }
     if (createIfNotExists === true) {
-      s = new svg.Property(name, "");
+      s = new Property(name, "");
       this.styles[name] = s;
     }
     return s || svg.EmptyProperty;
@@ -175,9 +263,14 @@ ElementBase = (function() {
   ElementBase.prototype.addChild = function(childNode, create) {
     var child;
 
+    console.log("addchild childNode: " + childNode);
+    console.log("typeof: " + typeof childNode);
     child = childNode;
     if (create) {
       child = svg.CreateElement(childNode);
+    }
+    if (child === null) {
+      return;
     }
     child.parent = this;
     return this.children.push(child);
@@ -406,7 +499,7 @@ ElementBaseStyle = (function(_super) {
               name = cssProps[k].substr(0, prop);
               value = cssProps[k].substr(prop + 1, cssProps[k].length - prop);
               if ((name != null) && (value != null)) {
-                props[svg.trim(name)] = new svg.Property(svg.trim(name), svg.trim(value));
+                props[svg.trim(name)] = new Property(svg.trim(name), svg.trim(value));
               }
             }
             svg.Styles[cssClass] = props;
@@ -572,8 +665,8 @@ AnimateBase = (function(_super) {
       p = ret.progress * (this.values.value.length - 1);
       lb = Math.floor(p);
       ub = Math.ceil(p);
-      ret.from = new svg.Property("from", parseFloat(this.values.value[lb]));
-      ret.to = new svg.Property("to", parseFloat(this.values.value[ub]));
+      ret.from = new Property("from", parseFloat(this.values.value[lb]));
+      ret.to = new Property("to", parseFloat(this.values.value[ub]));
       ret.progress = (p - lb) / (ub - lb);
     } else {
       ret.from = this.from;
@@ -686,7 +779,7 @@ GradientBase = (function(_super) {
       var p;
 
       if (parentOpacityProp.hasValue()) {
-        p = new svg.Property("color", color);
+        p = new Property("color", color);
         return p.addOpacity(parentOpacityProp.value).value;
       }
       return color;
@@ -701,18 +794,18 @@ GradientBase = (function(_super) {
     if (this.attribute("gradientTransform").hasValue()) {
       rootView = svg.ViewPort.viewPorts[0];
       rect = new svg.Element.rect();
-      rect.attributes["x"] = new svg.Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0);
-      rect.attributes["y"] = new svg.Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0);
-      rect.attributes["width"] = new svg.Property("width", svg.MAX_VIRTUAL_PIXELS);
-      rect.attributes["height"] = new svg.Property("height", svg.MAX_VIRTUAL_PIXELS);
+      rect.attributes["x"] = new Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0);
+      rect.attributes["y"] = new Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0);
+      rect.attributes["width"] = new Property("width", svg.MAX_VIRTUAL_PIXELS);
+      rect.attributes["height"] = new Property("height", svg.MAX_VIRTUAL_PIXELS);
       group = new svg.Element.g();
-      group.attributes["transform"] = new svg.Property("transform", this.attribute("gradientTransform").value);
+      group.attributes["transform"] = new Property("transform", this.attribute("gradientTransform").value);
       group.children = [rect];
       tempSvg = new svg.Element.svg();
-      tempSvg.attributes["x"] = new svg.Property("x", 0);
-      tempSvg.attributes["y"] = new svg.Property("y", 0);
-      tempSvg.attributes["width"] = new svg.Property("width", rootView.width);
-      tempSvg.attributes["height"] = new svg.Property("height", rootView.height);
+      tempSvg.attributes["x"] = new Property("x", 0);
+      tempSvg.attributes["y"] = new Property("y", 0);
+      tempSvg.attributes["width"] = new Property("width", rootView.width);
+      tempSvg.attributes["height"] = new Property("height", rootView.height);
       tempSvg.children = [group];
       c = document.createElement("canvas");
       c.width = rootView.width;
@@ -821,7 +914,7 @@ RenderedElementBase = (function(_super) {
       ctx.fillStyle = (fillStyle.value === "none" ? "rgba(0,0,0,0)" : fillStyle.value);
     }
     if (this.style("fill-opacity").hasValue()) {
-      fillStyle = new svg.Property("fill", ctx.fillStyle);
+      fillStyle = new Property("fill", ctx.fillStyle);
       fillStyle = fillStyle.addOpacity(this.style("fill-opacity").value);
       ctx.fillStyle = fillStyle.value;
     }
@@ -838,7 +931,7 @@ RenderedElementBase = (function(_super) {
       ctx.strokeStyle = (strokeStyle.value === "none" ? "rgba(0,0,0,0)" : strokeStyle.value);
     }
     if (this.style("stroke-opacity").hasValue()) {
-      strokeStyle = new svg.Property("stroke", ctx.strokeStyle);
+      strokeStyle = new Property("stroke", ctx.strokeStyle);
       strokeStyle = strokeStyle.addOpacity(this.style("stroke-opacity").value);
       ctx.strokeStyle = strokeStyle.value;
     }
@@ -956,7 +1049,7 @@ g = (function(_super) {
   g.prototype.getBoundingBox = function() {
     var bb, i, _i, _ref1;
 
-    bb = new svg.BoundingBox();
+    bb = new BoundingBox();
     for (i = _i = 0, _ref1 = this.children.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
       bb.addBoundingBox(this.children[i].getBoundingBox());
     }
@@ -1050,7 +1143,7 @@ image = (function(_super) {
     y = this.attribute("y").toPixels("y");
     width = this.attribute("width").toPixels("x");
     height = this.attribute("height").toPixels("y");
-    return new svg.BoundingBox(x, y, x + width, y + height);
+    return new BoundingBox(x, y, x + width, y + height);
   };
 
   return image;
@@ -1202,8 +1295,8 @@ a = (function(_super) {
 
     if (this.hasText) {
       a.__super__.renderChildren.call(this, ctx);
-      fontSize = new svg.Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
-      return svg.Mouse.checkBoundingBox(this, new svg.BoundingBox(this.x, this.y - fontSize.toPixels("y"), this.x + this.measureText(ctx), this.y));
+      fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
+      return svg.Mouse.checkBoundingBox(this, new BoundingBox(this.x, this.y - fontSize.toPixels("y"), this.x + this.measureText(ctx), this.y));
     } else {
       g = new svg.Element.g();
       g.children = this.children;
@@ -1280,7 +1373,7 @@ text = (function(_super) {
   };
 
   text.prototype.getBoundingBox = function() {
-    return new svg.BoundingBox(this.attribute("x").toPixels("x"), this.attribute("y").toPixels("y"), 0, 0);
+    return new BoundingBox(this.attribute("x").toPixels("x"), this.attribute("y").toPixels("y"), 0, 0);
   };
 
   text.prototype.renderChildren = function(ctx) {
@@ -1424,7 +1517,7 @@ PathElementBase = (function(_super) {
     if (ctx != null) {
       ctx.beginPath();
     }
-    return new svg.BoundingBox();
+    return new BoundingBox();
   };
 
   PathElementBase.prototype.renderChildren = function(ctx) {
@@ -1478,9 +1571,9 @@ PathParser = (function() {
     this.i = -1;
     this.command = "";
     this.previousCommand = "";
-    this.start = new svg.Point(0, 0);
-    this.control = new svg.Point(0, 0);
-    this.current = new svg.Point(0, 0);
+    this.start = new Point(0, 0);
+    this.control = new Point(0, 0);
+    this.current = new Point(0, 0);
     this.points = [];
     return this.angles = [];
   };
@@ -1530,7 +1623,7 @@ PathParser = (function() {
   PathParser.prototype.getPoint = function() {
     var p;
 
-    p = new svg.Point(this.getScalar(), this.getScalar());
+    p = new Point(this.getScalar(), this.getScalar());
     return this.makeAbsolute(p);
   };
 
@@ -1556,7 +1649,7 @@ PathParser = (function() {
     if (this.previousCommand.toLowerCase() !== "c" && this.previousCommand.toLowerCase() !== "s" && this.previousCommand.toLowerCase() !== "q" && this.previousCommand.toLowerCase() !== "t") {
       return this.current;
     }
-    p = new svg.Point(2 * this.current.x - this.control.x, 2 * this.current.y - this.control.y);
+    p = new Point(2 * this.current.x - this.control.x, 2 * this.current.y - this.control.y);
     return p;
   };
 
@@ -1631,7 +1724,7 @@ path = (function(_super) {
     pp = new PathParser(this.d);
     this.pp = pp;
     pp.reset();
-    bb = new svg.BoundingBox();
+    bb = new BoundingBox();
     if (ctx != null) {
       ctx.beginPath();
     }
@@ -1671,7 +1764,7 @@ path = (function(_super) {
         case "H":
         case "h":
           while (!pp.isCommandOrEnd()) {
-            newP = new svg.Point((pp.isRelativeCommand() ? pp.current.x : 0) + pp.getScalar(), pp.current.y);
+            newP = new Point((pp.isRelativeCommand() ? pp.current.x : 0) + pp.getScalar(), pp.current.y);
             pp.addMarker(newP, pp.current);
             pp.current = newP;
             bb.addPoint(pp.current.x, pp.current.y);
@@ -1683,7 +1776,7 @@ path = (function(_super) {
         case "V":
         case "v":
           while (!pp.isCommandOrEnd()) {
-            newP = new svg.Point(pp.current.x, (pp.isRelativeCommand() ? pp.current.y : 0) + pp.getScalar());
+            newP = new Point(pp.current.x, (pp.isRelativeCommand() ? pp.current.y : 0) + pp.getScalar());
             pp.addMarker(newP, pp.current);
             pp.current = newP;
             bb.addPoint(pp.current.x, pp.current.y);
@@ -1757,7 +1850,7 @@ path = (function(_super) {
             largeArcFlag = pp.getScalar();
             sweepFlag = pp.getScalar();
             cp = pp.getAsCurrentPoint();
-            currp = new svg.Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0);
+            currp = new Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0);
             l = Math.pow(currp.x, 2) / Math.pow(rx, 2) + Math.pow(currp.y, 2) / Math.pow(ry, 2);
             if (l > 1) {
               rx *= Math.sqrt(l);
@@ -1767,8 +1860,8 @@ path = (function(_super) {
             if (isNaN(s)) {
               s = 0;
             }
-            cpp = new svg.Point(s * rx * currp.y / ry, s * -ry * currp.x / rx);
-            centp = new svg.Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y);
+            cpp = new Point(s * rx * currp.y / ry, s * -ry * currp.x / rx);
+            centp = new Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y);
             m = function(v) {
               return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2));
             };
@@ -1790,7 +1883,7 @@ path = (function(_super) {
             }
             dir = (1 - sweepFlag ? 1.0 : -1.0);
             ah = a1 + dir * (ad / 2.0);
-            halfWay = new svg.Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah));
+            halfWay = new Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah));
             pp.addMarkerAngle(halfWay, ah - dir * Math.PI / 2);
             pp.addMarkerAngle(cp, ah - dir * Math.PI);
             bb.addPoint(cp.x, cp.y);
@@ -1868,13 +1961,13 @@ polyline = (function(_super) {
 
   function polyline(node) {
     polyline.__super__.constructor.call(this, node);
-    this.points = svg.CreatePath(this.attribute("points").value);
+    this.points = Point.pointsArrayFromNumberArray(this.attribute("points").value);
   }
 
   polyline.prototype.path = function(ctx) {
     var bb, i, _i, _ref1;
 
-    bb = new svg.BoundingBox(this.points[0].x, this.points[0].y);
+    bb = new BoundingBox(this.points[0].x, this.points[0].y);
     if (ctx != null) {
       ctx.beginPath();
       ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -1933,7 +2026,7 @@ line = (function(_super) {
   }
 
   line.prototype.getPoints = function() {
-    return [new svg.Point(this.attribute("x1").toPixels("x"), this.attribute("y1").toPixels("y")), new svg.Point(this.attribute("x2").toPixels("x"), this.attribute("y2").toPixels("y"))];
+    return [new Point(this.attribute("x1").toPixels("x"), this.attribute("y1").toPixels("y")), new Point(this.attribute("x2").toPixels("x"), this.attribute("y2").toPixels("y"))];
   };
 
   line.prototype.path = function(ctx) {
@@ -1945,7 +2038,7 @@ line = (function(_super) {
       ctx.moveTo(points[0].x, points[0].y);
       ctx.lineTo(points[1].x, points[1].y);
     }
-    return new svg.BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y);
+    return new BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y);
   };
 
   line.prototype.getMarkers = function() {
@@ -1984,7 +2077,7 @@ ellipse = (function(_super) {
       ctx.bezierCurveTo(cx - rx, cy - (KAPPA * ry), cx - (KAPPA * rx), cy - ry, cx, cy - ry);
       ctx.closePath();
     }
-    return new svg.BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry);
+    return new BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry);
   };
 
   return ellipse;
@@ -2009,7 +2102,7 @@ circle = (function(_super) {
       ctx.arc(cx, cy, r, 0, Math.PI * 2, true);
       ctx.closePath();
     }
-    return new svg.BoundingBox(cx - r, cy - r, cx + r, cy + r);
+    return new BoundingBox(cx - r, cy - r, cx + r, cy + r);
   };
 
   return circle;
@@ -2053,7 +2146,7 @@ rect = (function(_super) {
       ctx.quadraticCurveTo(x, y, x + rx, y);
       ctx.closePath();
     }
-    return new svg.BoundingBox(x, y, x + width, y + height);
+    return new BoundingBox(x, y, x + width, y + height);
   };
 
   return rect;
@@ -2118,13 +2211,13 @@ marker = (function(_super) {
     }
     ctx.save();
     tempSvg = new svg.Element.svg();
-    tempSvg.attributes["viewBox"] = new svg.Property("viewBox", this.attribute("viewBox").value);
-    tempSvg.attributes["refX"] = new svg.Property("refX", this.attribute("refX").value);
-    tempSvg.attributes["refY"] = new svg.Property("refY", this.attribute("refY").value);
-    tempSvg.attributes["width"] = new svg.Property("width", this.attribute("markerWidth").value);
-    tempSvg.attributes["height"] = new svg.Property("height", this.attribute("markerHeight").value);
-    tempSvg.attributes["fill"] = new svg.Property("fill", this.attribute("fill").valueOrDefault("black"));
-    tempSvg.attributes["stroke"] = new svg.Property("stroke", this.attribute("stroke").valueOrDefault("none"));
+    tempSvg.attributes["viewBox"] = new Property("viewBox", this.attribute("viewBox").value);
+    tempSvg.attributes["refX"] = new Property("refX", this.attribute("refX").value);
+    tempSvg.attributes["refY"] = new Property("refY", this.attribute("refY").value);
+    tempSvg.attributes["width"] = new Property("width", this.attribute("markerWidth").value);
+    tempSvg.attributes["height"] = new Property("height", this.attribute("markerHeight").value);
+    tempSvg.attributes["fill"] = new Property("fill", this.attribute("fill").valueOrDefault("black"));
+    tempSvg.attributes["stroke"] = new Property("stroke", this.attribute("stroke").valueOrDefault("none"));
     tempSvg.children = this.children;
     tempSvg.render(ctx);
     ctx.restore();
@@ -2154,10 +2247,10 @@ pattern = (function(_super) {
     width = this.attribute("width").toPixels("x", true);
     height = this.attribute("height").toPixels("y", true);
     tempSvg = new svg.Element.svg();
-    tempSvg.attributes["viewBox"] = new svg.Property("viewBox", this.attribute("viewBox").value);
-    tempSvg.attributes["width"] = new svg.Property("width", width + "px");
-    tempSvg.attributes["height"] = new svg.Property("height", height + "px");
-    tempSvg.attributes["transform"] = new svg.Property("transform", this.attribute("patternTransform").value);
+    tempSvg.attributes["viewBox"] = new Property("viewBox", this.attribute("viewBox").value);
+    tempSvg.attributes["width"] = new Property("width", width + "px");
+    tempSvg.attributes["height"] = new Property("height", height + "px");
+    tempSvg.attributes["transform"] = new Property("transform", this.attribute("patternTransform").value);
     tempSvg.children = this.children;
     c = document.createElement("canvas");
     c.width = width;
@@ -2207,64 +2300,100 @@ feGaussianBlur = (function(_super) {
 
 })(ElementBase);
 
-AspectRatio = (function() {
-  function AspectRatio(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
-    var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
+AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
+  var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
 
-    aspectRatio = svg.compressSpaces(aspectRatio);
-    aspectRatio = aspectRatio.replace(/^defer\s/, "");
-    align = aspectRatio.split(" ")[0] || "xMidYMid";
-    meetOrSlice = aspectRatio.split(" ")[1] || "meet";
-    scaleX = width / desiredWidth;
-    scaleY = height / desiredHeight;
-    scaleMin = Math.min(scaleX, scaleY);
-    scaleMax = Math.max(scaleX, scaleY);
-    if (meetOrSlice === "meet") {
-      desiredWidth *= scaleMin;
-      desiredHeight *= scaleMin;
+  aspectRatio = svg.compressSpaces(aspectRatio);
+  aspectRatio = aspectRatio.replace(/^defer\s/, "");
+  align = aspectRatio.split(" ")[0] || "xMidYMid";
+  meetOrSlice = aspectRatio.split(" ")[1] || "meet";
+  scaleX = width / desiredWidth;
+  scaleY = height / desiredHeight;
+  scaleMin = Math.min(scaleX, scaleY);
+  scaleMax = Math.max(scaleX, scaleY);
+  if (meetOrSlice === "meet") {
+    desiredWidth *= scaleMin;
+    desiredHeight *= scaleMin;
+  }
+  if (meetOrSlice === "slice") {
+    desiredWidth *= scaleMax;
+    desiredHeight *= scaleMax;
+  }
+  refX = new Property("refX", refX);
+  refY = new Property("refY", refY);
+  if (refX.hasValue() && refY.hasValue()) {
+    ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
+  } else {
+    if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+      ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
     }
+    if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+      ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
+    }
+    if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
+      ctx.translate(width - desiredWidth, 0);
+    }
+    if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
+      ctx.translate(0, height - desiredHeight);
+    }
+  }
+  if (align === "none") {
+    ctx.scale(scaleX, scaleY);
+  } else if (meetOrSlice === "meet") {
+    ctx.scale(scaleMin, scaleMin);
+  } else {
     if (meetOrSlice === "slice") {
-      desiredWidth *= scaleMax;
-      desiredHeight *= scaleMax;
+      ctx.scale(scaleMax, scaleMax);
     }
-    refX = new svg.Property("refX", refX);
-    refY = new svg.Property("refY", refY);
-    if (refX.hasValue() && refY.hasValue()) {
-      ctx.translate(-scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y"));
-    } else {
-      if (align.match(/^xMid/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-        ctx.translate(width / 2.0 - desiredWidth / 2.0, 0);
-      }
-      if (align.match(/YMid$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-        ctx.translate(0, height / 2.0 - desiredHeight / 2.0);
-      }
-      if (align.match(/^xMax/) && ((meetOrSlice === "meet" && scaleMin === scaleY) || (meetOrSlice === "slice" && scaleMax === scaleY))) {
-        ctx.translate(width - desiredWidth, 0);
-      }
-      if (align.match(/YMax$/) && ((meetOrSlice === "meet" && scaleMin === scaleX) || (meetOrSlice === "slice" && scaleMax === scaleX))) {
-        ctx.translate(0, height - desiredHeight);
-      }
+  }
+  ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
+};
+
+Transform = (function() {
+  function Transform(v) {
+    var data, i, s, transform, type, _i, _ref1;
+
+    this.Type = {};
+    this.Type.translate = translate;
+    this.Type.rotate = rotate;
+    this.Type.scale = scale;
+    this.Type.matrix = matrix;
+    this.Type.skewX = skewX;
+    this.Type.skewY = skewY;
+    this.transforms = [];
+    data = svg.trim(svg.compressSpaces(v)).replace(/\)(\s?,\s?)/g, ") ").split(/\s(?=[a-z])/);
+    for (i = _i = 0, _ref1 = data.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+      type = svg.trim(data[i].split("(")[0]);
+      s = data[i].split("(")[1].replace(")", "");
+      transform = new this.Type[type](s);
+      transform.type = type;
+      this.transforms.push(transform);
     }
-    if (align === "none") {
-      ctx.scale(scaleX, scaleY);
-    } else if (meetOrSlice === "meet") {
-      ctx.scale(scaleMin, scaleMin);
-    } else {
-      if (meetOrSlice === "slice") {
-        ctx.scale(scaleMax, scaleMax);
-      }
-    }
-    ctx.translate((minX == null ? 0 : -minX), (minY == null ? 0 : -minY));
-    return;
   }
 
-  return AspectRatio;
+  Transform.prototype.apply = function(ctx) {
+    var i, _i, _ref1;
+
+    for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+      this.transforms[i].apply(ctx);
+    }
+  };
+
+  Transform.prototype.applyToPoint = function(p) {
+    var i, _i, _ref1;
+
+    for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+      this.transforms[i].applyToPoint(p);
+    }
+  };
+
+  return Transform;
 
 })();
 
 scale = (function() {
   function scale(s) {
-    this.p = svg.CreatePoint(s);
+    this.p = Point.pointsFromNumberArray(s);
   }
 
   scale.prototype.apply = function(ctx) {
@@ -2301,7 +2430,7 @@ SkewBase = (function(_super) {
 
   function SkewBase(s) {
     SkewBase.__super__.constructor.call(this, s);
-    this.angle = new svg.Property("angle", s);
+    this.angle = new Property("angle", s);
     return;
   }
 
@@ -2338,7 +2467,7 @@ skewY = (function(_super) {
 rotate = (function() {
   function rotate(s) {
     a = svg.ToNumberArray(s);
-    this.angle = new svg.Property("angle", a[0]);
+    this.angle = new Property("angle", a[0]);
     this.cx = a[1] || 0;
     this.cy = a[2] || 0;
   }
@@ -2362,7 +2491,7 @@ rotate = (function() {
 
 translate = (function() {
   function translate(s) {
-    this.p = svg.CreatePoint(s);
+    this.p = Point.pointsFromNumberArray(s);
   }
 
   translate.prototype.apply = function(ctx) {
@@ -2578,6 +2707,24 @@ Point = (function() {
     return;
   }
 
+  Point.pointsFromNumberArray = function(s) {
+    if (arguments.length === 1) {
+      a = svg.ToNumberArray(s);
+      return new Point(a[0], a[1]);
+    }
+  };
+
+  Point.pointsArrayFromNumberArray = function(s) {
+    var i, _i, _ref1;
+
+    a = svg.ToNumberArray(s);
+    path = [];
+    for (i = _i = 0, _ref1 = a.length; _i < _ref1; i = _i += 2) {
+      path.push(new Point(a[i], a[i + 1]));
+    }
+    return path;
+  };
+
   Point.prototype.angleTo = function(p) {
     return Math.atan2(p.y - this.y, p.x - this.x);
   };
@@ -2723,7 +2870,7 @@ Property = (function() {
         newValue = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", " + opacity + ")";
       }
     }
-    return new svg.Property(this.name, newValue);
+    return new Property(this.name, newValue);
   };
 
   Property.prototype.getDefinition = function() {
@@ -2764,7 +2911,7 @@ Property = (function() {
     var em, fontSize;
 
     em = 12;
-    fontSize = new svg.Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
+    fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize);
     if (fontSize.hasValue()) {
       em = fontSize.toPixels(viewPort);
     }
@@ -3236,10 +3383,6 @@ svg.parseXml = function(xml) {
   }
 };
 
-svg.Property = Property;
-
-svg.Font = new Font;
-
 svg.ToNumberArray = function(s) {
   var i, _i, _ref1;
 
@@ -3250,70 +3393,15 @@ svg.ToNumberArray = function(s) {
   return a;
 };
 
-svg.Point = Point;
+svg.Transform = Transform;
 
-svg.CreatePoint = function(s) {
-  a = svg.ToNumberArray(s);
-  return new svg.Point(a[0], a[1]);
-};
-
-svg.CreatePath = function(s) {
-  var i, _i, _ref1;
-
-  a = svg.ToNumberArray(s);
-  path = [];
-  for (i = _i = 0, _ref1 = a.length; _i < _ref1; i = _i += 2) {
-    path.push(new svg.Point(a[i], a[i + 1]));
-  }
-  return path;
-};
-
-svg.BoundingBox = BoundingBox;
-
-svg.Transform = function(v) {
-  var data, i, s, transform, type, _i, _ref1;
-
-  this.Type = {};
-  this.Type.translate = translate;
-  this.Type.rotate = rotate;
-  this.Type.scale = scale;
-  this.Type.matrix = matrix;
-  this.Type.skewX = skewX;
-  this.Type.skewY = skewY;
-  this.transforms = [];
-  this.apply = function(ctx) {
-    var i, _i, _ref1;
-
-    for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      this.transforms[i].apply(ctx);
-    }
-  };
-  this.applyToPoint = function(p) {
-    var i, _i, _ref1;
-
-    for (i = _i = 0, _ref1 = this.transforms.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      this.transforms[i].applyToPoint(p);
-    }
-  };
-  data = svg.trim(svg.compressSpaces(v)).replace(/\)(\s?,\s?)/g, ") ").split(/\s(?=[a-z])/);
-  for (i = _i = 0, _ref1 = data.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-    type = svg.trim(data[i].split("(")[0]);
-    s = data[i].split("(")[1].replace(")", "");
-    transform = new this.Type[type](s);
-    transform.type = type;
-    this.transforms.push(transform);
-  }
-};
+svg.Font = new Font;
 
 svg.AspectRatio = AspectRatio;
 
 svg.Element = {};
 
-svg.EmptyProperty = new svg.Property("EMPTY", "");
-
-svg.Element.RenderedElementBase = RenderedElementBase;
-
-svg.Element.PathElementBase = PathElementBase;
+svg.EmptyProperty = new Property("EMPTY", "");
 
 svg.Element.svg = svgElement;
 
@@ -3393,11 +3481,13 @@ svg.Element.feColorMatrix = feColorMatrix;
 
 svg.Element.feGaussianBlur = feGaussianBlur;
 
+svg.Element.MISSING = MISSING;
+
 svg.Element.title = title;
 
 svg.Element.desc = desc;
 
-svg.Element.MISSING = MISSING;
+svg.Mouse = new Mouse;
 
 svg.CreateElement = function(node) {
   var className, e;
@@ -3405,6 +3495,10 @@ svg.CreateElement = function(node) {
   className = node.nodeName.replace(/^[^:]+:/, "");
   className = className.replace(/\-/g, "");
   e = null;
+  if (className === "title" || className === "desc" || className === "MISSING") {
+    console.log("not creating a " + svg.Element[className]);
+    return null;
+  }
   if (typeof svg.Element[className] !== "undefined") {
     e = new svg.Element[className](node);
   } else {
@@ -3453,17 +3547,18 @@ svg.loadXmlDoc = function(ctx, dom) {
     ctx.canvas.onclick = function(e) {
       var p;
 
-      p = mapXY(new svg.Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
+      p = mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
       return svg.Mouse.onclick(p.x, p.y);
     };
     ctx.canvas.onmousemove = function(e) {
       var p;
 
-      p = mapXY(new svg.Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
+      p = mapXY(new Point((e != null ? e.clientX : event.clientX), (e != null ? e.clientY : event.clientY)));
       return svg.Mouse.onmousemove(p.x, p.y);
     };
   }
   e = svg.CreateElement(dom.documentElement);
+  console.log("*** svgCreateElement from dom: " + dom.documentElement);
   e.root = true;
   isFirstRender = true;
   draw = function() {
@@ -3560,81 +3655,6 @@ svg.loadXmlDoc = function(ctx, dom) {
     }
   }, 1000 / svg.FRAMERATE);
 };
-
-svg.Mouse = new (function() {
-  this.events = [];
-  this.hasEvents = function() {
-    return this.events.length !== 0;
-  };
-  this.onclick = function(x, y) {
-    return this.events.push({
-      type: "onclick",
-      x: x,
-      y: y,
-      run: function(e) {
-        if (e.onclick) {
-          return e.onclick();
-        }
-      }
-    });
-  };
-  this.onmousemove = function(x, y) {
-    return this.events.push({
-      type: "onmousemove",
-      x: x,
-      y: y,
-      run: function(e) {
-        if (e.onmousemove) {
-          return e.onmousemove();
-        }
-      }
-    });
-  };
-  this.eventElements = [];
-  this.checkPath = function(element, ctx) {
-    var e, i, _i, _ref1, _results;
-
-    _results = [];
-    for (i = _i = 0, _ref1 = this.events.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      e = this.events[i];
-      if (ctx.isPointInPath && ctx.isPointInPath(e.x, e.y)) {
-        _results.push(this.eventElements[i] = element);
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-  this.checkBoundingBox = function(element, bb) {
-    var e, i, _i, _ref1, _results;
-
-    _results = [];
-    for (i = _i = 0, _ref1 = this.events.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      e = this.events[i];
-      if (bb.isPointInBox(e.x, e.y)) {
-        _results.push(this.eventElements[i] = element);
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-  this.runEvents = function() {
-    var e, element, i, _i, _ref1;
-
-    svg.ctx.canvas.style.cursor = "";
-    for (i = _i = 0, _ref1 = this.events.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-      e = this.events[i];
-      element = this.eventElements[i];
-      while (element) {
-        e.run(element);
-        element = element.parent;
-      }
-    }
-    this.events = [];
-    return this.eventElements = [];
-  };
-});
 
 if (CanvasRenderingContext2D) {
   CanvasRenderingContext2D.prototype.drawSvg = function(s, dx, dy, dw, dh) {

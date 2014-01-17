@@ -1,3 +1,55 @@
+class Mouse
+
+  constructor: ->
+    @events = []
+    @eventElements = []
+
+  hasEvents: ->
+    @events.length isnt 0
+
+  onclick: (x, y) ->
+    @events.push
+      type: "onclick"
+      x: x
+      y: y
+      run: (e) ->
+        e.onclick()  if e.onclick
+
+
+  onmousemove: (x, y) ->
+    @events.push
+      type: "onmousemove"
+      x: x
+      y: y
+      run: (e) ->
+        e.onmousemove()  if e.onmousemove
+
+
+  checkPath: (element, ctx) ->
+    for i in [0...@events.length]
+      e = @events[i]
+      @eventElements[i] = element  if ctx.isPointInPath and ctx.isPointInPath(e.x, e.y)
+
+  checkBoundingBox: (element, bb) ->
+
+    for i in [0...@events.length]
+      e = @events[i]
+      @eventElements[i] = element  if bb.isPointInBox(e.x, e.y)
+
+  runEvents: ->
+    svg.ctx.canvas.style.cursor = ""
+
+    for i in [0...@events.length]
+      e = @events[i]
+      element = @eventElements[i]
+      while element
+        e.run element
+        element = element.parent
+    
+    # done running, clear
+    @events = []
+    @eventElements = []
+
 class ElementBase
 
   constructor: (node) ->
@@ -14,7 +66,7 @@ class ElementBase
       # add attributes
       for i in [0...node.attributes.length]
         attribute = node.attributes[i]
-        @attributes[attribute.nodeName] = new svg.Property(attribute.nodeName, attribute.nodeValue)
+        @attributes[attribute.nodeName] = new Property(attribute.nodeName, attribute.nodeValue)
       
       # add tag styles
       styles = svg.Styles[node.nodeName]
@@ -50,7 +102,7 @@ class ElementBase
             style = styles[i].split(":")
             name = svg.trim(style[0])
             value = svg.trim(style[1])
-            @styles[name] = new svg.Property(name, value)
+            @styles[name] = new Property(name, value)
 
       
       # add id
@@ -62,7 +114,7 @@ class ElementBase
     a = @attributes[name]
     return a  if a?
     if createIfNotExists is true
-      a = new svg.Property(name, "")
+      a = new Property(name, "")
       @attributes[name] = a
     a or svg.EmptyProperty
 
@@ -76,8 +128,10 @@ class ElementBase
   style: (name, createIfNotExists) ->
     console.log "name, createIfNotExists " + name + " " + createIfNotExists
     console.log "@styles " + @styles + " class name: " + this.constructor.name
-    if this.constructor.name == "title"
+    if this.constructor.name == "title" or this.constructor.name == "desc" or this.constructor.name == "MISSING"
       console.log "for the break"
+      console.trace()
+      return svg.EmptyProperty
     if @styles == undefined then console.trace()
     s = @styles[name]
     return s  if s?
@@ -90,7 +144,7 @@ class ElementBase
       ps = p.style(name)
       return ps  if ps? and ps.hasValue()
     if createIfNotExists is true
-      s = new svg.Property(name, "")
+      s = new Property(name, "")
       @styles[name] = s
     s or svg.EmptyProperty
 
@@ -136,8 +190,11 @@ class ElementBase
     return
 
   addChild: (childNode, create) ->
+    console.log "addchild childNode: " + childNode
+    console.log "typeof: " + typeof(childNode)
     child = childNode
     child = svg.CreateElement(childNode)  if create
+    if child is null then return
     child.parent = this
     @children.push child
 
@@ -316,7 +373,7 @@ class ElementBaseStyle extends ElementBase
               prop = cssProps[k].indexOf(":")
               name = cssProps[k].substr(0, prop)
               value = cssProps[k].substr(prop + 1, cssProps[k].length - prop)
-              props[svg.trim(name)] = new svg.Property(svg.trim(name), svg.trim(value))  if name? and value?
+              props[svg.trim(name)] = new Property(svg.trim(name), svg.trim(value))  if name? and value?
             svg.Styles[cssClass] = props
             if cssClass is "@font-face"
               fontFamily = props["font-family"].value.replace(/"/g, "")
@@ -442,8 +499,8 @@ class AnimateBase extends ElementBase
       p = ret.progress * (@values.value.length - 1)
       lb = Math.floor(p)
       ub = Math.ceil(p)
-      ret.from = new svg.Property("from", parseFloat(@values.value[lb]))
-      ret.to = new svg.Property("to", parseFloat(@values.value[ub]))
+      ret.from = new Property("from", parseFloat(@values.value[lb]))
+      ret.to = new Property("to", parseFloat(@values.value[ub]))
       ret.progress = (p - lb) / (ub - lb)
     else
       ret.from = @from
@@ -515,7 +572,7 @@ class GradientBase extends ElementBase
     stopsContainer = @getHrefAttribute().getDefinition()  if @getHrefAttribute().hasValue()
     addParentOpacity = (color) ->
       if parentOpacityProp.hasValue()
-        p = new svg.Property("color", color)
+        p = new Property("color", color)
         return p.addOpacity(parentOpacityProp.value).value
       color
 
@@ -528,18 +585,18 @@ class GradientBase extends ElementBase
       # render as transformed pattern on temporary canvas
       rootView = svg.ViewPort.viewPorts[0]
       rect = new svg.Element.rect()
-      rect.attributes["x"] = new svg.Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0)
-      rect.attributes["y"] = new svg.Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0)
-      rect.attributes["width"] = new svg.Property("width", svg.MAX_VIRTUAL_PIXELS)
-      rect.attributes["height"] = new svg.Property("height", svg.MAX_VIRTUAL_PIXELS)
+      rect.attributes["x"] = new Property("x", -svg.MAX_VIRTUAL_PIXELS / 3.0)
+      rect.attributes["y"] = new Property("y", -svg.MAX_VIRTUAL_PIXELS / 3.0)
+      rect.attributes["width"] = new Property("width", svg.MAX_VIRTUAL_PIXELS)
+      rect.attributes["height"] = new Property("height", svg.MAX_VIRTUAL_PIXELS)
       group = new svg.Element.g()
-      group.attributes["transform"] = new svg.Property("transform", @attribute("gradientTransform").value)
+      group.attributes["transform"] = new Property("transform", @attribute("gradientTransform").value)
       group.children = [rect]
       tempSvg = new svg.Element.svg()
-      tempSvg.attributes["x"] = new svg.Property("x", 0)
-      tempSvg.attributes["y"] = new svg.Property("y", 0)
-      tempSvg.attributes["width"] = new svg.Property("width", rootView.width)
-      tempSvg.attributes["height"] = new svg.Property("height", rootView.height)
+      tempSvg.attributes["x"] = new Property("x", 0)
+      tempSvg.attributes["y"] = new Property("y", 0)
+      tempSvg.attributes["width"] = new Property("width", rootView.width)
+      tempSvg.attributes["height"] = new Property("height", rootView.height)
       tempSvg.children = [group]
       c = document.createElement("canvas")
       c.width = rootView.width
@@ -605,7 +662,7 @@ class RenderedElementBase extends ElementBase
       fillStyle.value = @style("color").value  if fillStyle.value is "currentColor"
       ctx.fillStyle = ((if fillStyle.value is "none" then "rgba(0,0,0,0)" else fillStyle.value))
     if @style("fill-opacity").hasValue()
-      fillStyle = new svg.Property("fill", ctx.fillStyle)
+      fillStyle = new Property("fill", ctx.fillStyle)
       fillStyle = fillStyle.addOpacity(@style("fill-opacity").value)
       ctx.fillStyle = fillStyle.value
     
@@ -618,7 +675,7 @@ class RenderedElementBase extends ElementBase
       strokeStyle.value = @style("color").value  if strokeStyle.value is "currentColor"
       ctx.strokeStyle = ((if strokeStyle.value is "none" then "rgba(0,0,0,0)" else strokeStyle.value))
     if @style("stroke-opacity").hasValue()
-      strokeStyle = new svg.Property("stroke", ctx.strokeStyle)
+      strokeStyle = new Property("stroke", ctx.strokeStyle)
       strokeStyle = strokeStyle.addOpacity(@style("stroke-opacity").value)
       ctx.strokeStyle = strokeStyle.value
     if @style("stroke-width").hasValue()
@@ -685,7 +742,7 @@ class g extends RenderedElementBase
     super node
 
   getBoundingBox: ->
-    bb = new svg.BoundingBox()
+    bb = new BoundingBox()
 
     for i in [0...@children.length]
       bb.addBoundingBox @children[i].getBoundingBox()
@@ -751,7 +808,7 @@ class image extends RenderedElementBase
     y = @attribute("y").toPixels("y")
     width = @attribute("width").toPixels("x")
     height = @attribute("height").toPixels("y")
-    new svg.BoundingBox(x, y, x + width, y + height)
+    new BoundingBox(x, y, x + width, y + height)
 
 
 class TextElementBase extends RenderedElementBase
@@ -848,8 +905,8 @@ class a extends TextElementBase
       
       # render as text element
       super ctx
-      fontSize = new svg.Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
-      svg.Mouse.checkBoundingBox this, new svg.BoundingBox(@x, @y - fontSize.toPixels("y"), @x + @measureText(ctx), @y)
+      fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
+      svg.Mouse.checkBoundingBox this, new BoundingBox(@x, @y - fontSize.toPixels("y"), @x + @measureText(ctx), @y)
     else
       
       # render as temporary group
@@ -898,7 +955,7 @@ class text extends RenderedElementBase
 
   getBoundingBox: ->
     # TODO: implement
-    new svg.BoundingBox(@attribute("x").toPixels("x"), @attribute("y").toPixels("y"), 0, 0)
+    new BoundingBox(@attribute("x").toPixels("x"), @attribute("y").toPixels("y"), 0, 0)
 
   renderChildren: (ctx) ->
     @textAnchor = @style("text-anchor").valueOrDefault("start")
@@ -1004,7 +1061,7 @@ class PathElementBase extends RenderedElementBase
 
   path: (ctx) ->
     ctx.beginPath()  if ctx?
-    new svg.BoundingBox()
+    new BoundingBox()
 
   renderChildren: (ctx) ->
     @path ctx
@@ -1038,9 +1095,9 @@ class PathParser
     @i = -1
     @command = ""
     @previousCommand = ""
-    @start = new svg.Point(0, 0)
-    @control = new svg.Point(0, 0)
-    @current = new svg.Point(0, 0)
+    @start = new Point(0, 0)
+    @control = new Point(0, 0)
+    @current = new Point(0, 0)
     @points = []
     @angles = []
 
@@ -1070,7 +1127,7 @@ class PathParser
     return
 
   getPoint: ->
-    p = new svg.Point(@getScalar(), @getScalar())
+    p = new Point(@getScalar(), @getScalar())
     @makeAbsolute p
 
   getAsControlPoint: ->
@@ -1087,7 +1144,7 @@ class PathParser
     return @current  if @previousCommand.toLowerCase() isnt "c" and @previousCommand.toLowerCase() isnt "s" and @previousCommand.toLowerCase() isnt "q" and @previousCommand.toLowerCase() isnt "t"
     
     # reflect point
-    p = new svg.Point(2 * @current.x - @control.x, 2 * @current.y - @control.y)
+    p = new Point(2 * @current.x - @control.x, 2 * @current.y - @control.y)
     p
 
   makeAbsolute: (p) ->
@@ -1141,7 +1198,7 @@ class path extends PathElementBase
     pp = new PathParser(@d)
     @pp = pp
     pp.reset()
-    bb = new svg.BoundingBox()
+    bb = new BoundingBox()
     ctx.beginPath()  if ctx?
     until pp.isEnd()
       pp.nextCommand()
@@ -1166,14 +1223,14 @@ class path extends PathElementBase
             ctx.lineTo p.x, p.y  if ctx?
         when "H", "h"
           until pp.isCommandOrEnd()
-            newP = new svg.Point(((if pp.isRelativeCommand() then pp.current.x else 0)) + pp.getScalar(), pp.current.y)
+            newP = new Point(((if pp.isRelativeCommand() then pp.current.x else 0)) + pp.getScalar(), pp.current.y)
             pp.addMarker newP, pp.current
             pp.current = newP
             bb.addPoint pp.current.x, pp.current.y
             ctx.lineTo pp.current.x, pp.current.y  if ctx?
         when "V", "v"
           until pp.isCommandOrEnd()
-            newP = new svg.Point(pp.current.x, ((if pp.isRelativeCommand() then pp.current.y else 0)) + pp.getScalar())
+            newP = new Point(pp.current.x, ((if pp.isRelativeCommand() then pp.current.y else 0)) + pp.getScalar())
             pp.addMarker newP, pp.current
             pp.current = newP
             bb.addPoint pp.current.x, pp.current.y
@@ -1226,7 +1283,7 @@ class path extends PathElementBase
             # Conversion from endpoint to center parameterization
             # http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
             # x1', y1'
-            currp = new svg.Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0)
+            currp = new Point(Math.cos(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.sin(xAxisRotation) * (curr.y - cp.y) / 2.0, -Math.sin(xAxisRotation) * (curr.x - cp.x) / 2.0 + Math.cos(xAxisRotation) * (curr.y - cp.y) / 2.0)
             
             # adjust radii
             l = Math.pow(currp.x, 2) / Math.pow(rx, 2) + Math.pow(currp.y, 2) / Math.pow(ry, 2)
@@ -1237,10 +1294,10 @@ class path extends PathElementBase
             # cx', cy'
             s = ((if largeArcFlag is sweepFlag then -1 else 1)) * Math.sqrt(((Math.pow(rx, 2) * Math.pow(ry, 2)) - (Math.pow(rx, 2) * Math.pow(currp.y, 2)) - (Math.pow(ry, 2) * Math.pow(currp.x, 2))) / (Math.pow(rx, 2) * Math.pow(currp.y, 2) + Math.pow(ry, 2) * Math.pow(currp.x, 2)))
             s = 0  if isNaN(s)
-            cpp = new svg.Point(s * rx * currp.y / ry, s * -ry * currp.x / rx)
+            cpp = new Point(s * rx * currp.y / ry, s * -ry * currp.x / rx)
             
             # cx, cy
-            centp = new svg.Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y)
+            centp = new Point((curr.x + cp.x) / 2.0 + Math.cos(xAxisRotation) * cpp.x - Math.sin(xAxisRotation) * cpp.y, (curr.y + cp.y) / 2.0 + Math.sin(xAxisRotation) * cpp.x + Math.cos(xAxisRotation) * cpp.y)
             
             # vector magnitude
             m = (v) ->
@@ -1270,7 +1327,7 @@ class path extends PathElementBase
             # for markers
             dir = (if 1 - sweepFlag then 1.0 else -1.0)
             ah = a1 + dir * (ad / 2.0)
-            halfWay = new svg.Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah))
+            halfWay = new Point(centp.x + rx * Math.cos(ah), centp.y + ry * Math.sin(ah))
             pp.addMarkerAngle halfWay, ah - dir * Math.PI / 2
             pp.addMarkerAngle cp, ah - dir * Math.PI
             bb.addPoint cp.x, cp.y # TODO: this is too naive, make it better
@@ -1316,10 +1373,10 @@ class missingglyph extends path
 class polyline extends PathElementBase
   constructor: (node) ->
     super node
-    @points = svg.CreatePath(@attribute("points").value)
+    @points = Point.pointsArrayFromNumberArray(@attribute("points").value)
   
   path: (ctx) ->
-    bb = new svg.BoundingBox(@points[0].x, @points[0].y)
+    bb = new BoundingBox(@points[0].x, @points[0].y)
     if ctx?
       ctx.beginPath()
       ctx.moveTo @points[0].x, @points[0].y
@@ -1353,7 +1410,7 @@ class line extends PathElementBase
     super node
   
   getPoints: ->
-    [new svg.Point(@attribute("x1").toPixels("x"), @attribute("y1").toPixels("y")), new svg.Point(@attribute("x2").toPixels("x"), @attribute("y2").toPixels("y"))]
+    [new Point(@attribute("x1").toPixels("x"), @attribute("y1").toPixels("y")), new Point(@attribute("x2").toPixels("x"), @attribute("y2").toPixels("y"))]
 
   path: (ctx) ->
     points = @getPoints()
@@ -1361,7 +1418,7 @@ class line extends PathElementBase
       ctx.beginPath()
       ctx.moveTo points[0].x, points[0].y
       ctx.lineTo points[1].x, points[1].y
-    new svg.BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y)
+    new BoundingBox(points[0].x, points[0].y, points[1].x, points[1].y)
 
   getMarkers: ->
     points = @getPoints()
@@ -1387,7 +1444,7 @@ class ellipse extends PathElementBase
       ctx.bezierCurveTo cx - (KAPPA * rx), cy + ry, cx - rx, cy + (KAPPA * ry), cx - rx, cy
       ctx.bezierCurveTo cx - rx, cy - (KAPPA * ry), cx - (KAPPA * rx), cy - ry, cx, cy - ry
       ctx.closePath()
-    new svg.BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry)
+    new BoundingBox(cx - rx, cy - ry, cx + rx, cy + ry)
 
 class circle extends PathElementBase
 
@@ -1402,7 +1459,7 @@ class circle extends PathElementBase
       ctx.beginPath()
       ctx.arc cx, cy, r, 0, Math.PI * 2, true
       ctx.closePath()
-    new svg.BoundingBox(cx - r, cy - r, cx + r, cy + r)
+    new BoundingBox(cx - r, cy - r, cx + r, cy + r)
 
 
 class rect extends PathElementBase
@@ -1432,7 +1489,7 @@ class rect extends PathElementBase
       ctx.lineTo x, y + ry
       ctx.quadraticCurveTo x, y, x + rx, y
       ctx.closePath()
-    new svg.BoundingBox(x, y, x + width, y + height)
+    new BoundingBox(x, y, x + width, y + height)
 
 
 class stop extends ElementBase
@@ -1464,13 +1521,13 @@ class marker extends ElementBase
     
     # render me using a temporary svg element
     tempSvg = new svg.Element.svg()
-    tempSvg.attributes["viewBox"] = new svg.Property("viewBox", @attribute("viewBox").value)
-    tempSvg.attributes["refX"] = new svg.Property("refX", @attribute("refX").value)
-    tempSvg.attributes["refY"] = new svg.Property("refY", @attribute("refY").value)
-    tempSvg.attributes["width"] = new svg.Property("width", @attribute("markerWidth").value)
-    tempSvg.attributes["height"] = new svg.Property("height", @attribute("markerHeight").value)
-    tempSvg.attributes["fill"] = new svg.Property("fill", @attribute("fill").valueOrDefault("black"))
-    tempSvg.attributes["stroke"] = new svg.Property("stroke", @attribute("stroke").valueOrDefault("none"))
+    tempSvg.attributes["viewBox"] = new Property("viewBox", @attribute("viewBox").value)
+    tempSvg.attributes["refX"] = new Property("refX", @attribute("refX").value)
+    tempSvg.attributes["refY"] = new Property("refY", @attribute("refY").value)
+    tempSvg.attributes["width"] = new Property("width", @attribute("markerWidth").value)
+    tempSvg.attributes["height"] = new Property("height", @attribute("markerHeight").value)
+    tempSvg.attributes["fill"] = new Property("fill", @attribute("fill").valueOrDefault("black"))
+    tempSvg.attributes["stroke"] = new Property("stroke", @attribute("stroke").valueOrDefault("none"))
     tempSvg.children = @children
     tempSvg.render ctx
     ctx.restore()
@@ -1489,10 +1546,10 @@ class pattern extends ElementBase
 
     # render me using a temporary svg element
     tempSvg = new svg.Element.svg()
-    tempSvg.attributes["viewBox"] = new svg.Property("viewBox", @attribute("viewBox").value)
-    tempSvg.attributes["width"] = new svg.Property("width", width + "px")
-    tempSvg.attributes["height"] = new svg.Property("height", height + "px")
-    tempSvg.attributes["transform"] = new svg.Property("transform", @attribute("patternTransform").value)
+    tempSvg.attributes["viewBox"] = new Property("viewBox", @attribute("viewBox").value)
+    tempSvg.attributes["width"] = new Property("width", width + "px")
+    tempSvg.attributes["height"] = new Property("height", height + "px")
+    tempSvg.attributes["transform"] = new Property("transform", @attribute("patternTransform").value)
     tempSvg.children = @children
     c = document.createElement("canvas")
     c.width = width
@@ -1533,53 +1590,86 @@ class feGaussianBlur extends ElementBase
 
 
 # aspect ratio
-class AspectRatio
-  constructor: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
-    # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
-    aspectRatio = svg.compressSpaces(aspectRatio)
-    aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
-    align = aspectRatio.split(" ")[0] or "xMidYMid"
-    meetOrSlice = aspectRatio.split(" ")[1] or "meet"
+AspectRatio = (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
+  # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
+  aspectRatio = svg.compressSpaces(aspectRatio)
+  aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
+  align = aspectRatio.split(" ")[0] or "xMidYMid"
+  meetOrSlice = aspectRatio.split(" ")[1] or "meet"
+  
+  # calculate scale
+  scaleX = width / desiredWidth
+  scaleY = height / desiredHeight
+  scaleMin = Math.min(scaleX, scaleY)
+  scaleMax = Math.max(scaleX, scaleY)
+  if meetOrSlice is "meet"
+    desiredWidth *= scaleMin
+    desiredHeight *= scaleMin
+  if meetOrSlice is "slice"
+    desiredWidth *= scaleMax
+    desiredHeight *= scaleMax
+  refX = new Property("refX", refX)
+  refY = new Property("refY", refY)
+  if refX.hasValue() and refY.hasValue()
+    ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
+  else
     
-    # calculate scale
-    scaleX = width / desiredWidth
-    scaleY = height / desiredHeight
-    scaleMin = Math.min(scaleX, scaleY)
-    scaleMax = Math.max(scaleX, scaleY)
-    if meetOrSlice is "meet"
-      desiredWidth *= scaleMin
-      desiredHeight *= scaleMin
-    if meetOrSlice is "slice"
-      desiredWidth *= scaleMax
-      desiredHeight *= scaleMax
-    refX = new svg.Property("refX", refX)
-    refY = new svg.Property("refY", refY)
-    if refX.hasValue() and refY.hasValue()
-      ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
-    else
-      
-      # align
-      ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
-      ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
-      ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
-      ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
-    
-    # scale
-    if align is "none"
-      ctx.scale scaleX, scaleY
-    else if meetOrSlice is "meet"
-      ctx.scale scaleMin, scaleMin
-    else ctx.scale scaleMax, scaleMax  if meetOrSlice is "slice"
+    # align
+    ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
+    ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
+    ctx.translate width - desiredWidth, 0  if align.match(/^xMax/) and ((meetOrSlice is "meet" and scaleMin is scaleY) or (meetOrSlice is "slice" and scaleMax is scaleY))
+    ctx.translate 0, height - desiredHeight  if align.match(/YMax$/) and ((meetOrSlice is "meet" and scaleMin is scaleX) or (meetOrSlice is "slice" and scaleMax is scaleX))
+  
+  # scale
+  if align is "none"
+    ctx.scale scaleX, scaleY
+  else if meetOrSlice is "meet"
+    ctx.scale scaleMin, scaleMin
+  else ctx.scale scaleMax, scaleMax  if meetOrSlice is "slice"
+  
+  # translate
+  ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
+  return
+
+class Transform
+  constructor: (v) ->
+    @Type = {}
     
     # translate
-    ctx.translate (if not minX? then 0 else -minX), (if not minY? then 0 else -minY)
+    @Type.translate = translate
+
+    # rotate
+    @Type.rotate = rotate
+    @Type.scale = scale
+    @Type.matrix = matrix
+    @Type.skewX = skewX
+    @Type.skewY = skewY
+
+    @transforms = []
+
+    data = svg.trim(svg.compressSpaces(v)).replace(/\)(\s?,\s?)/g, ") ").split(/\s(?=[a-z])/)
+
+    for i in [0...data.length]
+      type = svg.trim(data[i].split("(")[0])
+      s = data[i].split("(")[1].replace(")", "")
+      transform = new @Type[type](s)
+      transform.type = type
+      @transforms.push transform
+
+  apply: (ctx) ->
+    for i in [0...@transforms.length]
+      @transforms[i].apply ctx
     return
 
+  applyToPoint: (p) ->
+    for i in [0...@transforms.length]
+      @transforms[i].applyToPoint p
+    return
 
 
 class scale
   constructor: (s) ->
-    @p = svg.CreatePoint(s)
+    @p = Point.pointsFromNumberArray(s)
   apply: (ctx) ->
     ctx.scale @p.x or 1.0, @p.y or @p.x or 1.0
     return
@@ -1602,7 +1692,7 @@ class matrix
 class SkewBase extends matrix
   constructor: (s) ->
     super s
-    @angle = new svg.Property("angle", s)
+    @angle = new Property("angle", s)
     return
 
 class skewX extends SkewBase
@@ -1620,7 +1710,7 @@ class skewY extends SkewBase
 class rotate
   constructor: (s) ->
     a = svg.ToNumberArray(s)
-    @angle = new svg.Property("angle", a[0])
+    @angle = new Property("angle", a[0])
     @cx = a[1] or 0
     @cy = a[2] or 0
   
@@ -1640,7 +1730,7 @@ class rotate
 
 class translate
   constructor: (s) ->
-    @p = svg.CreatePoint(s)
+    @p = Point.pointsFromNumberArray(s)
   apply: (ctx) ->
     ctx.translate @p.x or 0.0, @p.y or 0.0
     return
@@ -1779,10 +1869,25 @@ class ViewPort
     Math.sqrt(Math.pow(@width(), 2) + Math.pow(@height(), 2)) / Math.sqrt(2)
 
 class Point
+
   constructor: (x, y) ->
     @x = x
     @y = y
     return
+
+  @pointsFromNumberArray: (s) -> 
+    if arguments.length == 1
+      a = svg.ToNumberArray(s)
+      return new Point(a[0], a[1])  
+
+
+  @pointsArrayFromNumberArray: (s) ->
+    a = svg.ToNumberArray(s)
+    path = []
+
+    for i in [0...a.length] by 2
+      path.push new Point(a[i], a[i + 1])
+    path
 
   angleTo: (p) ->
     Math.atan2 p.y - @y, p.x - @x
@@ -1870,7 +1975,7 @@ class Property
     if opacity? and opacity isnt "" and typeof (@value) is "string" # can only add opacity to colors, not patterns
       color = new RGBColor(@value)
       newValue = "rgba(" + color.r + ", " + color.g + ", " + color.b + ", " + opacity + ")"  if color.ok
-    new svg.Property(@name, newValue)
+    new Property(@name, newValue)
 
 
   # definition extensions
@@ -1901,7 +2006,7 @@ class Property
 
   getEM: (viewPort) ->
     em = 12
-    fontSize = new svg.Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
+    fontSize = new Property("fontSize", svg.Font.Parse(svg.ctx.font).fontSize)
     em = fontSize.toPixels(viewPort)  if fontSize.hasValue()
     em
 
@@ -2301,10 +2406,6 @@ svg.parseXml = (xml) ->
     xmlDoc.loadXML xml
     xmlDoc
 
-svg.Property = Property
-
-# fonts
-svg.Font = new Font
 
 # points and paths
 svg.ToNumberArray = (s) ->
@@ -2313,58 +2414,13 @@ svg.ToNumberArray = (s) ->
     a[i] = parseFloat(a[i])
   a
 
-svg.Point = Point
-
-svg.CreatePoint = (s) ->
-  a = svg.ToNumberArray(s)
-  new svg.Point(a[0], a[1])
-
-svg.CreatePath = (s) ->
-  a = svg.ToNumberArray(s)
-  path = []
-
-  for i in [0...a.length] by 2
-    path.push new svg.Point(a[i], a[i + 1])
-  path
-
-svg.BoundingBox = BoundingBox
 
 # transforms
-svg.Transform = (v) ->
-  @Type = {}
-  
-  # translate
-  @Type.translate = translate
+svg.Transform = Transform
 
-  # rotate
-  @Type.rotate = rotate
-  @Type.scale = scale
-  @Type.matrix = matrix
-  @Type.skewX = skewX
-  @Type.skewY = skewY
 
-  @transforms = []
-  @apply = (ctx) ->
-    for i in [0...@transforms.length]
-      @transforms[i].apply ctx
-    return
-
-  @applyToPoint = (p) ->
-    for i in [0...@transforms.length]
-      @transforms[i].applyToPoint p
-    return
-
-  data = svg.trim(svg.compressSpaces(v)).replace(/\)(\s?,\s?)/g, ") ").split(/\s(?=[a-z])/)
-
-  for i in [0...data.length]
-    type = svg.trim(data[i].split("(")[0])
-    s = data[i].split("(")[1].replace(")", "")
-    transform = new @Type[type](s)
-    transform.type = type
-    @transforms.push transform
-
-  return
-
+# fonts
+svg.Font = new Font
 
 
 # aspect ratio
@@ -2373,147 +2429,76 @@ svg.AspectRatio = AspectRatio
 
 # elements
 svg.Element = {}
-svg.EmptyProperty = new svg.Property("EMPTY", "")
+svg.EmptyProperty = new Property("EMPTY", "")
 
-svg.Element.RenderedElementBase = RenderedElementBase
 
-svg.Element.PathElementBase = PathElementBase
+# Elements. Each element has its
+# own class. The reason they are kept
+# in this structure is that we create the
+# objects dynamically by doing a
+#   new svg.Element[elementname]
+# later on.
 
-# svg element
 svg.Element.svg = svgElement
-
-# rect element
 svg.Element.rect = rect
-
-# circle element
 svg.Element.circle = circle
-
-# ellipse element
 svg.Element.ellipse = ellipse
-
-
-
-# line element
 svg.Element.line = line
-
-# polyline element
 svg.Element.polyline = polyline
-
-# polygon element
 svg.Element.polygon = polygon
-
-
-# path element
 svg.Element.path = path
-
-# pattern element
 svg.Element.pattern = pattern
-
-# marker element
 svg.Element.marker = marker
-
-# definitions element
 svg.Element.defs = defs
-
-
-# base for gradients
 svg.Element.GradientBase = GradientBase
-
-# linear gradient element
 svg.Element.linearGradient = linearGradient
-
-# radial gradient element
 svg.Element.radialGradient = radialGradient
-
-# gradient stop element
 svg.Element.stop = stop
-
-# animation base element
 svg.Element.AnimateBase = AnimateBase
-
-
-# animate element
 svg.Element.animate = animate
-
-# animate color element
 svg.Element.animateColor = animateColor
-
-# animate transform element
 svg.Element.animateTransform = animateTransform
-
-
-
-# font element
 svg.Element.font = font
-
-# font-face element
 svg.Element.fontface = fontface
-
-# missing-glyph element
 svg.Element.missingglyph = missingglyph
-
-# glyph element
 svg.Element.glyph = glyph
-
-# text element
 svg.Element.text = text
-
-# text base
 svg.Element.TextElementBase = TextElementBase
-
-# tspan 
 svg.Element.tspan = tspan
-
-# tref
 svg.Element.tref = tref
-
-# a element
 svg.Element.a = a
-
-# image element
 svg.Element.image = image
-
-# group element
 svg.Element.g = g
-
-# symbol element
 svg.Element.symbol = symbol
-
-
-# style element
 svg.Element.style = ElementBaseStyle
-
-# use element 
 svg.Element.use = use
-
-# mask element
 svg.Element.mask = mask
-
-# clip element
 svg.Element.clipPath = clipPath
-
-# filters
 svg.Element.filter = filter
-
 svg.Element.feMorphology = feMorphology
-
 svg.Element.feColorMatrix = feColorMatrix
-
 svg.Element.feGaussianBlur = feGaussianBlur
-
+svg.Element.MISSING = MISSING
 # title element, do nothing
 svg.Element.title = title
-
 # desc element, do nothing
 svg.Element.desc = desc
 
-svg.Element.MISSING = MISSING
+
+svg.Mouse = new Mouse
 
 # element factory
 svg.CreateElement = (node) ->
   className = node.nodeName.replace(/^[^:]+:/, "") # remove namespace
   className = className.replace(/\-/g, "") # remove dashes
   e = null
+  # Todo this should be handled
+  # more gracefully - we really want the title
+  # and desc to be created - but just to not to cause
+  # troubles with the attributes and styles
+  if className is "title" or className is "desc" or className is "MISSING"
+    console.log "not creating a " + svg.Element[className]
+    return null 
   unless typeof (svg.Element[className]) is "undefined"
     e = new svg.Element[className](node)
   else
@@ -2550,13 +2535,16 @@ svg.loadXmlDoc = (ctx, dom) ->
   # bind mouse
   unless svg.opts["ignoreMouse"] is true
     ctx.canvas.onclick = (e) ->
-      p = mapXY(new svg.Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
+      p = mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
       svg.Mouse.onclick p.x, p.y
 
     ctx.canvas.onmousemove = (e) ->
-      p = mapXY(new svg.Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
+      p = mapXY(new Point((if e? then e.clientX else event.clientX), (if e? then e.clientY else event.clientY)))
       svg.Mouse.onmousemove p.x, p.y
+
   e = svg.CreateElement(dom.documentElement)
+  console.log "*** svgCreateElement from dom: " + dom.documentElement
+  #alert  "svgCreateElement from dom"
   e.root = true
   
   # render loop
@@ -2630,56 +2618,6 @@ svg.loadXmlDoc = (ctx, dom) ->
       svg.Mouse.runEvents() # run and clear our events
   , 1000 / svg.FRAMERATE)
 
-svg.Mouse = new (->
-  @events = []
-  @hasEvents = ->
-    @events.length isnt 0
-
-  @onclick = (x, y) ->
-    @events.push
-      type: "onclick"
-      x: x
-      y: y
-      run: (e) ->
-        e.onclick()  if e.onclick
-
-
-  @onmousemove = (x, y) ->
-    @events.push
-      type: "onmousemove"
-      x: x
-      y: y
-      run: (e) ->
-        e.onmousemove()  if e.onmousemove
-
-
-  @eventElements = []
-  @checkPath = (element, ctx) ->
-    for i in [0...@events.length]
-      e = @events[i]
-      @eventElements[i] = element  if ctx.isPointInPath and ctx.isPointInPath(e.x, e.y)
-
-  @checkBoundingBox = (element, bb) ->
-
-    for i in [0...@events.length]
-      e = @events[i]
-      @eventElements[i] = element  if bb.isPointInBox(e.x, e.y)
-
-  @runEvents = ->
-    svg.ctx.canvas.style.cursor = ""
-
-    for i in [0...@events.length]
-      e = @events[i]
-      element = @eventElements[i]
-      while element
-        e.run element
-        element = element.parent
-    
-    # done running, clear
-    @events = []
-    @eventElements = []
-  return
-)
 
 
 if CanvasRenderingContext2D
