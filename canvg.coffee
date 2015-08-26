@@ -285,12 +285,15 @@ class svSVGgContainerElement
     unless @opts["ignoreDimensions"] is true
       
       # set canvas size
+      console.log "setting the canvas size\n"
       if e.style("width").hasValue()
         ctx.canvas.width = e.style("width").toPixels("x")
         ctx.canvas.style.width = ctx.canvas.width + "px"
+        console.log "ctx.canvas.width" + ctx.canvas.width + "px"
       if e.style("height").hasValue()
         ctx.canvas.height = e.style("height").toPixels("y")
         ctx.canvas.style.height = ctx.canvas.height + "px"
+        console.log "ctx.canvas.height" + ctx.canvas.height + "px"
     cWidth = ctx.canvas.clientWidth or ctx.canvas.width
     cHeight = ctx.canvas.clientHeight or ctx.canvas.height
     if @opts["ignoreDimensions"] is true and e.style("width").hasValue() and e.style("height").hasValue()
@@ -301,7 +304,9 @@ class svSVGgContainerElement
     e.attribute("y", true).value = @opts["offsetY"]  if @opts["offsetY"]?
     if @opts["scaleWidth"]? and @opts["scaleHeight"]?
       xRatio = 1
+      console.log "xRatio: " + xRatio
       yRatio = 1
+      console.log "yRatio: " + yRatio
       viewBox = @ToNumberArray(e.attribute("viewBox").value)
       if e.attribute("width").hasValue()
         xRatio = e.attribute("width").toPixels("x") / @opts["scaleWidth"]
@@ -314,12 +319,16 @@ class svSVGgContainerElement
       e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio)
       e.attribute("preserveAspectRatio", true).value = "none"
     
+    console.log "xRatio: " + xRatio
+    console.log "yRatio: " + yRatio
     # clear and render
-    ctx.clearRect 0, 0, cWidth, cHeight  unless @opts["ignoreClear"] is true
+    unless @opts["ignoreClear"]
+      ctx.clearRect 0, 0, cWidth, cHeight
+      console.log "clearing: " + cWidth + " " + cHeight
     e.render ctx
-    if @isFirstRender
-      @isFirstRender = false
-      @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
+    #if @isFirstRender
+    #  @isFirstRender = false
+    #  @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
 
 
 
@@ -546,17 +555,21 @@ class SVGElement
   render: (ctx) ->
     
     # don't render display=none
-    return  if @style("display").value == "none"
+    if @style("display").value == "none"
+      return  
     
     # don't render visibility=hidden
-    return  if @attribute("visibility").value == "hidden"
+    if @attribute("visibility").value == "hidden"
+      return
     ctx.save()
     if @attribute("mask").hasValue() # mask
       mask = @attribute("mask").getDefinition()
-      mask.apply ctx, this  if mask?
+      if mask?
+        mask.apply ctx, this  
     else if @style("filter").hasValue() # filter
       filter = @style("filter").getDefinition()
-      filter.apply ctx, this  if filter?
+      if filter?
+        filter.apply ctx, this  
     else
       @setContext ctx
       @renderChildren ctx
@@ -712,20 +725,34 @@ class SVGmaskContainerElement extends SVGElement
 
   apply: (ctx, element) ->
 
+    debugger
     # render as temp svg  
     x = @attribute("x").toPixels("x")
     y = @attribute("y").toPixels("y")
     width = @attribute("width").toPixels("x")
     height = @attribute("height").toPixels("y")
+
+    if width == 0 and height == 0
+      bb = new SVGBoundingBox()
+      i = 0
+      while i < @children.length
+        bb.addBoundingBox @children[i].getBoundingBox()
+        i++
+      x = Math.floor(bb.x1)
+      y = Math.floor(bb.y1)
+      width = Math.floor(bb.width())
+      height = Math.floor(bb.height())
     
     # temporarily remove mask to avoid recursion
     mask = element.attribute("mask").value
     element.attribute("mask").value = ""
+
     cMask = document.createElement("canvas")
     cMask.width = x + width
     cMask.height = y + height
     maskCtx = cMask.getContext("2d")
     @renderChildren maskCtx
+
     c = document.createElement("canvas")
     c.width = x + width
     c.height = y + height
@@ -734,11 +761,13 @@ class SVGmaskContainerElement extends SVGElement
     tempCtx.globalCompositeOperation = "destination-in"
     tempCtx.fillStyle = maskCtx.createPattern(cMask, "no-repeat")
     tempCtx.fillRect 0, 0, x + width, y + height
+
     ctx.fillStyle = tempCtx.createPattern(c, "no-repeat")
     ctx.fillRect 0, 0, x + width, y + height
     
     # reassign mask
     element.attribute("mask").value = mask
+    return
 
   render: (ctx) ->
   # NO RENDER
@@ -971,7 +1000,6 @@ class SVGGradientElement extends SVGElement
   constructor: (node) ->
     @stops = []
     super node
-    @gradientUnits = @attribute("gradientUnits").valueOrDefault("objectBoundingBox")
     for i in [0...@children.length]
       child = @children[i]
       @stops.push child  if child.type == "stop"
@@ -979,6 +1007,9 @@ class SVGGradientElement extends SVGElement
 
   getGradient: ->
   # OVERRIDE ME!
+
+  gradientUnits: ->
+    return @attribute("gradientUnits").valueOrDefault("objectBoundingBox")
 
   createGradient: (ctx, element, parentOpacityProp) ->
     stopsContainer = this
@@ -1031,13 +1062,13 @@ class SVGradialGradientGradientElement extends SVGGradientElement
     @attribute("cx", true).value = "50%"  unless @attribute("cx").hasValue()
     @attribute("cy", true).value = "50%"  unless @attribute("cy").hasValue()
     @attribute("r", true).value = "50%"  unless @attribute("r").hasValue()
-    cx = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("cx").numValue() else @attribute("cx").toPixels("x")))
-    cy = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("cy").numValue() else @attribute("cy").toPixels("y")))
+    cx = ((if @gradientUnits() == "objectBoundingBox" then bb.x() + bb.width() * @attribute("cx").numValue() else @attribute("cx").toPixels("x")))
+    cy = ((if @gradientUnits() == "objectBoundingBox" then bb.y() + bb.height() * @attribute("cy").numValue() else @attribute("cy").toPixels("y")))
     fx = cx
     fy = cy
-    fx = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("fx").numValue() else @attribute("fx").toPixels("x")))  if @attribute("fx").hasValue()
-    fy = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("fy").numValue() else @attribute("fy").toPixels("y")))  if @attribute("fy").hasValue()
-    r = ((if @gradientUnits == "objectBoundingBox" then (bb.width() + bb.height()) / 2.0 * @attribute("r").numValue() else @attribute("r").toPixels()))
+    fx = ((if @gradientUnits() == "objectBoundingBox" then bb.x() + bb.width() * @attribute("fx").numValue() else @attribute("fx").toPixels("x")))  if @attribute("fx").hasValue()
+    fy = ((if @gradientUnits() == "objectBoundingBox" then bb.y() + bb.height() * @attribute("fy").numValue() else @attribute("fy").toPixels("y")))  if @attribute("fy").hasValue()
+    r = ((if @gradientUnits() == "objectBoundingBox" then (bb.width() + bb.height()) / 2.0 * @attribute("r").numValue() else @attribute("r").toPixels()))
     ctx.createRadialGradient fx, fy, 0, cx, cy, r
 
 
@@ -1052,10 +1083,10 @@ class SVGlinearGradientGradientElement extends SVGGradientElement
       @attribute("y1", true).value = 0
       @attribute("x2", true).value = 1
       @attribute("y2", true).value = 0
-    x1 = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x1").numValue() else @attribute("x1").toPixels("x")))
-    y1 = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y1").numValue() else @attribute("y1").toPixels("y")))
-    x2 = ((if @gradientUnits == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x2").numValue() else @attribute("x2").toPixels("x")))
-    y2 = ((if @gradientUnits == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y2").numValue() else @attribute("y2").toPixels("y")))
+    x1 = ((if @gradientUnits() == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x1").numValue() else @attribute("x1").toPixels("x")))
+    y1 = ((if @gradientUnits() == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y1").numValue() else @attribute("y1").toPixels("y")))
+    x2 = ((if @gradientUnits() == "objectBoundingBox" then bb.x() + bb.width() * @attribute("x2").numValue() else @attribute("x2").toPixels("x")))
+    y2 = ((if @gradientUnits() == "objectBoundingBox" then bb.y() + bb.height() * @attribute("y2").numValue() else @attribute("y2").toPixels("y")))
     return null  if x1 is x2 and y1 is y2
     ctx.createLinearGradient x1, y1, x2, y2
 
@@ -1075,53 +1106,54 @@ class SVGRenderedElement extends SVGElement
       if fillStyle.value == "currentColor"
         fillStyle.value = @style("color").value
       
-      #sabotage!
-      randomSabotage = Math.random()
-      
-      #if randomSabotage > 1-1/3
-      #  fillStyle.value = "red"
-      #else if randomSabotage > 1-2/3
-      #  fillStyle.value = "black"
-      #else if randomSabotage > 1-3/3
-      #  fillStyle.value = "yellow"
+      if false
+        #sabotage!
+        randomSabotage = Math.random()
+        
+        #if randomSabotage > 1-1/3
+        #  fillStyle.value = "red"
+        #else if randomSabotage > 1-2/3
+        #  fillStyle.value = "black"
+        #else if randomSabotage > 1-3/3
+        #  fillStyle.value = "yellow"
 
-      #if randomSabotage > 1-1/3
-      #  fillStyle.value = "#01dd85" # Caribbean Green
-      #else if randomSabotage > 1-2/3
-      #  fillStyle.value = "red"
-      #else if randomSabotage > 1-3/3
-      #  fillStyle.value = "#b271c3" # Amethyst
-
-
-      if randomSabotage > 1-1/8
-        fillStyle.value = "#01dd85" # Caribbean Green
-      else if randomSabotage > 1-2/8
-        fillStyle.value = "red"
-      else if randomSabotage > 1-3/8
-        fillStyle.value = "#b271c3" # Amethyst
-      else if randomSabotage > 1-4/8
-        fillStyle.value = "37a2da" # curious blue
-      else if randomSabotage > 1-5/8
-        fillStyle.value = "b40d91" # red violet
-      else if randomSabotage > 1-6/8
-        fillStyle.value = "EB038B" # Hollywood Cerise
-      else if randomSabotage > 1-7/8
-        fillStyle.value = "f0e905" # Turbo (i.e. a yellow)
-      else if randomSabotage > 1-8/8
-        fillStyle.value = "black"
+        #if randomSabotage > 1-1/3
+        #  fillStyle.value = "#01dd85" # Caribbean Green
+        #else if randomSabotage > 1-2/3
+        #  fillStyle.value = "red"
+        #else if randomSabotage > 1-3/3
+        #  fillStyle.value = "#b271c3" # Amethyst
 
 
+        if randomSabotage > 1-1/8
+          fillStyle.value = "#01dd85" # Caribbean Green
+        else if randomSabotage > 1-2/8
+          fillStyle.value = "red"
+        else if randomSabotage > 1-3/8
+          fillStyle.value = "#b271c3" # Amethyst
+        else if randomSabotage > 1-4/8
+          fillStyle.value = "37a2da" # curious blue
+        else if randomSabotage > 1-5/8
+          fillStyle.value = "b40d91" # red violet
+        else if randomSabotage > 1-6/8
+          fillStyle.value = "EB038B" # Hollywood Cerise
+        else if randomSabotage > 1-7/8
+          fillStyle.value = "f0e905" # Turbo (i.e. a yellow)
+        else if randomSabotage > 1-8/8
+          fillStyle.value = "black"
 
 
-      #if randomSabotage > 1-1/2
-      #  fillStyle.value = "black"
-      #else if randomSabotage > 1-2/2
-      #  fillStyle.value = "white"
 
-      #if randomSabotage > 1-1/2
-      #  fillStyle.value = "black"
-      #else if randomSabotage > 1-2/2
-      #  fillStyle.value = "red"
+
+        #if randomSabotage > 1-1/2
+        #  fillStyle.value = "black"
+        #else if randomSabotage > 1-2/2
+        #  fillStyle.value = "white"
+
+        #if randomSabotage > 1-1/2
+        #  fillStyle.value = "black"
+        #else if randomSabotage > 1-2/2
+        #  fillStyle.value = "red"
 
       ctx.fillStyle = ((if fillStyle.value == "none" then "rgba(0,0,0,0)" else fillStyle.value))
     if @style("fill-opacity").hasValue()
@@ -2205,7 +2237,6 @@ class SVGBoundingBox
   constructor: (x1, y1, x2, y2) -> # pass in initial points if you want
     @addPoint x1, y1
     @addPoint x2, y2
-    return
 
   x: ->
     @x1
@@ -2678,7 +2709,7 @@ SVGRGBColor = (color_string) ->
   for key of simple_colors
     color_string = simple_colors[key]  if color_string is key
   
-  # emd of simple type-in colors
+  # end of simple type-in colors
   
   # array of color definition objects
   color_defs = [
@@ -2739,5 +2770,7 @@ SVGRGBColor = (color_string) ->
     g = "0" + g  if g.length is 1
     b = "0" + b  if b.length is 1
     "#" + r + g + b
+
+  return @
 
 
