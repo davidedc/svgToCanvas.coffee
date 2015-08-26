@@ -5,7 +5,9 @@
 
 # original Javascript code by:
 # Gabe Lerner (gabelerner@gmail.com)
-# http://code.google.com/p/canvg/
+#   http://code.google.com/p/canvg/
+# and subsequently:
+#   https://github.com/gabelerner/canvg
 
 # canvg(target, s)
 # empty parameters: replace all 'svg' elements on page with 'canvas' elements
