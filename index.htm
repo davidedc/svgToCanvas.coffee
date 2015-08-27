@@ -53,19 +53,6 @@
 		label { color: darkblue; }
 		a image { border: 0; }
 		</style>
-		<script type="text/javascript">
-
-		  var _gaq = _gaq || [];
-		  _gaq.push(['_setAccount', 'UA-15494947-1']);
-		  _gaq.push(['_trackPageview']);
-
-		  (function() {
-			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-		  })();
-
-		</script>		
 	</head>
 	<body onload="bodyonload();">
 		<h1 id="title"><a href="http://canvg.googlecode.com/">canvg</a> examples</h1>
@@ -74,53 +61,53 @@
 		<table><tr><td rowspan="2" class="examples">
 		
 		<table><thead><tr><th colspan="3">complex</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/1.svg')">soccer</a></td><td> <a href="svgs/1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://en.wikipedia.org/wiki/File:Soccer_ball_animated.svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/22.svg')">world</a></td><td> <a href="svgs/22.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://en.wikipedia.org/wiki/Blank_map" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/23.svg')">tiger</a></td><td> <a href="svgs/23.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.croczilla.com/bits_and_pieces/svg/samples/" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/25.svg')">butterfly</a></td><td> <a href="svgs/25.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.croczilla.com/bits_and_pieces/svg/samples/" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/26.svg')">floorplan</a></td><td> <a href="svgs/26.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://cse.unl.edu/~nbenes/snippets/Test%20Case_347938.snip" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/1.svg', {ignoreSVGMouse: true})">soccer</a></td><td> <a href="svgs/1.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://en.wikipedia.org/wiki/File:Soccer_ball_animated.svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/22.svg', {ignoreSVGMouse: true})">world</a></td><td> <a href="svgs/22.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://en.wikipedia.org/wiki/Blank_map" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/23.svg', {ignoreSVGMouse: true})">tiger</a></td><td> <a href="svgs/23.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.croczilla.com/bits_and_pieces/svg/samples/" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/25.svg', {ignoreSVGMouse: true})">butterfly</a></td><td> <a href="svgs/25.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.croczilla.com/bits_and_pieces/svg/samples/" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/26.svg', {ignoreSVGMouse: true})">floorplan</a></td><td> <a href="svgs/26.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://cse.unl.edu/~nbenes/snippets/Test%20Case_347938.snip" target="_blank"><img src="images/link.png" /></a></td></tr>
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">basic shapes</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/2.svg')">all</a></td><td> <a href="svgs/2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://keith-wood.name/svg.html#examples" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/8.svg')">layers</a></td><td> <a href="svgs/8.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=ellipse2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/2.svg', {ignoreSVGMouse: true})">all</a></td><td> <a href="svgs/2.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://keith-wood.name/svg.html#examples" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/8.svg', {ignoreSVGMouse: true})">layers</a></td><td> <a href="svgs/8.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=ellipse2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">paths</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/10.svg')">line</a></td><td> <a href="svgs/10.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=line1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/11.svg')">poly</a></td><td> <a href="svgs/11.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=polygon1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/13.svg')">path</a></td><td> <a href="svgs/13.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=polyline1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/15.svg')">curve</a></td><td> <a href="svgs/15.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=path2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/27.svg')">arcs</a></td><td> <a href="svgs/27.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/paths.html#PathDataEllipticalArcCommands" target="_blank"><img src="images/link.png" /></a></td></tr>		
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/29.svg')">markers</a></td><td> <a href="svgs/29.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://apike.ca/prog_svg_paths.html" target="_blank"><img src="images/link.png" /></a></td></tr>		
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/10.svg', {ignoreSVGMouse: true})">line</a></td><td> <a href="svgs/10.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=line1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/11.svg', {ignoreSVGMouse: true})">poly</a></td><td> <a href="svgs/11.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=polygon1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/13.svg', {ignoreSVGMouse: true})">path</a></td><td> <a href="svgs/13.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=polyline1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/15.svg', {ignoreSVGMouse: true})">curve</a></td><td> <a href="svgs/15.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=path2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/27.svg', {ignoreSVGMouse: true})">arcs</a></td><td> <a href="svgs/27.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/paths.html#PathDataEllipticalArcCommands" target="_blank"><img src="images/link.png" /></a></td></tr>		
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/29.svg', {ignoreSVGMouse: true})">markers</a></td><td> <a href="svgs/29.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://apike.ca/prog_svg_paths.html" target="_blank"><img src="images/link.png" /></a></td></tr>		
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">gradients &amp; patterns</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/16.svg')">linear</a></td><td> <a href="svgs/16.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=linear1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/18.svg')">radial</a></td><td> <a href="svgs/18.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=radial1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/19.svg')">radial focus</a></td><td> <a href="svgs/19.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=radial2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/30.svg')">pattern</a></td><td> <a href="svgs/30.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/pservers.html#Patterns" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/34.svg')">transform</a></td><td> <a href="svgs/34.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/pservers.html#LinearGradientElementGradientTransformAttribute" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/16.svg', {ignoreSVGMouse: true})">linear</a></td><td> <a href="svgs/16.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=linear1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/18.svg', {ignoreSVGMouse: true})">radial</a></td><td> <a href="svgs/18.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=radial1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/19.svg', {ignoreSVGMouse: true})">radial focus</a></td><td> <a href="svgs/19.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=radial2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/30.svg', {ignoreSVGMouse: true})">pattern</a></td><td> <a href="svgs/30.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/pservers.html#Patterns" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/34.svg', {ignoreSVGMouse: true})">transform</a></td><td> <a href="svgs/34.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/pservers.html#LinearGradientElementGradientTransformAttribute" target="_blank"><img src="images/link.png" /></a></td></tr>
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">animations</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/20.svg')">indefinite</a></td><td> <a href="svgs/20.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=animate_1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/21.svg')">multiple</a></td><td> <a href="svgs/21.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=animate_2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/20.svg', {ignoreSVGMouse: true})">indefinite</a></td><td> <a href="svgs/20.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=animate_1&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/21.svg', {ignoreSVGMouse: true})">multiple</a></td><td> <a href="svgs/21.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3schools.com/svg/tryit.asp?filename=animate_2&type=svg" target="_blank"><img src="images/link.png" /></a></td></tr>
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">text</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/35.svg')">glyphs</a></td><td> <a href="svgs/35.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/fonts.html#GlyphElement" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/36.svg')">external</a></td><td> <a href="svgs/36.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/fonts.html#SVGFontsOverview" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/35.svg', {ignoreSVGMouse: true})">glyphs</a></td><td> <a href="svgs/35.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/fonts.html#GlyphElement" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/36.svg', {ignoreSVGMouse: true})">external</a></td><td> <a href="svgs/36.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/fonts.html#SVGFontsOverview" target="_blank"><img src="images/link.png" /></a></td></tr>
 		</tbody></table>
 		
 		<table><thead><tr><th colspan="3">other</th></tr></thead><tbody>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/33.svg')">masks</a></td><td> <a href="svgs/33.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/24.svg')">units</a></td><td> <a href="svgs/24.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/coords.html#Units" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/28.svg')">viewport</a></td><td> <a href="svgs/28.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/coords.html#PreserveAspectRatioAttribute" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/33.svg', {ignoreSVGMouse: true})">masks</a></td><td> <a href="svgs/33.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/masking.html#Masking" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/24.svg', {ignoreSVGMouse: true})">units</a></td><td> <a href="svgs/24.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/coords.html#Units" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/28.svg', {ignoreSVGMouse: true})">viewport</a></td><td> <a href="svgs/28.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG11/coords.html#PreserveAspectRatioAttribute" target="_blank"><img src="images/link.png" /></a></td></tr>
 			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/31.svg')">links</a></td><td> <a href="svgs/31.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/linking.html" target="_blank"><img src="images/link.png" /></a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/32.svg')">images</a></td><td> <a href="svgs/32.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/struct.html#ImageElement" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/32.svg', {ignoreSVGMouse: true})">images</a></td><td> <a href="svgs/32.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/struct.html#ImageElement" target="_blank"><img src="images/link.png" /></a></td></tr>
 			<tr><td colspan="2"><a href="callback.htm">callbacks</a></td></tr>
-			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/filters-gauss-01-b.svg')">blur filter</a></td><td> <a href="svgs/filters-gauss-01-b.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/struct.html#ImageElement" target="_blank"><img src="images/link.png" /></a></td></tr>
+			<tr><td><a href="javascript:r();canvg('canvas', 'svgs/filters-gauss-01-b.svg', {ignoreSVGMouse: true})">blur filter</a></td><td> <a href="svgs/filters-gauss-01-b.svg" target="_blank"><img src="images/svg.png" /></a></td><td><a href="http://www.w3.org/TR/SVG/struct.html#ImageElement" target="_blank"><img src="images/link.png" /></a></td></tr>
 
 
 

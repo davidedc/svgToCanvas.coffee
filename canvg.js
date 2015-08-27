@@ -235,7 +235,6 @@ svSVGgContainerElement = (function() {
     className = className.replace(/\-/g, "");
     e = null;
     if (typeof this.Element[className] !== "undefined") {
-      console.log('attempting to create a ' + className);
       e = new this.Element[className](node);
     } else {
       e = new SVGmissingElement(node);
@@ -253,6 +252,7 @@ svSVGgContainerElement = (function() {
   };
 
   svSVGgContainerElement.prototype.stop = function() {
+    console.log(">>>>>> stopping interval");
     if (this.intervalID) {
       return clearInterval(this.intervalID);
     }
@@ -277,6 +277,7 @@ svSVGgContainerElement = (function() {
 
   svSVGgContainerElement.prototype.draw = function() {
     var cHeight, cWidth, ctx, e, viewBox, xRatio, yRatio;
+    console.log("start of draw() function");
     ctx = this.ctxFromLoadXMLDoc;
     e = this.eFromLoadXMLDoc;
     this.ViewPort.Clear();
@@ -375,6 +376,7 @@ svSVGgContainerElement = (function() {
       waitingForImages = false;
       this.draw();
     }
+    console.log(">>>>>> starting interval with fps: " + this.FRAMERATE);
     return this.intervalID = setInterval((function(_this) {
       return function() {
         var animation, needUpdate, _i, _len, _ref;
@@ -606,8 +608,6 @@ SVGElement = (function() {
 
   SVGElement.prototype.style = function(name, createIfNotExists) {
     var a, p, ps, s;
-    console.log("name, createIfNotExists " + name + " " + createIfNotExists);
-    console.log("@styles " + this.styles + " class name: " + this.constructor.name);
     if (this.styles === void 0) {
       console.trace();
     }
@@ -676,8 +676,6 @@ SVGElement = (function() {
 
   SVGElement.prototype.addChild = function(childNode, create) {
     var child;
-    console.log("addchild childNode: " + childNode);
-    console.log("typeof: " + typeof childNode);
     child = childNode;
     if (create) {
       child = svg.CreateElement(childNode);
@@ -858,7 +856,6 @@ SVGmaskContainerElement = (function(_super) {
   }
 
   SVGmaskContainerElement.prototype.apply = function(ctx, element) {
-    debugger;
     var bb, c, cMask, height, i, mask, maskCtx, tempCtx, width, x, y;
     x = this.attribute("x").toPixels("x");
     y = this.attribute("y").toPixels("y");
@@ -1171,7 +1168,6 @@ SVGanimateAnimationElement = (function(_super) {
   SVGanimateAnimationElement.prototype.calcValue = function() {
     var newValue, p;
     p = this.progress();
-    console.log('p: ' + p);
     newValue = p.from.numValue() + (p.to.numValue() - p.from.numValue()) * p.progress;
     return newValue + this.initialUnits;
   };
@@ -1412,7 +1408,7 @@ SVGRenderedElement = (function(_super) {
       }
     }
     if (this.style("opacity").hasValue()) {
-      return ctx.globalAlpha = this.style("opacity").numValue();
+      ctx.globalAlpha = this.style("opacity").numValue();
     }
   };
 
@@ -1675,6 +1671,17 @@ SVGTextContentElement = (function(_super) {
 
   SVGTextContentElement.prototype.getText = function() {};
 
+  SVGTextContentElement.prototype.measureTextRecursive = function(ctx) {
+    var i, width;
+    width = this.measureText(ctx);
+    i = 0;
+    while (i < this.children.length) {
+      width += this.children[i].measureTextRecursive(ctx);
+      i++;
+    }
+    return width;
+  };
+
   SVGTextContentElement.prototype.measureText = function(ctx) {
     var customFont, customFontStyle, dx, fontSize, glyph, i, measure, text, textToMeasure, width, _i, _ref;
     customFontStyle = this.parent.style("font-family");
@@ -1811,63 +1818,118 @@ SVGtextTextContentElement = (function(_super) {
   };
 
   SVGtextTextContentElement.prototype.getBoundingBox = function() {
-    return new SVGBoundingBox(this.attribute("x").toPixels("x"), this.attribute("y").toPixels("y"), 0, 0);
+    var fontSize, x, y;
+    x = this.attribute('x').toPixels('x');
+    y = this.attribute('y').toPixels('y');
+    fontSize = this.parent.style('font-size').numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize);
+    return new SVGBoundingBox(x, y - fontSize, x + Math.floor(fontSize * 2.0 / 3.0) * this.children[0].getText().length, y);
   };
 
   SVGtextTextContentElement.prototype.renderChildren = function(ctx) {
     var i, _i, _ref;
-    this.textAnchor = this.style("text-anchor").valueOrDefault("start");
-    this.x = this.attribute("x").toPixels("x");
-    this.y = this.attribute("y").toPixels("y");
+    this.x = this.attribute('x').toPixels('x');
+    this.y = this.attribute('y').toPixels('y');
+    if (this.attribute('dx').hasValue()) {
+      this.x += this.attribute('dx').toPixels('x');
+    }
+    if (this.attribute('dy').hasValue()) {
+      this.y += this.attribute('dy').toPixels('y');
+    }
+    this.x += this.getAnchorDelta(ctx, this, 0);
     for (i = _i = 0, _ref = this.children.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       this.renderChild(ctx, this, i);
     }
   };
 
-  SVGtextTextContentElement.prototype.renderChild = function(ctx, parent, i) {
-    var child, childInGroup, childLength, groupLength, j, _i, _j, _ref, _ref1, _ref2;
-    child = parent.children[i];
-    if (child.attribute("x").hasValue()) {
-      child.x = child.attribute("x").toPixels("x");
-    } else {
-      if (this.attribute("dx").hasValue()) {
-        this.x += this.attribute("dx").toPixels("x");
+  SVGtextTextContentElement.prototype.getAnchorDelta = function(ctx, parent, startI) {
+    var child, i, textAnchor, width;
+    textAnchor = this.style('text-anchor').valueOrDefault('start');
+    if (textAnchor !== 'start') {
+      width = 0;
+      i = startI;
+      while (i < parent.children.length) {
+        child = parent.children[i];
+        if (i > startI && child.attribute('x').hasValue()) {
+          break;
+        }
+        width += child.measureTextRecursive(ctx);
+        i++;
       }
-      if (child.attribute("dx").hasValue()) {
-        this.x += child.attribute("dx").toPixels("x");
+      return -1 * (textAnchor === 'end' ? width : width / 2.0);
+    }
+    return 0;
+  };
+
+  SVGtextTextContentElement.prototype.renderChild = function(ctx, parent, i) {
+    var i;
+    var child;
+    child = parent.children[i];
+    if (child.attribute('x').hasValue()) {
+      child.x = child.attribute('x').toPixels('x') + this.getAnchorDelta(ctx, parent, i);
+    } else {
+      if (this.attribute('dx').hasValue()) {
+        this.x += this.attribute('dx').toPixels('x');
+      }
+      if (child.attribute('dx').hasValue()) {
+        this.x += child.attribute('dx').toPixels('x');
       }
       child.x = this.x;
     }
-    childLength = (typeof (child.measureText === "undefined") ? 0 : child.measureText(ctx));
-    if (this.textAnchor !== "start" && (i === 0 || child.attribute("x").hasValue())) {
-      groupLength = childLength;
-      for (j = _i = _ref = i + 1, _ref1 = this.children.length; _ref <= _ref1 ? _i < _ref1 : _i > _ref1; j = _ref <= _ref1 ? ++_i : --_i) {
-        childInGroup = this.children[j];
-        if (childInGroup.attribute("x").hasValue()) {
-          break;
-        }
-        groupLength += childInGroup.measureText(ctx);
-      }
-      child.x -= (this.textAnchor === "end" ? groupLength : groupLength / 2.0);
-    }
-    this.x = child.x + childLength;
-    if (child.attribute("y").hasValue()) {
-      child.y = child.attribute("y").toPixels("y");
+    this.x = child.x + child.measureText(ctx);
+    if (child.attribute('y').hasValue()) {
+      child.y = child.attribute('y').toPixels('y');
     } else {
-      if (this.attribute("dy").hasValue()) {
-        this.y += this.attribute("dy").toPixels("y");
+      if (this.attribute('dy').hasValue()) {
+        this.y += this.attribute('dy').toPixels('y');
       }
-      if (child.attribute("dy").hasValue()) {
-        this.y += child.attribute("dy").toPixels("y");
+      if (child.attribute('dy').hasValue()) {
+        this.y += child.attribute('dy').toPixels('y');
       }
       child.y = this.y;
     }
     this.y = child.y;
     child.render(ctx);
-    for (i = _j = 0, _ref2 = child.children.length; 0 <= _ref2 ? _j < _ref2 : _j > _ref2; i = 0 <= _ref2 ? ++_j : --_j) {
+    i = 0;
+    while (i < child.children.length) {
       this.renderChild(ctx, child, i);
+      i++;
     }
   };
+
+
+  /*
+  renderChild: (ctx, parent, i) ->
+    child = parent.children[i]
+    if child.attribute("x").hasValue()
+      child.x = child.attribute("x").toPixels("x")
+    else
+      @x += @attribute("dx").toPixels("x")  if @attribute("dx").hasValue()
+      @x += child.attribute("dx").toPixels("x")  if child.attribute("dx").hasValue()
+      child.x = @x
+    childLength = (if typeof (child.measureText == "undefined") then 0 else child.measureText(ctx))
+    if @textAnchor != "start" and (i is 0 or child.attribute("x").hasValue()) # new group?
+       * loop through rest of children
+      groupLength = childLength
+  
+      for j in [i+1...@children.length]
+        childInGroup = @children[j]
+        break  if childInGroup.attribute("x").hasValue() # new group
+        groupLength += childInGroup.measureText(ctx)
+      child.x -= ((if @textAnchor == "end" then groupLength else groupLength / 2.0))
+    @x = child.x + childLength
+    if child.attribute("y").hasValue()
+      child.y = child.attribute("y").toPixels("y")
+    else
+      @y += @attribute("dy").toPixels("y")  if @attribute("dy").hasValue()
+      @y += child.attribute("dy").toPixels("y")  if child.attribute("dy").hasValue()
+      child.y = @y
+    @y = child.y
+    child.render ctx
+  
+    for i in [0...child.children.length]
+      @renderChild ctx, child, i
+    return
+   */
 
   return SVGtextTextContentElement;
 
@@ -1979,7 +2041,7 @@ SVGGraphicsElement = (function(_super) {
       }
       if (this.style("marker-end").isUrlDefinition()) {
         marker = this.style("marker-end").getDefinition();
-        return marker.render(ctx, markers[markers.length - 1][0], markers[markers.length - 1][1]);
+        marker.render(ctx, markers[markers.length - 1][0], markers[markers.length - 1][1]);
       }
     }
   };
@@ -2131,9 +2193,7 @@ SVGpathGraphicsElement = (function(_super) {
 
   function SVGpathGraphicsElement(node) {
     var d;
-    console.log('creating a SVGpathGraphicsElement');
     SVGpathGraphicsElement.__super__.constructor.call(this, node);
-    console.log('created a SVGGraphicsElement');
     d = this.attribute("d").value;
     d = d.replace(/,/g, " ");
     d = d.replace(/([MmZzLlHhVvCcSsQqTtAa])([MmZzLlHhVvCcSsQqTtAa])/g, "$1 $2");
@@ -2146,7 +2206,6 @@ SVGpathGraphicsElement = (function(_super) {
     d = svg.compressSpaces(d);
     d = svg.trim(d);
     this.d = d;
-    console.log('finished creating a path');
   }
 
   SVGpathGraphicsElement.prototype.path = function(ctx) {

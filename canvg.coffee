@@ -248,7 +248,7 @@ class svSVGgContainerElement
     className = className.replace(/\-/g, "")
     e = null
     unless typeof (@Element[className]) == "undefined"
-      console.log 'attempting to create a ' + className
+      #console.log 'attempting to create a ' + className
       e = new @Element[className](node)
     else
       e = new SVGmissingElement(node)
@@ -266,6 +266,7 @@ class svSVGgContainerElement
     @loadXmlDoc ctx, @parseXml(xml)
 
   stop: ->
+    console.log ">>>>>> stopping interval"
     clearInterval @intervalID  if @intervalID
 
   mapXY: (p, ctx) ->
@@ -279,6 +280,7 @@ class svSVGgContainerElement
     p
 
   draw: ->
+    console.log "start of draw() function"
     ctx = @ctxFromLoadXMLDoc
     e = @eFromLoadXMLDoc
 
@@ -363,6 +365,7 @@ class svSVGgContainerElement
       waitingForImages = false
       @draw()
 
+    console.log ">>>>>> starting interval with fps: " + @FRAMERATE
     @intervalID = setInterval(=>
       needUpdate = false
       if waitingForImages and @ImagesLoaded()
@@ -534,8 +537,8 @@ class SVGElement
   
   # get or create style, crawls up node tree
   style: (name, createIfNotExists) ->
-    console.log "name, createIfNotExists " + name + " " + createIfNotExists
-    console.log "@styles " + @styles + " class name: " + this.constructor.name
+    #console.log "name, createIfNotExists " + name + " " + createIfNotExists
+    #console.log "@styles " + @styles + " class name: " + this.constructor.name
     if @styles == undefined then console.trace()
     s = @styles[name]
     return s  if s?
@@ -598,8 +601,8 @@ class SVGElement
     return
 
   addChild: (childNode, create) ->
-    console.log "addchild childNode: " + childNode
-    console.log "typeof: " + typeof(childNode)
+    #console.log "addchild childNode: " + childNode
+    #console.log "typeof: " + typeof(childNode)
     child = childNode
     child = svg.CreateElement(childNode)  if create
     if child is null then return
@@ -726,8 +729,6 @@ class SVGmaskContainerElement extends SVGElement
     super node
 
   apply: (ctx, element) ->
-
-    debugger
     # render as temp svg  
     x = @attribute("x").toPixels("x")
     y = @attribute("y").toPixels("y")
@@ -994,7 +995,7 @@ class SVGanimateAnimationElement extends SVGAnimationElement
     p = @progress()
     
     # tween value linearly
-    console.log 'p: ' + p
+    # console.log 'p: ' + p
     newValue = p.from.numValue() + (p.to.numValue() - p.from.numValue()) * p.progress
     newValue + @initialUnits
 
@@ -1211,6 +1212,7 @@ class SVGRenderedElement extends SVGElement
     
     # opacity
     ctx.globalAlpha = @style("opacity").numValue()  if @style("opacity").hasValue()
+    return
 
 # 'use' is both a graphics and and a structural element,
 # see http://www.w3.org/TR/SVG/struct.html#UseElement, picking one.
@@ -1375,7 +1377,15 @@ class SVGTextContentElement extends SVGRenderedElement
 
   getText: ->
 
-  
+
+  measureTextRecursive: (ctx) ->
+    width = @measureText(ctx)
+    i = 0
+    while i < @children.length
+      width += @children[i].measureTextRecursive(ctx)
+      i++
+    width
+
   # OVERRIDE ME
   measureText: (ctx) ->
     customFontStyle = @parent.style("font-family")
@@ -1398,7 +1408,7 @@ class SVGTextContentElement extends SVGRenderedElement
     @setContext ctx
     width = ctx.measureText(textToMeasure).width
     ctx.restore()
-    width
+    return width
 
 # in theory, 'a' is a container element though
 class SVGaContainerElement extends SVGTextContentElement
@@ -1475,18 +1485,67 @@ class SVGtextTextContentElement extends SVGRenderedElement
     return
 
   getBoundingBox: ->
-    # TODO: implement
-    new SVGBoundingBox(@attribute("x").toPixels("x"), @attribute("y").toPixels("y"), 0, 0)
+    x = @attribute('x').toPixels('x')
+    y = @attribute('y').toPixels('y')
+    fontSize = @parent.style('font-size').numValueOrDefault(svg.Font.Parse(svg.ctx.font).fontSize)
+    new SVGBoundingBox(x, y - fontSize, x + Math.floor(fontSize * 2.0 / 3.0) * @children[0].getText().length, y)
 
   renderChildren: (ctx) ->
-    @textAnchor = @style("text-anchor").valueOrDefault("start")
-    @x = @attribute("x").toPixels("x")
-    @y = @attribute("y").toPixels("y")
-
+    @x = @attribute('x').toPixels('x')
+    @y = @attribute('y').toPixels('y')
+    if @attribute('dx').hasValue()
+      @x += @attribute('dx').toPixels('x')
+    if @attribute('dy').hasValue()
+      @y += @attribute('dy').toPixels('y')
+    @x += @getAnchorDelta(ctx, this, 0)
     for i in [0...@children.length]
       @renderChild ctx, this, i
     return
 
+  getAnchorDelta: (ctx, parent, startI) ->
+    textAnchor = @style('text-anchor').valueOrDefault('start')
+    if textAnchor != 'start'
+      width = 0
+      i = startI
+      while i < parent.children.length
+        child = parent.children[i]
+        if i > startI and child.attribute('x').hasValue()
+          break
+        # new group
+        width += child.measureTextRecursive(ctx)
+        i++
+      return -1 * (if textAnchor == 'end' then width else width / 2.0)
+    0
+
+  renderChild: (ctx, parent, i) ->
+    `var i`
+    child = parent.children[i]
+    if child.attribute('x').hasValue()
+      child.x = child.attribute('x').toPixels('x') + @getAnchorDelta(ctx, parent, i)
+    else
+      if @attribute('dx').hasValue()
+        @x += @attribute('dx').toPixels('x')
+      if child.attribute('dx').hasValue()
+        @x += child.attribute('dx').toPixels('x')
+      child.x = @x
+    @x = child.x + child.measureText(ctx)
+    if child.attribute('y').hasValue()
+      child.y = child.attribute('y').toPixels('y')
+    else
+      if @attribute('dy').hasValue()
+        @y += @attribute('dy').toPixels('y')
+      if child.attribute('dy').hasValue()
+        @y += child.attribute('dy').toPixels('y')
+      child.y = @y
+    @y = child.y
+    child.render ctx
+    i = 0
+    while i < child.children.length
+      @renderChild ctx, child, i
+      i++
+    return
+
+  ###
   renderChild: (ctx, parent, i) ->
     child = parent.children[i]
     if child.attribute("x").hasValue()
@@ -1518,6 +1577,7 @@ class SVGtextTextContentElement extends SVGRenderedElement
     for i in [0...child.children.length]
       @renderChild ctx, child, i
     return
+  ###
 
 
 class SVGElement extends SVGRenderedElement
@@ -1599,6 +1659,7 @@ class SVGGraphicsElement extends SVGRenderedElement
       if @style("marker-end").isUrlDefinition()
         marker = @style("marker-end").getDefinition()
         marker.render ctx, markers[markers.length - 1][0], markers[markers.length - 1][1]
+    return
 
   getBoundingBox: ->
     @path()
@@ -1696,9 +1757,9 @@ class SVGPathParser
 
 class SVGpathGraphicsElement extends SVGGraphicsElement
   constructor: (node) ->
-    console.log 'creating a SVGpathGraphicsElement'
+    #console.log 'creating a SVGpathGraphicsElement'
     super node
-    console.log 'created a SVGGraphicsElement'
+    #console.log 'created a SVGGraphicsElement'
     d = @attribute("d").value
     
     # TODO: convert to real lexer based on http://www.w3.org/TR/SVG11/paths.html#PathDataBNF
@@ -1713,7 +1774,7 @@ class SVGpathGraphicsElement extends SVGGraphicsElement
     d = svg.compressSpaces(d) # compress multiple spaces
     d = svg.trim(d)
     @d = d
-    console.log 'finished creating a path'
+    #console.log 'finished creating a path'
 
   path: (ctx) ->
     pp = new SVGPathParser(@d)
