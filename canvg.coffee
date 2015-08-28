@@ -22,7 +22,6 @@
 #     offsetY: int => draws at a y offset
 #     scaleWidth: int => scales horizontally to width
 #     scaleHeight: int => scales vertically to height
-#     renderCallback: function => will call the function after the first render is completed
 #     forceRedraw: function => will call the function on every frame, if it returns true, will redraw
 
 svg = undefined
@@ -332,7 +331,6 @@ class svSVGgContainerElement
     e.render ctx
     #if @isFirstRender
     #  @isFirstRender = false
-    #  @opts["renderCallback"]()  if typeof (@opts["renderCallback"]) == "function"
 
 
 
