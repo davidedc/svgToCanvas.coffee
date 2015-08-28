@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>svgToCanvas.coffee</title>
+	
+<meta name="description" content="">
+<link rel="stylesheet" href="./icons-and-styles/style.css" title="yellow" type="text/css" media="screen">
+	<style id="clearly_highlighting_css" type="text/css">/* selection */ html.clearly_highlighting_enabled ::-moz-selection { background: rgba(246, 238, 150, 0.99); } html.clearly_highlighting_enabled ::selection { background: rgba(246, 238, 150, 0.99); } /* cursor */ html.clearly_highlighting_enabled {    /* cursor and hot-spot position -- requires a default cursor, after the URL one */    cursor: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--cursor.png") 14 16, text; } /* highlight tag */ em.clearly_highlight_element {    font-style: inherit !important; font-weight: inherit !important;    background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--yellow.png");    background-repeat: repeat-x; background-position: top left; background-size: 100% 100%; } /* the delete-buttons are positioned relative to this */ em.clearly_highlight_element.clearly_highlight_first { position: relative; } /* delete buttons */ em.clearly_highlight_element a.clearly_highlight_delete_element {    display: none; cursor: pointer;    padding: 0; margin: 0; line-height: 0;    position: absolute; width: 34px; height: 34px; left: -17px; top: -17px;    background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--delete-sprite.png"); background-repeat: no-repeat; background-position: 0px 0px; } em.clearly_highlight_element a.clearly_highlight_delete_element:hover { background-position: -34px 0px; } /* retina */ @media (min--moz-device-pixel-ratio: 2), (-webkit-min-device-pixel-ratio: 2), (min-device-pixel-ratio: 2) {    em.clearly_highlight_element { background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--yellow@2x.png"); }    em.clearly_highlight_element a.clearly_highlight_delete_element { background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--delete-sprite@2x.png"); background-size: 68px 34px; } } </style><style>[touch-action="none"]{ -ms-touch-action: none; touch-action: none; }[touch-action="pan-x"]{ -ms-touch-action: pan-x; touch-action: pan-x; }[touch-action="pan-y"]{ -ms-touch-action: pan-y; touch-action: pan-y; }[touch-action="scroll"],[touch-action="pan-x pan-y"],[touch-action="pan-y pan-x"]{ -ms-touch-action: pan-x pan-y; touch-action: pan-x pan-y; }
+  .indentedLine {
+      margin-left: 2em;
+      margin-bottom: 1em;
+  }
+  .rowTitle {
+      margin-top: 1em;
+  }
+  textArea {
+      width: 100%;
+  }
+  #countdown {
+    text-align: center;
+    font-size: large;
+    background-color: black;
+    color: white;
+  }
+  </style></head>
+
+
+<body>
+
+<div id="grid_hold">
+
+<div id="header">
+<div id="title"><span class="blog_title">svgToCanvas.coffee</span></div>
+<div id="about">
+	
+    JSON-P DB Redux is a minimal Google App Engine app to persist/retrieve JSON objects via simple client-side javascript <a href="http://www.json.com/2007/12/24/jsonp-header-transfer-proposal/">JSON-P</a> calls. Curl also supported.
+
+</div>
+</div>
+
+<div id="content_hold">
+
+<div style="border: 1px solid gray; width: 47%; float: left; margin-bottom:3em;">
+      <canvas id="canvas" width="100%"></canvas>
+</div>
+
+<div style="border: 1px solid gray; width: 47%; float: left; margin-left: 2%; margin-bottom:3em;">
+      <canvas id="canvas" width="100%"></canvas>
+</div>
+  <div style="width:80%">
+    <a id="Preliminaries"><h1>Preliminaries</h1></a>
+    <p>JSON-P DB Redux is the resurrection, modification and extension of the abandoned <a href="http://jsonpdb.appspot.com/index.html">JSON-P DB</a> project by <a href="https://plus.google.com/+AdamRibaudo/posts">Adam Ribaudo</a> and <a href="https://plus.google.com/+PaulIrish/posts">Paul Irish</a>.</p>
+  </div>
+		
+	<a id="Goodfor"><h1>What is this good for?</h1></a>	
+	<div id="content">
+		<p><strong>This is good for having your own free and highly-hackable server to persist JSON objects from your web projects. Ready in 5 minutes.</strong></p>
+<p>There are several ways to persist data, the characteristics of this particular method are:
+
+<ul>
+<li>it's stored in the cloud so it will persist across browsers and users</li>
+<li>it's free for any sane volume of traffic/data</li>
+<li>it's simple to set-up, you just need a gmail account and to tweak a couple of lines in the source files</li>
+<li>it allows basic querying on the stored objects (equality test of one or more of its fields)</li>
+<li>it's based on JSON-P which means that you can store/retrieve JSON from any page served from any domain (even just pages opened from local file system)</li>
+<li>the source is minimal and well-commented python code, meaning that it's easy to bend it / hack it.</li>
+<li>it's dead easy to use</li>
+</ul>
+	</div>
+
+  <a id="Principles"><h1>What's the general principle?</h1></a> 
+  <div id="content">
+<p>To store a JSON object, just send it to the server together with a "bucket" name and a callback. The bucket name can be used to group (and fetch) together objects of the same kind, you can invent as many bucket names as the types of data you are going to store. So if you want to store something like {first:'Maggie',last:'Lynch',phone:'884-7839'} then you are probably going to give it the bucket of "contact" and issue a request like this: bucket=contact/{first:'Maggie',last:'Lynch',phone:'884-7839'}?callback=some-function. You are going to get a "key" as a response, which can be used to retrieve the object. Precise examples below. You'll use the bucket name to retrieve objects of the same kind as per examples below.</p>
+<p>To retrieve: you can either a) use the key returned by the store operation or b) retrieve all objects in a bucket or c) retrieve all objects (from a bucket) having one or more field values you specify.</p>
+  </div>
+
+<a id="JSONPAPI"><h1>JSONP API</h1></a>
+
+  <h3>Storing data:</h3>
+
+  <div class="indentedLine"><strong>Note:</strong> adding objects is not idempotent: adding the same object twice will result in two entries (with the same content) with two different keys.</div>
+
+  <div class="indentedLine">http://<i>serverName</i>/put/buckets/<i>bucketName</i>/<i>jsonObj</i>?callback=<i>callbackFunc</i></div>
+  
+  <div class="indentedLine">
+  <b>Example:</b>
+  <div class="indentedLine">http://jsonp-db-redux.appspot.com/put/buckets/myFoo/{"foo":"bar","baz":9}?callback=func</div>
+
+  <b>Response:</b>
+  <div class="indentedLine">func('agNpZWRyDQsSB2NvbnRhY3QYAQw'); <small> (item key is unique to this object)</small></div>
+  </div>
+  
+
+
+  <h3>Retrieve by item key:</h3>
+  <div class="indentedLine">http://<i>serverName</i>/get/keys/<i>itemKey</i>?callback=<i>callbackFunc</i></div>
+  <div class="indentedLine">
+  <b>Example:</b>
+  <div class="indentedLine" style="
+    font-size: smaller;
+">http://jsonp-db-redux.appspot.com/get/keys/agNpZWRyDQsSB2NvbnRhY3QYAQw?callback=func</div>
+  <b>Response:</b>
+  <div class="indentedLine">func({"foo":"bar","baz":9});</div>
+  </div>
+
+
+  <h3>Retrieve all items in a bucket:</h3>
+  <div class="indentedLine">http://<i>serverName</i>/get/buckets/<i>bucketName</i>/?callback=<i>callbackFunc</i></div>
+  <div class="indentedLine">
+  <b>Example:</b>
+  <div class="indentedLine">http://jsonp-db-redux.appspot.com/get/buckets/myFoo/?callback=func</div>
+  <b>Response:</b>
+  <div class="indentedLine">func([{"foo":"bar","baz":9},{"foo":"bar2","baz":10}]);</div>
+  </div>
+
+  <h3>Retrieve specific items by query (within a bucket)</h3>
+  <div class="indentedLine">
+  You pass an object - all fields will have to match:
+  <div class="indentedLine">http://<i>serverName</i>/get/buckets/<i>bucketName</i>/?filter=<i>jsonObjToMatch</i>&callback=<i>callbackFunc</i></div>
+  <div class="indentedLine">
+  <b>Example</b>
+  <div class="indentedLine">http://jsonp-db-redux.appspot.com/get/kind/myFoo/?filter={"foo":"bar2"}&callback=func</div>
+  <b>Response:</b>
+  <div class="indentedLine">func([{"foo":"bar2","baz":10}]);</div>
+  </div>
+  </div>
+
+
+	</div>
+
+<div id="sidebar">
+<div id="sidebarTitle"><span class="text">Get JSON-P DB Redux</span></div>
+<p><a href="https://github.com/davidedc/jsonp-db-redux" style="text-decoration: none;"><img src="./icons-and-styles/github-icon.png" width="32" height="32" style="border: 0;"></a></p>
+
+<div id="sidebarTitle"><span class="text">Comment</span></div>
+<ul>
+	<li><a href="https://github.com/davidedc/jsonp-db-redux/issues">Here</a></li>
+</ul>
+
+<div id="sidebarTitle"><span class="text">Sections</span></div>
+<ul>
+	<li><a href="#Preliminaries" title="Preliminaries">Preliminaries</a></li>
+  <li><a href="#Goodfor" title="good for...">What is it good for?</a></li>
+  <li><a href="#Principles" title="general principles">General principles</a></li>
+  <li><a href="#JSONPAPI" title="JSONP API">JSONP API</a></li>
+  <li><a href="#CURLAPI" title="Curl API">Curl API</a></li>
+  <li><a href="#DataPrivacy" title="Data privacy">Data privacy</a></li>
+  <li><a href="#Demo" title="Demo">Demo</a></li>
+  <li><a href="#Differences" title="differences with original project">Differences with original project</a></li>
+  <li><a href="#Notes" title="implementation notes">Implementation notes</a></li>
+  <li><a href="#Limitations" title="limitations">Limitations</a></li>
+  <li><a href="#Installation" title="installation notes">Installation</a></li>
+</ul>
+
+
+<div id="sidebarTitle"><span class="text">Follow on twitter</span></div>
+<ul>
+	<li><a href="https://twitter.com/davidedc">Davide Della Casa</a></li>
+</ul>
+<div id="sidebarTitle"><span class="text">Credits</span></div>
+<ul>Fancy server-selection dropdown: <strong><a href="http://ivaynberg.github.io/select2/">Select2</a></strong> (by <strong><a href="https://twitter.com/ivaynberg">Igor Vaynberg</a></strong>.)</ul>
+<ul>Notification library: <strong><a href="http://ned.im/noty/">Noty</a></strong> (by <strong><a href="https://twitter.com/needim">Nedim Arabaci</a></strong>.)</ul>
+<ul>Page theme: <strong><a href="http://www.behance.net/p41studios">Angebot by P41 Studios</a></strong> (via <strong><a href="http://i-am-glow.com/">I am glow</a></strong> project.)</ul>
+
+</div>
+</div></body></html>
