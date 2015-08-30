@@ -28,7 +28,8 @@ svg = undefined
 
 canvg = (target, s, opts) ->
   
-  # no parametrs
+  # no parametrs, means that all the svg tags
+  # are turned into canvases
   if not target? and not s? and not opts?
     svgTags = document.getElementsByTagName("svg")
     for eachTag in svgTags
@@ -54,18 +55,19 @@ canvg = (target, s, opts) ->
   console.log 'just created svg and opts is: ' + svg.opts         
   target.svg = svg
   ctx = target.getContext("2d")
+
   unless typeof (s.documentElement) == "undefined"
     console.log 'about to call loadXmlDoc and opts is: ' + svg.opts 
     # load from xml doc
-    svg.loadXmlDoc ctx, s
+    svg.loadXmlDoc ctx, s, target
   else if s.substr(0, 1) == "<"
     console.log 'about to call loadXml and opts is: ' + svg.opts     
     # load from xml string
-    svg.loadXml ctx, s
+    svg.loadXml ctx, s, target
   else
     console.log 'about to call load and opts is: ' + svg.opts         
     # load from url
-    svg.load ctx, s
+    svg.load ctx, s, target
 
 class svSVGgContainerElement
   @uniqueId: 0
@@ -150,6 +152,7 @@ class svSVGgContainerElement
 
   AspectRatio: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
     # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
+    debugger;
     aspectRatio = svg.compressSpaces(aspectRatio)
     aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
     align = aspectRatio.split(" ")[0] or "xMidYMid"
@@ -256,13 +259,13 @@ class svSVGgContainerElement
 
 
   # load from url
-  load: (ctx, url) ->
-    @loadXml ctx, @ajax(url)
+  load: (ctx, url, target) ->
+    @loadXml ctx, @ajax(url), target
 
 
   # load from xml
-  loadXml: (ctx, xml) ->
-    @loadXmlDoc ctx, @parseXml(xml)
+  loadXml: (ctx, xml, target) ->
+    @loadXmlDoc ctx, @parseXml(xml), target
 
   stop: ->
     console.log ">>>>>> stopping interval"
@@ -334,7 +337,7 @@ class svSVGgContainerElement
 
 
 
-  loadXmlDoc: (ctx, dom) ->
+  loadXmlDoc: (ctx, dom, target) ->
     @init ctx
 
     # bind mouse
@@ -357,6 +360,12 @@ class svSVGgContainerElement
     console.log 'assigning @ctxFromLoadXMLDoc'
     @ctxFromLoadXMLDoc = ctx
     @eFromLoadXMLDoc = e
+
+    #debugger
+    #svgWidth = parseInt(e.attributes.width.value.replace("px",""))
+    #svgHeight = parseInt(e.attributes.height.value.replace("px",""))
+    #@AspectRatio ctx, 1, svgWidth, target.width, svgHeight, target.height
+
     
     waitingForImages = true
     if @ImagesLoaded()
@@ -1587,6 +1596,8 @@ class SVGElement extends SVGRenderedElement
     svg.ViewPort.RemoveCurrent()
 
   setContext: (ctx) ->
+
+    debugger
     
     # initial values
     ctx.strokeStyle = "rgba(0,0,0,0)"
@@ -1628,6 +1639,14 @@ class SVGElement extends SVGRenderedElement
       width = viewBox[2]
       height = viewBox[3]
       svg.AspectRatio ctx, @attribute("preserveAspectRatio").value, svg.ViewPort.width(), width, svg.ViewPort.height(), height, minX, minY, @attribute("refX").value, @attribute("refY").value
+      ###
+      svg.AspectRatio ctx,
+        @attribute("preserveAspectRatio").value,
+        width,
+        svg.ViewPort.width(),
+        height,
+        svg.ViewPort.height(), minX, minY, @attribute("refX").value, @attribute("refY").value
+      ###
       svg.ViewPort.RemoveCurrent()
       svg.ViewPort.SetCurrent viewBox[2], viewBox[3]
 

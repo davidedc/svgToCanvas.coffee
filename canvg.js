@@ -39,13 +39,13 @@ canvg = function(target, s, opts) {
   ctx = target.getContext("2d");
   if (typeof s.documentElement !== "undefined") {
     console.log('about to call loadXmlDoc and opts is: ' + svg.opts);
-    return svg.loadXmlDoc(ctx, s);
+    return svg.loadXmlDoc(ctx, s, target);
   } else if (s.substr(0, 1) === "<") {
     console.log('about to call loadXml and opts is: ' + svg.opts);
-    return svg.loadXml(ctx, s);
+    return svg.loadXml(ctx, s, target);
   } else {
     console.log('about to call load and opts is: ' + svg.opts);
-    return svg.load(ctx, s);
+    return svg.load(ctx, s, target);
   }
 };
 
@@ -118,6 +118,7 @@ svSVGgContainerElement = (function() {
   };
 
   svSVGgContainerElement.prototype.AspectRatio = function(ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) {
+    debugger;
     var align, meetOrSlice, scaleMax, scaleMin, scaleX, scaleY;
     aspectRatio = svg.compressSpaces(aspectRatio);
     aspectRatio = aspectRatio.replace(/^defer\s/, "");
@@ -243,12 +244,12 @@ svSVGgContainerElement = (function() {
     return e;
   };
 
-  svSVGgContainerElement.prototype.load = function(ctx, url) {
-    return this.loadXml(ctx, this.ajax(url));
+  svSVGgContainerElement.prototype.load = function(ctx, url, target) {
+    return this.loadXml(ctx, this.ajax(url), target);
   };
 
-  svSVGgContainerElement.prototype.loadXml = function(ctx, xml) {
-    return this.loadXmlDoc(ctx, this.parseXml(xml));
+  svSVGgContainerElement.prototype.loadXml = function(ctx, xml, target) {
+    return this.loadXmlDoc(ctx, this.parseXml(xml), target);
   };
 
   svSVGgContainerElement.prototype.stop = function() {
@@ -344,7 +345,7 @@ svSVGgContainerElement = (function() {
     return e.render(ctx);
   };
 
-  svSVGgContainerElement.prototype.loadXmlDoc = function(ctx, dom) {
+  svSVGgContainerElement.prototype.loadXmlDoc = function(ctx, dom, target) {
     var e, waitingForImages;
     this.init(ctx);
     console.log("opts: " + this.opts);
@@ -1948,6 +1949,7 @@ SVGElement = (function(_super) {
   };
 
   SVGElement.prototype.setContext = function(ctx) {
+    debugger;
     var height, minX, minY, viewBox, width, x, y;
     ctx.strokeStyle = "rgba(0,0,0,0)";
     ctx.lineCap = "butt";
@@ -1994,6 +1996,15 @@ SVGElement = (function(_super) {
       width = viewBox[2];
       height = viewBox[3];
       svg.AspectRatio(ctx, this.attribute("preserveAspectRatio").value, svg.ViewPort.width(), width, svg.ViewPort.height(), height, minX, minY, this.attribute("refX").value, this.attribute("refY").value);
+
+      /*
+      svg.AspectRatio ctx,
+        @attribute("preserveAspectRatio").value,
+        width,
+        svg.ViewPort.width(),
+        height,
+        svg.ViewPort.height(), minX, minY, @attribute("refX").value, @attribute("refY").value
+       */
       svg.ViewPort.RemoveCurrent();
       return svg.ViewPort.SetCurrent(viewBox[2], viewBox[3]);
     }
