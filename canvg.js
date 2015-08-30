@@ -311,30 +311,33 @@ svSVGgContainerElement = (function() {
     if (this.opts["offsetY"] != null) {
       e.attribute("y", true).value = this.opts["offsetY"];
     }
-    if ((this.opts["scaleWidth"] != null) && (this.opts["scaleHeight"] != null)) {
-      xRatio = 1;
-      console.log("xRatio: " + xRatio);
-      yRatio = 1;
-      console.log("yRatio: " + yRatio);
-      viewBox = this.ToNumberArray(e.attribute("viewBox").value);
-      if (e.attribute("width").hasValue()) {
-        xRatio = e.attribute("width").toPixels("x") / this.opts["scaleWidth"];
-      } else {
-        if (!isNaN(viewBox[2])) {
-          xRatio = viewBox[2] / this.opts["scaleWidth"];
+    if (svg.opts['scaleWidth'] !== null || svg.opts['scaleHeight'] !== null) {
+      xRatio = null;
+      yRatio = null;
+      viewBox = svg.ToNumberArray(e.attribute('viewBox').value);
+      if (svg.opts['scaleWidth'] != null) {
+        if (e.attribute('width').hasValue()) {
+          xRatio = e.attribute('width').toPixels('x') / svg.opts['scaleWidth'];
+        } else if (!isNaN(viewBox[2])) {
+          xRatio = viewBox[2] / svg.opts['scaleWidth'];
         }
       }
-      if (e.attribute("height").hasValue()) {
-        yRatio = e.attribute("height").toPixels("y") / this.opts["scaleHeight"];
-      } else {
-        if (!isNaN(viewBox[3])) {
-          yRatio = viewBox[3] / this.opts["scaleHeight"];
+      if (svg.opts['scaleHeight'] != null) {
+        if (e.attribute('height').hasValue()) {
+          yRatio = e.attribute('height').toPixels('y') / svg.opts['scaleHeight'];
+        } else if (!isNaN(viewBox[3])) {
+          yRatio = viewBox[3] / svg.opts['scaleHeight'];
         }
+      }
+      if (xRatio === null) {
+        xRatio = yRatio;
+      }
+      if (yRatio === null) {
+        yRatio = xRatio;
       }
       e.attribute("width", true).value = this.opts["scaleWidth"];
       e.attribute("height", true).value = this.opts["scaleHeight"];
-      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio);
-      e.attribute("preserveAspectRatio", true).value = "none";
+      e.attribute('transform', true).value += ' scale(' + (1.0 / xRatio) + ',' + (1.0 / yRatio) + ')';
     }
     console.log("xRatio: " + xRatio);
     console.log("yRatio: " + yRatio);

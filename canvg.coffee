@@ -163,6 +163,7 @@ class svSVGgContainerElement
     scaleY = height / desiredHeight
     scaleMin = Math.min(scaleX, scaleY)
     scaleMax = Math.max(scaleX, scaleY)
+
     if meetOrSlice == "meet"
       desiredWidth *= scaleMin
       desiredHeight *= scaleMin
@@ -171,10 +172,11 @@ class svSVGgContainerElement
       desiredHeight *= scaleMax
     refX = new SVGProperty("refX", refX)
     refY = new SVGProperty("refY", refY)
+
+    # translate
     if refX.hasValue() and refY.hasValue()
       ctx.translate -scaleMin * refX.toPixels("x"), -scaleMin * refY.toPixels("y")
-    else
-      
+    else      
       # align
       ctx.translate width / 2.0 - desiredWidth / 2.0, 0  if align.match(/^xMid/) and ((meetOrSlice == "meet" and scaleMin is scaleY) or (meetOrSlice == "slice" and scaleMax is scaleY))
       ctx.translate 0, height / 2.0 - desiredHeight / 2.0  if align.match(/YMid$/) and ((meetOrSlice == "meet" and scaleMin is scaleX) or (meetOrSlice == "slice" and scaleMax is scaleX))
@@ -308,22 +310,32 @@ class svSVGgContainerElement
     @ViewPort.SetCurrent cWidth, cHeight
     e.attribute("x", true).value = @opts["offsetX"]  if @opts["offsetX"]?
     e.attribute("y", true).value = @opts["offsetY"]  if @opts["offsetY"]?
-    if @opts["scaleWidth"]? and @opts["scaleHeight"]?
-      xRatio = 1
-      console.log "xRatio: " + xRatio
-      yRatio = 1
-      console.log "yRatio: " + yRatio
-      viewBox = @ToNumberArray(e.attribute("viewBox").value)
-      if e.attribute("width").hasValue()
-        xRatio = e.attribute("width").toPixels("x") / @opts["scaleWidth"]
-      else xRatio = viewBox[2] / @opts["scaleWidth"]  unless isNaN(viewBox[2])
-      if e.attribute("height").hasValue()
-        yRatio = e.attribute("height").toPixels("y") / @opts["scaleHeight"]
-      else yRatio = viewBox[3] / @opts["scaleHeight"]  unless isNaN(viewBox[3])
+
+
+    # from commit 08ee5692a08281c1e3626ed2281cf1742e16000d
+    if svg.opts['scaleWidth'] != null or svg.opts['scaleHeight'] != null
+      xRatio = null
+      yRatio = null
+      viewBox = svg.ToNumberArray(e.attribute('viewBox').value)
+      if svg.opts['scaleWidth']?
+        if e.attribute('width').hasValue()
+          xRatio = e.attribute('width').toPixels('x') / svg.opts['scaleWidth']
+        else if !isNaN(viewBox[2])
+          xRatio = viewBox[2] / svg.opts['scaleWidth']
+      if svg.opts['scaleHeight']?
+        if e.attribute('height').hasValue()
+          yRatio = e.attribute('height').toPixels('y') / svg.opts['scaleHeight']
+        else if !isNaN(viewBox[3])
+          yRatio = viewBox[3] / svg.opts['scaleHeight']
+      if xRatio == null
+        xRatio = yRatio
+      if yRatio == null
+        yRatio = xRatio
+
       e.attribute("width", true).value = @opts["scaleWidth"]
       e.attribute("height", true).value = @opts["scaleHeight"]
-      e.attribute("viewBox", true).value = "0 0 " + (cWidth * xRatio) + " " + (cHeight * yRatio)
-      e.attribute("preserveAspectRatio", true).value = "none"
+      # from commit 0f568d4506657a93753a3f674467597e5b45ffbc here
+      e.attribute('transform', true).value += ' scale('+(1.0/xRatio)+','+(1.0/yRatio)+')'
     
     console.log "xRatio: " + xRatio
     console.log "yRatio: " + yRatio
