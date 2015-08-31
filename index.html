@@ -168,16 +168,44 @@ examplesTable.push(['layers', 'filters-gauss-01-b.svg', 'blurFilter_64x64.png'])
 
 <body onload="bodyonload();">
 
+<div id="sidebar" style="float: right; padding-right:15px;">
+  <div id="sidebarTitle"><span class="text">Get it</span></div>
+  <p><a href="https://github.com/davidedc/jsonp-db-redux" style="text-decoration: none;"><img src="./icons-and-styles/github-icon.png" width="32" height="32" style="border: 0;"></a></p>
+
+  <div id="sidebarTitle"><span class="text">Comment</span></div>
+  <ul>
+    <li><a href="https://github.com/davidedc/jsonp-db-redux/issues">Here</a></li>
+  </ul>
+
+  <div id="sidebarTitle"><span class="text">Sections</span></div>
+  <ul>
+    <li><a href="#Goodfor" title="good for...">What is it good for?</a></li>
+    <li><a href="#WhyCoffeescript" title="why coffeescript">Why Coffeescript?</a></li>
+  </ul>
+
+
+  <div id="sidebarTitle"><span class="text">Follow on twitter</span></div>
+  <ul>
+    <li><a href="https://twitter.com/davidedc">Davide Della Casa</a></li>
+  </ul>
+  <div id="sidebarTitle"><span class="text">Credits</span></div>
+
+  <ul><strong><a href="https://github.com/gabelerner/canvg">Canvg project</a></strong>by <strong><a href="https://github.com/gabelerner">Gabe Lerner</a></strong>.</ul>
+
+  <ul>Page theme: <strong><a href="http://www.behance.net/p41studios">Angebot by P41 Studios</a></strong> (via <strong><a href="http://i-am-glow.com/">I am glow</a></strong> project.)</ul>
+
+</div>
+
 <div id="grid_hold">
 
 <div id="header">
   <div id="title"><span class="blog_title">svgToCanvas.coffee</span></div>
   <div id="about">
   	
-      JSON-P DB Redux is a minimal Google App Engine app to persist/retrieve JSON objects via simple client-side javascript <a href="http://www.json.com/2007/12/24/jsonp-header-transfer-proposal/">JSON-P</a> calls. Curl also supported.
+      svgToCanvas.coffee is a coffeescript port (with minor edits) of the <a href="https://github.com/gabelerner/canvg">canvg</a> project by <a href="https://github.com/gabelerner">Gabe Lerner</a>. It visualizes .svg vector files using the HTML5 canvas "low level" graphics API (and, in the process, it rasterizes them in case that's also useful to you).
 
   </div>
-  <div id="thumbnails" style="float: left;">
+  <div id="thumbnails" style="width: 70%;">
   </div>
 
 </div>
@@ -192,120 +220,36 @@ examplesTable.push(['layers', 'filters-gauss-01-b.svg', 'blurFilter_64x64.png'])
   <img id="theSVGImage" src="svgs/25.svg" width="100%" />
 </div>
 
-  <div style="width:80%">
-    <a id="Preliminaries"><h1>Preliminaries</h1></a>
-    <p>JSON-P DB Redux is the resurrection, modification and extension of the abandoned <a href="http://jsonpdb.appspot.com/index.html">JSON-P DB</a> project by <a href="https://plus.google.com/+AdamRibaudo/posts">Adam Ribaudo</a> and <a href="https://plus.google.com/+PaulIrish/posts">Paul Irish</a>.</p>
-  </div>
 		
 	<a id="Goodfor"><h1>What is this good for?</h1></a>	
 	<div id="content">
-		<p><strong>This is good for having your own free and highly-hackable server to persist JSON objects from your web projects. Ready in 5 minutes.</strong></p>
-<p>There are several ways to persist data, the characteristics of this particular method are:
+    <p>Implementations of "low level" Canvas primitives (say, draw a line or fill a path) are quite consistent and stable across browsers. On the other hand, SVG is large and complex format, and SVG implementations vary quite a lot and can produce <a id="Goodfor" href="https://en.wikipedia.org/wiki/Comparison_of_layout_engines_(Scalable_Vector_Graphics)#SVG_1.1_support">very</a> <a id="Goodfor" href="http://viziblr.com/news/2011/5/10/inline-svg-rendering-comparison-revisited-ndash-chrome-firef.html">different</a> <a id="Goodfor" href="http://blogs.msdn.com/b/saveenr/archive/2010/03/21/getting-started-with-svg-an-example-driven-exploration-of-basic-svg-usage-in-xhtml.aspx">results</a> for even simple files. So, this renderer might be useful to <i>consistently visualize</i> SVG files, or to <i>consistently rasterize</i> them: even if this renderer is slightly off, at least glitches can be consistently adjusted.</p>
 
-<ul>
-<li>it's stored in the cloud so it will persist across browsers and users</li>
-<li>it's free for any sane volume of traffic/data</li>
-<li>it's simple to set-up, you just need a gmail account and to tweak a couple of lines in the source files</li>
-<li>it allows basic querying on the stored objects (equality test of one or more of its fields)</li>
-<li>it's based on JSON-P which means that you can store/retrieve JSON from any page served from any domain (even just pages opened from local file system)</li>
-<li>the source is minimal and well-commented python code, meaning that it's easy to bend it / hack it.</li>
-<li>it's dead easy to use</li>
-</ul>
+    <p>You might find useful the rasterization part, say, to apply raster filters on your svgs, or for input to other library/system expecting raster input.</p>
+
+    <p>...or you might have the odd itch to hack/play with the rasterizer just for kicks or for custom fixes/effects.</p>
+
+    <p><strong>Note:</strong> if you just want to rasterize an SVG and you are not concerned with older browser versions or cross-browser differences <a id="Goodfor" href="http://stackoverflow.com/a/3769883">there is a simple way</a> to do <i>just</i> that with Canvas.</p>
+
+
+
 	</div>
 
-  <a id="Principles"><h1>What's the general principle?</h1></a> 
+
+
+  <a id="WhyCoffeescript"><h1>Why a coffeescript version?</h1></a> 
   <div id="content">
-<p>To store a JSON object, just send it to the server together with a "bucket" name and a callback. The bucket name can be used to group (and fetch) together objects of the same kind, you can invent as many bucket names as the types of data you are going to store. So if you want to store something like {first:'Maggie',last:'Lynch',phone:'884-7839'} then you are probably going to give it the bucket of "contact" and issue a request like this: bucket=contact/{first:'Maggie',last:'Lynch',phone:'884-7839'}?callback=some-function. You are going to get a "key" as a response, which can be used to retrieve the object. Precise examples below. You'll use the bucket name to retrieve objects of the same kind as per examples below.</p>
-<p>To retrieve: you can either a) use the key returned by the store operation or b) retrieve all objects in a bucket or c) retrieve all objects (from a bucket) having one or more field values you specify.</p>
-  </div>
-
-<a id="JSONPAPI"><h1>JSONP API</h1></a>
-
-  <h3>Storing data:</h3>
-
-  <div class="indentedLine"><strong>Note:</strong> adding objects is not idempotent: adding the same object twice will result in two entries (with the same content) with two different keys.</div>
-
-  <div class="indentedLine">http://<i>serverName</i>/put/buckets/<i>bucketName</i>/<i>jsonObj</i>?callback=<i>callbackFunc</i></div>
-  
-  <div class="indentedLine">
-  <b>Example:</b>
-  <div class="indentedLine">http://jsonp-db-redux.appspot.com/put/buckets/myFoo/{"foo":"bar","baz":9}?callback=func</div>
-
-  <b>Response:</b>
-  <div class="indentedLine">func('agNpZWRyDQsSB2NvbnRhY3QYAQw'); <small> (item key is unique to this object)</small></div>
-  </div>
-  
-
-
-  <h3>Retrieve by item key:</h3>
-  <div class="indentedLine">http://<i>serverName</i>/get/keys/<i>itemKey</i>?callback=<i>callbackFunc</i></div>
-  <div class="indentedLine">
-  <b>Example:</b>
-  <div class="indentedLine" style="
-    font-size: smaller;
-">http://jsonp-db-redux.appspot.com/get/keys/agNpZWRyDQsSB2NvbnRhY3QYAQw?callback=func</div>
-  <b>Response:</b>
-  <div class="indentedLine">func({"foo":"bar","baz":9});</div>
+    <p>Maybe personal taste, or maybe for consistency with an existing system/framework/dev process.</p>
   </div>
 
 
-  <h3>Retrieve all items in a bucket:</h3>
-  <div class="indentedLine">http://<i>serverName</i>/get/buckets/<i>bucketName</i>/?callback=<i>callbackFunc</i></div>
-  <div class="indentedLine">
-  <b>Example:</b>
-  <div class="indentedLine">http://jsonp-db-redux.appspot.com/get/buckets/myFoo/?callback=func</div>
-  <b>Response:</b>
-  <div class="indentedLine">func([{"foo":"bar","baz":9},{"foo":"bar2","baz":10}]);</div>
-  </div>
-
-  <h3>Retrieve specific items by query (within a bucket)</h3>
-  <div class="indentedLine">
-  You pass an object - all fields will have to match:
-  <div class="indentedLine">http://<i>serverName</i>/get/buckets/<i>bucketName</i>/?filter=<i>jsonObjToMatch</i>&callback=<i>callbackFunc</i></div>
-  <div class="indentedLine">
-  <b>Example</b>
-  <div class="indentedLine">http://jsonp-db-redux.appspot.com/get/kind/myFoo/?filter={"foo":"bar2"}&callback=func</div>
-  <b>Response:</b>
-  <div class="indentedLine">func([{"foo":"bar2","baz":10}]);</div>
-  </div>
-  </div>
 
 
-	</div>
-
-<div id="sidebar">
-<div id="sidebarTitle"><span class="text">Get JSON-P DB Redux</span></div>
-<p><a href="https://github.com/davidedc/jsonp-db-redux" style="text-decoration: none;"><img src="./icons-and-styles/github-icon.png" width="32" height="32" style="border: 0;"></a></p>
-
-<div id="sidebarTitle"><span class="text">Comment</span></div>
-<ul>
-	<li><a href="https://github.com/davidedc/jsonp-db-redux/issues">Here</a></li>
-</ul>
-
-<div id="sidebarTitle"><span class="text">Sections</span></div>
-<ul>
-	<li><a href="#Preliminaries" title="Preliminaries">Preliminaries</a></li>
-  <li><a href="#Goodfor" title="good for...">What is it good for?</a></li>
-  <li><a href="#Principles" title="general principles">General principles</a></li>
-  <li><a href="#JSONPAPI" title="JSONP API">JSONP API</a></li>
-  <li><a href="#CURLAPI" title="Curl API">Curl API</a></li>
-  <li><a href="#DataPrivacy" title="Data privacy">Data privacy</a></li>
-  <li><a href="#Demo" title="Demo">Demo</a></li>
-  <li><a href="#Differences" title="differences with original project">Differences with original project</a></li>
-  <li><a href="#Notes" title="implementation notes">Implementation notes</a></li>
-  <li><a href="#Limitations" title="limitations">Limitations</a></li>
-  <li><a href="#Installation" title="installation notes">Installation</a></li>
-</ul>
+	</div> <!--- content hold-->
 
 
-<div id="sidebarTitle"><span class="text">Follow on twitter</span></div>
-<ul>
-	<li><a href="https://twitter.com/davidedc">Davide Della Casa</a></li>
-</ul>
-<div id="sidebarTitle"><span class="text">Credits</span></div>
-<ul>Fancy server-selection dropdown: <strong><a href="http://ivaynberg.github.io/select2/">Select2</a></strong> (by <strong><a href="https://twitter.com/ivaynberg">Igor Vaynberg</a></strong>.)</ul>
-<ul>Notification library: <strong><a href="http://ned.im/noty/">Noty</a></strong> (by <strong><a href="https://twitter.com/needim">Nedim Arabaci</a></strong>.)</ul>
-<ul>Page theme: <strong><a href="http://www.behance.net/p41studios">Angebot by P41 Studios</a></strong> (via <strong><a href="http://i-am-glow.com/">I am glow</a></strong> project.)</ul>
+</div> <!--- grid hold-->
 
-</div>
-</div></body></html>
+
+
+</body></html>
