@@ -36,20 +36,97 @@
       }   
       return null;
     }   
+
+    var examplesTable = [];
+    examplesTable.push(['tiger', '23.svg', 'tiger_64x64.png']);
+    examplesTable.push(['football', '1.svg', 'football_64x64.png']);
+    examplesTable.push(['world', '22.svg', 'world_64x64.png']);
+    examplesTable.push(['butterfly', '25.svg', 'butterfly_64x64.png']);
+    examplesTable.push(['floorplan', '26.svg', 'floorplan_64x64.png']);
+    examplesTable.push(['all', '2.svg', 'all_64x64.png']);
+    examplesTable.push(['layers', '8.svg', 'layers_64x64.png']);
+
+
+examplesTable.push(['layers', '10.svg', 'line_64x64.png']);
+examplesTable.push(['layers', '11.svg', 'poly_64x64.png']);
+examplesTable.push(['layers', '13.svg', 'path_64x64.png']);
+examplesTable.push(['layers', '15.svg', 'curve_64x64.png']);
+examplesTable.push(['layers', '27.svg', 'arcs_64x64.png']);
+examplesTable.push(['layers', '29.svg', 'markers_64x64.png']);
+
+examplesTable.push(['layers', '16.svg', 'linear_64x64.png']);
+examplesTable.push(['layers', '18.svg', 'radial_64x64.png']);
+examplesTable.push(['layers', '19.svg', 'radialFocus_64x64.png']);
+examplesTable.push(['layers', '30.svg', 'pattern_64x64.png']);
+examplesTable.push(['layers', '34.svg', 'transform_64x64.png']);
+
+examplesTable.push(['layers', '20.svg', 'indefinite_64x64.png']);
+examplesTable.push(['layers', '21.svg', 'multiple_64x64.png']);
+
+examplesTable.push(['layers', '35.svg', 'glyphs_64x64.png']);
+examplesTable.push(['layers', '24.svg', 'units_64x64.png']);
+examplesTable.push(['layers', '28.svg', 'viewport_64x64.png']);
+examplesTable.push(['layers', '31.svg', 'links_64x64.png']);
+examplesTable.push(['layers', '32.svg', 'images_64x64.png']);
+examplesTable.push(['layers', 'filters-gauss-01-b.svg', 'blurFilter_64x64.png']);
+
+
+    var lastLoadedThumbnail = 0
+    function loadFromThumbnail() {
+      debugger
+      //document.getElementById("theSVGImage").onLoad = svgImageLoaded;
+      document.getElementById("theSVGImage").addEventListener('load', svgImageLoaded);
+      document.getElementById("theSVGImage").src = "svgs/"+examplesTable[lastLoadedThumbnail][1];
+    }
+
+    function createfunc(k) {
+        return function() {
+          lastLoadedThumbnail = k;
+          loadFromThumbnail();
+        };
+    }
+
+
     var context;
     function bodyonload() {
       debugger;
       context = document.getElementById('canvas').getContext('2d'); 
-      var qUrl = q('url'); if (qUrl != null && qUrl != '') { r(); canvg('canvas', qUrl); }
-      var qSvg = q('svg'); if (qSvg != null && qSvg != '') { r(); canvg('canvas', qSvg); }      
-      r();
+      var qUrl = q('url'); if (qUrl != null && qUrl != '') { resetCanvas(); canvg('canvas', qUrl); }
+      var qSvg = q('svg'); if (qSvg != null && qSvg != '') { resetCanvas(); canvg('canvas', qSvg); }      
+      resetCanvas();
+
+      debugger;
+      var img;
+      for (j = 0, len = examplesTable.length; j < len; j++) {
+        i = examplesTable[j];
+
+        lastLoadedThumbnail = j;
+        img= new Image();
+        img.src= "svg-thumbnails/"+i[2];
+        img.style.width = "32px";
+        img.style.height = "32px";
+        img.style.cssFloat = "left";
+        img.style.cursor = "pointer";
+        img.className = " thumbnailImage";
+
+
+
+        img.onclick = createfunc(j);
+        //if (alt!=null) img.alt= alt;
+        //if (title!=null) img.title= title;
+
+        document.getElementById("thumbnails").appendChild(img);
+
+      }
+
     }
+
     function render() {
       var c = document.getElementById('canvas');
       if (context) c.getContext = context;
       canvg(c, document.getElementById('svg').value);
     }
-    function r() {
+    function resetCanvas() {
       var c = document.getElementById('canvas');
       var theSVGDiv = document.getElementById('theSVGDiv');
       //c.width = 400;
@@ -61,9 +138,28 @@
       context = c.getContext('2d');
       context.setTransform(1, 0, 0, 1, 0, 0);
       context.clearRect(0, 0, c.width, c.height);
-      canvg('canvas', 'svgs/33.svg', {ignoreSVGMouse: true, scaleWidth: c.width, ignoreDimensions: true});
+      canvg('canvas', 'svgs/25.svg', {ignoreSVGMouse: true, scaleWidth: c.width, ignoreDimensions: true});
       
     }
+
+
+    function svgImageLoaded() {
+      debugger
+      var c = document.getElementById('canvas');
+      var theSVGDiv = document.getElementById('theSVGDiv');
+      //c.width = 400;
+      //c.height = 400;
+      c.style.width  = theSVGDiv.clientWidth + "px"
+      c.style.height = theSVGDiv.clientHeight + "px"
+      c.width  = theSVGDiv.clientWidth
+      c.height = theSVGDiv.clientHeight
+      context = c.getContext('2d');
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.clearRect(0, 0, c.width, c.height);
+      canvg('canvas', "svgs/"+examplesTable[lastLoadedThumbnail][1], {ignoreSVGMouse: true, scaleWidth: c.width, ignoreDimensions: true});
+    }
+
+
   </script>
 
 
@@ -75,22 +171,25 @@
 <div id="grid_hold">
 
 <div id="header">
-<div id="title"><span class="blog_title">svgToCanvas.coffee</span></div>
-<div id="about">
-	
-    JSON-P DB Redux is a minimal Google App Engine app to persist/retrieve JSON objects via simple client-side javascript <a href="http://www.json.com/2007/12/24/jsonp-header-transfer-proposal/">JSON-P</a> calls. Curl also supported.
+  <div id="title"><span class="blog_title">svgToCanvas.coffee</span></div>
+  <div id="about">
+  	
+      JSON-P DB Redux is a minimal Google App Engine app to persist/retrieve JSON objects via simple client-side javascript <a href="http://www.json.com/2007/12/24/jsonp-header-transfer-proposal/">JSON-P</a> calls. Curl also supported.
+
+  </div>
+  <div id="thumbnails" style="float: left;">
+  </div>
 
 </div>
-</div>
 
-<div id="content_hold">
+<div id="content_hold" style="clear: left; margin-top:1em;" >
 
 <div style="border: 1px solid gray; width: 47%; float: left; margin-bottom:3em;">
       <canvas id="canvas" width="100%"></canvas>
 </div>
 
 <div id="theSVGDiv" style="border: 1px solid gray; width: 47%; float: left; margin-left: 2%; margin-bottom:3em;">
-  <img src="svgs/33.svg" width="100%" />
+  <img id="theSVGImage" src="svgs/25.svg" width="100%" />
 </div>
 
   <div style="width:80%">

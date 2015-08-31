@@ -10,6 +10,8 @@ Theme Description: An experimental theme by <a href="http://p41studios.com">P41 
 body {font:normal 11pt/16pt Arial, Helvetica, Sans-serif;color:#000;margin:0;padding:0;}
 a, a:visited, a:hover {color:#000;outline:none;}
 
+.thumbnailImage {width:100%;margin: 1px;border: #9C9C9C;border-style: solid;border-width: 1px;}
+
 #grid_hold {width:100%;margin:2.5em 2.5em;}
 #header {width:900px;}
 #title {width:900px;margin:0 0 1.4em 0;padding:0;}
