@@ -1813,8 +1813,22 @@ SVGtextTextContentElement = (function(_super) {
   __extends(SVGtextTextContentElement, _super);
 
   function SVGtextTextContentElement(node) {
+    var childNode, i;
     this.captureTextNodes = true;
     SVGtextTextContentElement.__super__.constructor.call(this, node);
+    if (node !== null) {
+      this.children = [];
+      i = 0;
+      while (i < node.childNodes.length) {
+        childNode = node.childNodes[i];
+        if (childNode.nodeType === 1) {
+          this.addChild(childNode, true);
+        } else if (childNode.nodeType === 3) {
+          this.addChild(new SVGtspanTextContentElement(childNode), false);
+        }
+        i++;
+      }
+    }
   }
 
   SVGtextTextContentElement.prototype.setContext = function(ctx) {
@@ -1837,6 +1851,7 @@ SVGtextTextContentElement = (function(_super) {
 
   SVGtextTextContentElement.prototype.renderChildren = function(ctx) {
     var i, _i, _ref;
+    this.textAnchor = this.style('text-anchor').valueOrDefault('start');
     this.x = this.attribute('x').toPixels('x');
     this.y = this.attribute('y').toPixels('y');
     if (this.attribute('dx').hasValue()) {
@@ -1852,9 +1867,9 @@ SVGtextTextContentElement = (function(_super) {
   };
 
   SVGtextTextContentElement.prototype.getAnchorDelta = function(ctx, parent, startI) {
-    var child, i, textAnchor, width;
-    textAnchor = this.style('text-anchor').valueOrDefault('start');
-    if (textAnchor !== 'start') {
+    var child, i, width;
+    this.textAnchor = this.style('text-anchor').valueOrDefault('start');
+    if (this.textAnchor !== 'start') {
       width = 0;
       i = startI;
       while (i < parent.children.length) {
@@ -1865,13 +1880,12 @@ SVGtextTextContentElement = (function(_super) {
         width += child.measureTextRecursive(ctx);
         i++;
       }
-      return -1 * (textAnchor === 'end' ? width : width / 2.0);
+      return -1 * (this.textAnchor === 'end' ? width : width / 2.0);
     }
     return 0;
   };
 
   SVGtextTextContentElement.prototype.renderChild = function(ctx, parent, i) {
-    var i;
     var child;
     child = parent.children[i];
     if (child.attribute('x').hasValue()) {

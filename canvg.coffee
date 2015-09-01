@@ -494,8 +494,10 @@ class SVGElement
       # add children
       #alert 'adding child ' + node.nodeType
       for childNode in node.childNodes
-        @addChild childNode, true  if childNode.nodeType is 1 #ELEMENT_NODE
-        @addChild new SVGtspanTextContentElement(childNode), false  if @captureTextNodes and childNode.nodeType is 3 # TEXT_NODE
+        if childNode.nodeType is 1 #ELEMENT_NODE
+          @addChild childNode, true
+        if @captureTextNodes and childNode.nodeType is 3 # TEXT_NODE
+          @addChild new SVGtspanTextContentElement(childNode), false
       
       # add attributes
       for attribute in node.attributes
@@ -1498,6 +1500,20 @@ class SVGtextTextContentElement extends SVGRenderedElement
   constructor: (node) ->
     @captureTextNodes = true
     super node
+
+    if node != null
+      # add children
+      @children = []
+      i = 0
+      while i < node.childNodes.length
+        childNode = node.childNodes[i]
+        if childNode.nodeType == 1
+          # capture tspan and tref nodes
+          @addChild childNode, true
+        else if childNode.nodeType == 3
+          # capture text
+          @addChild (new SVGtspanTextContentElement(childNode)), false
+        i++
   
   setContext: (ctx) ->
     #alert 'text.setContext'
@@ -1513,6 +1529,7 @@ class SVGtextTextContentElement extends SVGRenderedElement
     new SVGBoundingBox(x, y - fontSize, x + Math.floor(fontSize * 2.0 / 3.0) * @children[0].getText().length, y)
 
   renderChildren: (ctx) ->
+    @textAnchor = @style('text-anchor').valueOrDefault('start')
     @x = @attribute('x').toPixels('x')
     @y = @attribute('y').toPixels('y')
     if @attribute('dx').hasValue()
@@ -1525,8 +1542,8 @@ class SVGtextTextContentElement extends SVGRenderedElement
     return
 
   getAnchorDelta: (ctx, parent, startI) ->
-    textAnchor = @style('text-anchor').valueOrDefault('start')
-    if textAnchor != 'start'
+    @textAnchor = @style('text-anchor').valueOrDefault('start')
+    if @textAnchor != 'start'
       width = 0
       i = startI
       while i < parent.children.length
@@ -1536,11 +1553,10 @@ class SVGtextTextContentElement extends SVGRenderedElement
         # new group
         width += child.measureTextRecursive(ctx)
         i++
-      return -1 * (if textAnchor == 'end' then width else width / 2.0)
+      return -1 * (if @textAnchor == 'end' then width else width / 2.0)
     0
 
   renderChild: (ctx, parent, i) ->
-    `var i`
     child = parent.children[i]
     if child.attribute('x').hasValue()
       child.x = child.attribute('x').toPixels('x') + @getAnchorDelta(ctx, parent, i)

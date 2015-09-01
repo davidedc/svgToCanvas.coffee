@@ -70,6 +70,9 @@
     examplesTable.push(['layers', '32.svg', 'images_64x64.png']);
     examplesTable.push(['layers', 'filters-gauss-01-b.svg', 'blurFilter_64x64.png']);
 
+    // http://www.w3.org/TR/SVG/text.html#TSpanElement
+    examplesTable.push(['issue187', 'issue187.svg', 'innerTspan_64x64.png']);
+
 
     var lastLoadedThumbnail = 0
     function loadFromThumbnail() {
@@ -180,7 +183,7 @@
       console.log("bbox:");
       console.log(bbox);
       var zoom = document.getElementById("svgObject").clientWidth / (bbox.width + bbox.x)
-      alert("scale: " + zoom);
+      //alert("scale: " + zoom);
       if (zoom >= 1) {
         zoom = 1;
         bbox.height = document.getElementById("svgObject").clientHeight
@@ -220,7 +223,7 @@ document.getElementById("svgObject").height = ((bbox.height + bbox.y) * zoom) + 
       context = c.getContext('2d');
       //context.setTransform(1, 0, 0, 1, 0, 0);
       //context.clearRect(0, 0, c.width, c.height);
-      alert("c.width: " + c.width);
+      //alert("c.width: " + c.width);
       canvg('canvas', "svgs/"+examplesTable[lastLoadedThumbnail][1], {ignoreSVGMouse: true, scaleWidth: c.width, ignoreDimensions: true});
     }
 
