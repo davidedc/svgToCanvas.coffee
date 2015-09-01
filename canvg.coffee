@@ -22,6 +22,7 @@
 #     offsetY: int => draws at a y offset
 #     scaleWidth: int => scales horizontally to width
 #     scaleHeight: int => scales vertically to height
+#     renderCallback: function => will call the function after the first render is completed
 #     forceRedraw: function => will call the function on every frame, if it returns true, will redraw
 
 svg = undefined
@@ -283,7 +284,7 @@ class svSVGgContainerElement
     p.y += window.scrollY  if window.scrollY
     p
 
-  draw: ->
+  draw: (dom)->
     console.log "start of draw() function"
     ctx = @ctxFromLoadXMLDoc
     e = @eFromLoadXMLDoc
@@ -344,8 +345,10 @@ class svSVGgContainerElement
       ctx.clearRect 0, 0, cWidth, cHeight
       console.log "clearing: " + cWidth + " " + cHeight
     e.render ctx
-    #if @isFirstRender
-    #  @isFirstRender = false
+    if @isFirstRender
+      @isFirstRender = false
+      if typeof (@opts["renderCallback"]) == "function"
+        @opts["renderCallback"](dom)
 
 
 
@@ -382,7 +385,7 @@ class svSVGgContainerElement
     waitingForImages = true
     if @ImagesLoaded()
       waitingForImages = false
-      @draw()
+      @draw(dom)
 
     console.log ">>>>>> starting interval with fps: " + @FRAMERATE
     @intervalID = setInterval(=>
