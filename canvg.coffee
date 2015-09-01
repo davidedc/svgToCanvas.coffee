@@ -1394,8 +1394,8 @@ class SVGTextContentElement extends SVGRenderedElement
         @x += fontSize * (glyph.horizAdvX or customFont.horizAdvX) / customFont.fontFace.unitsPerEm
         @x += dx[i]  if typeof (dx[i]) != "undefined" and not isNaN(dx[i])
       return
-    ctx.fillText svg.compressSpaces(@getText()), @x, @y  unless ctx.fillStyle == ""
     ctx.strokeText svg.compressSpaces(@getText()), @x, @y  unless ctx.strokeStyle == ""
+    ctx.fillText svg.compressSpaces(@getText()), @x, @y  unless ctx.fillStyle == ""
 
   getText: ->
 

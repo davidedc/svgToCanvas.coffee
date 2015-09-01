@@ -1671,11 +1671,11 @@ SVGTextContentElement = (function(_super) {
       }
       return;
     }
-    if (ctx.fillStyle !== "") {
-      ctx.fillText(svg.compressSpaces(this.getText()), this.x, this.y);
-    }
     if (ctx.strokeStyle !== "") {
-      return ctx.strokeText(svg.compressSpaces(this.getText()), this.x, this.y);
+      ctx.strokeText(svg.compressSpaces(this.getText()), this.x, this.y);
+    }
+    if (ctx.fillStyle !== "") {
+      return ctx.fillText(svg.compressSpaces(this.getText()), this.x, this.y);
     }
   };
 
