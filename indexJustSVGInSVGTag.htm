@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>svgToCanvas.coffee</title>
+	
+<meta name="description" content="">
+<link rel="stylesheet" href="./icons-and-styles/style.css" title="yellow" type="text/css" media="screen">
+	<style id="clearly_highlighting_css" type="text/css">/* selection */ html.clearly_highlighting_enabled ::-moz-selection { background: rgba(246, 238, 150, 0.99); } html.clearly_highlighting_enabled ::selection { background: rgba(246, 238, 150, 0.99); } /* cursor */ html.clearly_highlighting_enabled {    /* cursor and hot-spot position -- requires a default cursor, after the URL one */    cursor: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--cursor.png") 14 16, text; } /* highlight tag */ em.clearly_highlight_element {    font-style: inherit !important; font-weight: inherit !important;    background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--yellow.png");    background-repeat: repeat-x; background-position: top left; background-size: 100% 100%; } /* the delete-buttons are positioned relative to this */ em.clearly_highlight_element.clearly_highlight_first { position: relative; } /* delete buttons */ em.clearly_highlight_element a.clearly_highlight_delete_element {    display: none; cursor: pointer;    padding: 0; margin: 0; line-height: 0;    position: absolute; width: 34px; height: 34px; left: -17px; top: -17px;    background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--delete-sprite.png"); background-repeat: no-repeat; background-position: 0px 0px; } em.clearly_highlight_element a.clearly_highlight_delete_element:hover { background-position: -34px 0px; } /* retina */ @media (min--moz-device-pixel-ratio: 2), (-webkit-min-device-pixel-ratio: 2), (min-device-pixel-ratio: 2) {    em.clearly_highlight_element { background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--yellow@2x.png"); }    em.clearly_highlight_element a.clearly_highlight_delete_element { background-image: url("chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/clearly/images/highlight--delete-sprite@2x.png"); background-size: 68px 34px; } } </style><style>[touch-action="none"]{ -ms-touch-action: none; touch-action: none; }[touch-action="pan-x"]{ -ms-touch-action: pan-x; touch-action: pan-x; }[touch-action="pan-y"]{ -ms-touch-action: pan-y; touch-action: pan-y; }[touch-action="scroll"],[touch-action="pan-x pan-y"],[touch-action="pan-y pan-x"]{ -ms-touch-action: pan-x pan-y; touch-action: pan-x pan-y; }
+  .indentedLine {
+      margin-left: 2em;
+      margin-bottom: 1em;
+  }
+  .rowTitle {
+      margin-top: 1em;
+  }
+  textArea {
+      width: 100%;
+  }
+  #countdown {
+    text-align: center;
+    font-size: large;
+    background-color: black;
+    color: white;
+  }
+  </style>
+
+
+  <script type="text/javascript" src="StackBlur.js"></script>
+  <script type="text/javascript" src="canvg.js"></script>
+  <script type="text/javascript">
+    function q(k) {
+      var qs = window.location.search.substring(1);
+      var t = qs.split("&");
+      for (i=0;i<t.length;i++) {
+        kv = t[i].split("=");
+        if (kv[0] == k) return unescape(kv[1]).replace('+',' ');
+      }   
+      return null;
+    }   
+
+    var examplesTable = [];
+    examplesTable.push(['tiger', '23.svg', 'tiger_64x64.png']);
+    examplesTable.push(['football', '1.svg', 'football_64x64.png']);
+    examplesTable.push(['world', '22.svg', 'world_64x64.png']);
+    examplesTable.push(['butterfly', '25.svg', 'butterfly_64x64.png']);
+    examplesTable.push(['floorplan', '26.svg', 'floorplan_64x64.png']);
+    examplesTable.push(['all', '2.svg', 'all_64x64.png']);
+    examplesTable.push(['layers', '8.svg', 'layers_64x64.png']);
+
+
+    examplesTable.push(['layers', '10.svg', 'line_64x64.png']);
+    examplesTable.push(['layers', '11.svg', 'poly_64x64.png']);
+    examplesTable.push(['layers', '13.svg', 'path_64x64.png']);
+    examplesTable.push(['layers', '15.svg', 'curve_64x64.png']);
+    examplesTable.push(['layers', '27.svg', 'arcs_64x64.png']);
+    examplesTable.push(['layers', '29.svg', 'markers_64x64.png']);
+
+    examplesTable.push(['layers', '16.svg', 'linear_64x64.png']);
+    examplesTable.push(['layers', '18.svg', 'radial_64x64.png']);
+    examplesTable.push(['layers', '19.svg', 'radialFocus_64x64.png']);
+    examplesTable.push(['layers', '30.svg', 'pattern_64x64.png']);
+    examplesTable.push(['layers', '34.svg', 'transform_64x64.png']);
+
+    examplesTable.push(['layers', '20.svg', 'indefinite_64x64.png']);
+    examplesTable.push(['layers', '21.svg', 'multiple_64x64.png']);
+
+    examplesTable.push(['layers', '35.svg', 'glyphs_64x64.png']);
+    examplesTable.push(['layers', '24.svg', 'units_64x64.png']);
+    examplesTable.push(['layers', '28.svg', 'viewport_64x64.png']);
+    examplesTable.push(['layers', '31.svg', 'links_64x64.png']);
+    examplesTable.push(['layers', '32.svg', 'images_64x64.png']);
+    examplesTable.push(['layers', 'filters-gauss-01-b.svg', 'blurFilter_64x64.png']);
+
+
+    function theRenderCallback(theDom) {
+      debugger
+      var svg = (new XMLSerializer()).serializeToString(theDom);
+      document.getElementById('theSVGDiv').innerHTML = svg;
+    }
+
+    var lastLoadedThumbnail = 0
+    function loadFromThumbnail() {
+      debugger
+      //document.getElementById("theSVGImage").onLoad = svgImageLoaded;
+      //document.getElementById("theSVGImage").addEventListener('load', svgImageLoaded);
+      //document.getElementById("theSVGImage").src = "svgs/"+examplesTable[lastLoadedThumbnail][1];
+
+
+      canvg('canvas', "svgs/"+examplesTable[lastLoadedThumbnail][1], {ignoreSVGMouse: true, scaleWidth: 1, ignoreDimensions: true, renderCallback: theRenderCallback});
+
+
+
+    }
+
+    function createfunc(k) {
+        return function() {
+          lastLoadedThumbnail = k;
+          loadFromThumbnail();
+        };
+    }
+
+
+    var context;
+    function bodyonload() {
+      debugger;
+      resetCanvas();
+
+      debugger;
+      var img;
+      for (j = 0, len = examplesTable.length; j < len; j++) {
+        i = examplesTable[j];
+
+        lastLoadedThumbnail = j;
+        img= new Image();
+        img.src= "svg-thumbnails/"+i[2];
+        img.style.width = "32px";
+        img.style.height = "32px";
+        img.style.cssFloat = "left";
+        img.style.cursor = "pointer";
+        img.className = " thumbnailImage";
+
+
+
+        img.onclick = createfunc(j);
+        //if (alt!=null) img.alt= alt;
+        //if (title!=null) img.title= title;
+
+        document.getElementById("thumbnails").appendChild(img);
+
+      }
+
+    }
+
+    function render() {
+    }
+
+    function resetCanvas() {
+      
+    }
+
+    window.getDevicePixelRatio = function () {
+    };
+
+    function svgImageLoaded() {
+      debugger
+       }
+
+
+  </script>
+
+
+</head>
+
+
+<body onload="bodyonload();">
+
+
+<div id="grid_hold">
+
+<div id="header">
+
+  <div id="about">
+  	
+      this page just shows loading an svg directly into an svg tag inside a div. Interesting for looking at which part the browser decides to paint and which to crop off.
+
+  </div>
+  <div id="thumbnails" style="width: 70%;">
+  </div>
+
+</div>
+
+<div id="content_hold" style="clear: left; margin-top:1em; width: 90%;" >
+
+<div style="display: none;">
+      <canvas id="canvas" width="100%"></canvas>
+</div>
+
+
+<div id="theSVGDiv" style="border: 1px solid gray; width: 100%; float: left; margin-left: 2%; margin-bottom:3em;">
+  <img id="theSVGImage" src="svgs/25.svg" width="100%" />
+</div>
+
+		
+	<div id="content">
+    <p>Implementations of "low level" Canvas primitives (say, draw a line or fill a path) are quite consistent and stable across browsers. On the other hand, SVG is large and complex format, and SVG implementations vary quite a lot and can produce <a href="https://en.wikipedia.org/wiki/Comparison_of_layout_engines_(Scalable_Vector_Graphics)#SVG_1.1_support">very</a> <a href="http://viziblr.com/news/2011/5/10/inline-svg-rendering-comparison-revisited-ndash-chrome-firef.html">different</a> <a href="http://blogs.msdn.com/b/saveenr/archive/2010/03/21/getting-started-with-svg-an-example-driven-exploration-of-basic-svg-usage-in-xhtml.aspx">results</a> for even simple files. So, this renderer might be useful to <i>consistently visualize</i> SVG files, or to <i>consistently rasterize</i> them: even if this renderer is slightly off, at least glitches can be consistently dealt with.</p>
+
+    <p>You might find useful the rasterization part, say, to apply raster filters on your svgs, or for input to other library/system expecting raster input.</p>
+
+    <p>...or you might have the odd itch to hack/play with the rasterizer just for kicks or for custom fixes/extensions.</p>
+
+    <p><strong>Note:</strong> if you just want to rasterize an SVG and you are not concerned with older browser versions or cross-browser differences, you can <i>attempt</i> <a href="http://stackoverflow.com/a/3769883">this simple way</a> to do <i>just</i> that with Canvas - although it seems <a href="http://jsfiddle.net/Na6X5/548/">buggy</a> in many cases.</p>
+
+
+
+
+	</div>
+
+
+
+	</div> <!--- content hold-->
+
+
+</div> <!--- grid hold-->
+
+
+
+</body></html>
