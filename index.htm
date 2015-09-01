@@ -75,8 +75,20 @@
     function loadFromThumbnail() {
       debugger
       //document.getElementById("theSVGImage").onLoad = svgImageLoaded;
-      document.getElementById("theSVGImage").addEventListener('load', svgImageLoaded);
-      document.getElementById("theSVGImage").src = "svgs/"+examplesTable[lastLoadedThumbnail][1];
+      //document.getElementById("theSVGImage").addEventListener('load', svgImageLoaded);
+      //document.getElementById("theSVGImage").src = "svgs/"+examplesTable[lastLoadedThumbnail][1];
+
+            var object = document.createElement("object");
+            object.setAttribute("id", "svgObject");
+            object.type = "image/svg+xml";
+            object.data = "svgs/"+examplesTable[lastLoadedThumbnail][1];
+             document.getElementById("theSVGDiv").innerHTML = "";
+            document.getElementById("theSVGDiv").appendChild(object);
+            object.removeAttribute("");
+            object.width = "100%";
+            // cheap version of "onload" here
+            setTimeout(svgImageLoaded,200);
+
     }
 
     function createfunc(k) {
@@ -142,20 +154,73 @@
       
     }
 
+    window.getDevicePixelRatio = function () {
+        var ratio = 1;
+        // To account for zoom, change to use deviceXDPI instead of systemXDPI
+        if (window.screen.systemXDPI !== undefined && window.screen.logicalXDPI       !== undefined && window.screen.systemXDPI > window.screen.logicalXDPI) {
+            // Only allow for values > 1
+            ratio = window.screen.systemXDPI / window.screen.logicalXDPI;
+        }
+        else if (window.devicePixelRatio !== undefined) {
+            ratio = window.devicePixelRatio;
+        }
+        return ratio;
+    };
 
     function svgImageLoaded() {
       debugger
+      
+
+
       var c = document.getElementById('canvas');
       var theSVGDiv = document.getElementById('theSVGDiv');
+
+      var svgElem = document.getElementById("svgObject").contentDocument.children[0];
+      var bbox = svgElem.getBBox();
+      console.log("bbox:");
+      console.log(bbox);
+      var zoom = document.getElementById("svgObject").clientWidth / (bbox.width + bbox.x)
+      alert("scale: " + zoom);
+      if (zoom >= 1) {
+        zoom = 1;
+        bbox.height = document.getElementById("svgObject").clientHeight
+        bbox.y = 0
+        bbox.width = document.getElementById("svgObject").clientWidth
+        bbox.x = 0
+      }
+
+//c.parentNode.style.height = ((bbox.height + bbox.y) * zoom) + "px";
+
+/*
+c.style.transform = 'scale(' + zoom + ')';
+c.style['-o-transform'] = 'scale(' + zoom + ')';
+c.style['-webkit-transform'] = 'scale(' + zoom + ')';
+c.style['-moz-transform'] = 'scale(' + zoom + ')';
+
+c.style.transformOrigin = '0 0';
+*/
+
+/*
+svgElem.style.transform = 'scale(' + zoom + ')';
+svgElem.style['-o-transform'] = 'scale(' + zoom + ')';
+svgElem.style['-webkit-transform'] = 'scale(' + zoom + ')';
+svgElem.style['-moz-transform'] = 'scale(' + zoom + ')';
+*/
+
+svgElem.style.zoom = zoom;
+document.getElementById("svgObject").parentNode.style.height = ((bbox.height + bbox.y) * zoom) + "px";
+document.getElementById("svgObject").height = ((bbox.height + bbox.y) * zoom) + "px";
+
       //c.width = 400;
       //c.height = 400;
-      c.style.width  = theSVGDiv.clientWidth + "px"
-      c.style.height = theSVGDiv.clientHeight + "px"
-      c.width  = theSVGDiv.clientWidth
-      c.height = theSVGDiv.clientHeight
+      c.style.width  = ((bbox.width + bbox.x)*zoom) + "px"
+      c.style.height = ((bbox.height + bbox.y)*zoom) + "px"
+      c.width  = ((bbox.width + bbox.x)*zoom) * window.getDevicePixelRatio();
+      c.height = ((bbox.height + bbox.y)*zoom) * window.getDevicePixelRatio();
       context = c.getContext('2d');
-      context.setTransform(1, 0, 0, 1, 0, 0);
-      context.clearRect(0, 0, c.width, c.height);
+      //context.setTransform(1, 0, 0, 1, 0, 0);
+      //context.clearRect(0, 0, c.width, c.height);
+      alert("c.width: " + c.width);
       canvg('canvas', "svgs/"+examplesTable[lastLoadedThumbnail][1], {ignoreSVGMouse: true, scaleWidth: c.width, ignoreDimensions: true});
     }
 
