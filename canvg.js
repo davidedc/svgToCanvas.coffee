@@ -276,7 +276,7 @@ svSVGgContainerElement = (function() {
     return p;
   };
 
-  svSVGgContainerElement.prototype.draw = function() {
+  svSVGgContainerElement.prototype.draw = function(dom) {
     var cHeight, cWidth, ctx, e, viewBox, xRatio, yRatio;
     console.log("start of draw() function");
     ctx = this.ctxFromLoadXMLDoc;
@@ -345,7 +345,13 @@ svSVGgContainerElement = (function() {
       ctx.clearRect(0, 0, cWidth, cHeight);
       console.log("clearing: " + cWidth + " " + cHeight);
     }
-    return e.render(ctx);
+    e.render(ctx);
+    if (this.isFirstRender) {
+      this.isFirstRender = false;
+      if (typeof this.opts["renderCallback"] === "function") {
+        return this.opts["renderCallback"](dom);
+      }
+    }
   };
 
   svSVGgContainerElement.prototype.loadXmlDoc = function(ctx, dom, target) {
@@ -378,7 +384,7 @@ svSVGgContainerElement = (function() {
     waitingForImages = true;
     if (this.ImagesLoaded()) {
       waitingForImages = false;
-      this.draw();
+      this.draw(dom);
     }
     console.log(">>>>>> starting interval with fps: " + this.FRAMERATE);
     return this.intervalID = setInterval((function(_this) {
