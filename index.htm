@@ -223,13 +223,14 @@
 		
 	<a id="Goodfor"><h1>What is this good for?</h1></a>	
 	<div id="content">
-    <p>Implementations of "low level" Canvas primitives (say, draw a line or fill a path) are quite consistent and stable across browsers. On the other hand, SVG is large and complex format, and SVG implementations vary quite a lot and can produce <a id="Goodfor" href="https://en.wikipedia.org/wiki/Comparison_of_layout_engines_(Scalable_Vector_Graphics)#SVG_1.1_support">very</a> <a id="Goodfor" href="http://viziblr.com/news/2011/5/10/inline-svg-rendering-comparison-revisited-ndash-chrome-firef.html">different</a> <a id="Goodfor" href="http://blogs.msdn.com/b/saveenr/archive/2010/03/21/getting-started-with-svg-an-example-driven-exploration-of-basic-svg-usage-in-xhtml.aspx">results</a> for even simple files. So, this renderer might be useful to <i>consistently visualize</i> SVG files, or to <i>consistently rasterize</i> them: even if this renderer is slightly off, at least glitches can be consistently adjusted.</p>
+    <p>Implementations of "low level" Canvas primitives (say, draw a line or fill a path) are quite consistent and stable across browsers. On the other hand, SVG is large and complex format, and SVG implementations vary quite a lot and can produce <a href="https://en.wikipedia.org/wiki/Comparison_of_layout_engines_(Scalable_Vector_Graphics)#SVG_1.1_support">very</a> <a href="http://viziblr.com/news/2011/5/10/inline-svg-rendering-comparison-revisited-ndash-chrome-firef.html">different</a> <a href="http://blogs.msdn.com/b/saveenr/archive/2010/03/21/getting-started-with-svg-an-example-driven-exploration-of-basic-svg-usage-in-xhtml.aspx">results</a> for even simple files. So, this renderer might be useful to <i>consistently visualize</i> SVG files, or to <i>consistently rasterize</i> them: even if this renderer is slightly off, at least glitches can be consistently dealt with.</p>
 
     <p>You might find useful the rasterization part, say, to apply raster filters on your svgs, or for input to other library/system expecting raster input.</p>
 
-    <p>...or you might have the odd itch to hack/play with the rasterizer just for kicks or for custom fixes/effects.</p>
+    <p>...or you might have the odd itch to hack/play with the rasterizer just for kicks or for custom fixes/extensions.</p>
 
-    <p><strong>Note:</strong> if you just want to rasterize an SVG and you are not concerned with older browser versions or cross-browser differences <a id="Goodfor" href="http://stackoverflow.com/a/3769883">there is a simple way</a> to do <i>just</i> that with Canvas.</p>
+    <p><strong>Note:</strong> if you just want to rasterize an SVG and you are not concerned with older browser versions or cross-browser differences, you can <i>attempt</i> <a href="http://stackoverflow.com/a/3769883">this simple way</a> to do <i>just</i> that with Canvas - although it seems <a href="http://jsfiddle.net/Na6X5/548/">buggy</a> in many cases.</p>
+
 
 
 
