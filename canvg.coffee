@@ -28,7 +28,6 @@
 svg = undefined
 
 canvg = (target, s, opts) ->
-  
   # no parametrs, means that all the svg tags
   # are turned into canvases
   if not target? and not s? and not opts?
@@ -144,6 +143,7 @@ class svSVGgContainerElement
     @Element.clipPath = SVGclipPathElement
     @Element.filter = SVGfilterElement
     @Element.feMorphology = SVGfeMorphologyFilterPrimitiveElement
+    @Element.feComposite = SVGfeCompositeFilterPrimitiveElement
     @Element.feColorMatrix = SVGfeColorMatrixFilterPrimitiveElement
     @Element.feGaussianBlur = SVGfeGaussianBlurFilterPrimitiveElement
     @Element.title = SVGtitleDescriptiveElement
@@ -153,7 +153,6 @@ class svSVGgContainerElement
 
   AspectRatio: (ctx, aspectRatio, width, desiredWidth, height, desiredHeight, minX, minY, refX, refY) ->
     # aspect ratio - http://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
-    debugger;
     aspectRatio = svg.compressSpaces(aspectRatio)
     aspectRatio = aspectRatio.replace(/^defer\s/, "") # ignore defer
     align = aspectRatio.split(" ")[0] or "xMidYMid"
@@ -258,7 +257,7 @@ class svSVGgContainerElement
     else
       e = new SVGmissingElement(node)
     e.type = node.nodeName
-    e
+    return e
 
 
   # load from url
@@ -285,6 +284,7 @@ class svSVGgContainerElement
     p
 
   draw: (dom)->
+    debugger
     console.log "start of draw() function"
     ctx = @ctxFromLoadXMLDoc
     e = @eFromLoadXMLDoc
@@ -376,7 +376,6 @@ class svSVGgContainerElement
     @ctxFromLoadXMLDoc = ctx
     @eFromLoadXMLDoc = e
 
-    #debugger
     #svgWidth = parseInt(e.attributes.width.value.replace("px",""))
     #svgHeight = parseInt(e.attributes.height.value.replace("px",""))
     #@AspectRatio ctx, 1, svgWidth, target.width, svgHeight, target.height
@@ -496,8 +495,12 @@ class SVGElement
       for childNode in node.childNodes
         if childNode.nodeType is 1 #ELEMENT_NODE
           @addChild childNode, true
-        if @captureTextNodes and childNode.nodeType is 3 # TEXT_NODE
-          @addChild new SVGtspanTextContentElement(childNode), false
+        if @captureTextNodes and childNode.nodeType == 3
+          text = childNode.nodeValue or childNode.text or ''
+          if svg.trim(svg.compressSpaces(text)) != ''
+            @addChild (new SVGtspanTextContentElement(childNode)), false
+            # TEXT_NODE
+
       
       # add attributes
       for attribute in node.attributes
@@ -648,9 +651,24 @@ class SVGmissingElement extends SVGElement
     console.log "ERROR: Element '" + node.nodeName + "' not yet implemented."  if console
 
 
+
 class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
   constructor: (node) ->
     super node
+    @matrix = svg.ToNumberArray(@attribute('values').value)
+    switch @attribute('type').valueOrDefault('matrix')
+      # http://www.w3.org/TR/SVG/filters.html#feColorMatrixElement
+      when 'saturate'
+        s = @matrix[0]
+        @matrix = [0.213 + 0.787 * s, 0.715 - (0.715 * s), 0.072 - (0.072 * s), 0, 0, 0.213 - (0.213 * s), 0.715 + 0.285 * s, 0.072 - (0.072 * s), 0, 0, 0.213 - (0.213 * s), 0.715 - (0.715 * s), 0.072 + 0.928 * s, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1];
+      when 'hueRotate'
+        a = @matrix[0] * Math.PI / 180.0
+        c = (m1, m2, m3) ->
+          m1 + Math.cos(a) * m2 + Math.sin(a) * m3
+        @matrix = [c(0.213, 0.787, -0.213), c(0.715, -0.715, -0.715), c(0.072, -0.072, 0.928), 0, 0, c(0.213, -0.213, 0.143), c(0.715, 0.285, 0.140), c(0.072, -0.072, -0.283), 0, 0, c(0.213, -0.213, -0.787), c(0.715, -0.715, 0.715), c(0.072, 0.928, 0.072), 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1];
+      when 'luminanceToAlpha'
+        @matrix = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.2125, 0.7154, 0.0721, 0, 0, 0, 0, 0, 0, 1];
+
 
   imGet: (img, x, y, width, height, rgba) ->
     img[y * width * 4 + x * 4 + rgba]
@@ -668,10 +686,12 @@ class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
         r = @imGet(srcData.data, x, y, width, height, 0)
         g = @imGet(srcData.data, x, y, width, height, 1)
         b = @imGet(srcData.data, x, y, width, height, 2)
-        gray = (r + g + b) / 3
-        @imSet srcData.data, x, y, width, height, 0, gray
-        @imSet srcData.data, x, y, width, height, 1, gray
-        @imSet srcData.data, x, y, width, height, 2, gray
+        a = @imGet(srcData.data, x, y, width, height, 3)
+        @imSet srcData.data, x, y, width, height, 0, @matrix[0] * r + @matrix[1] * g + @matrix[2] * b + @matrix[3] * a + @matrix[4]
+        @imSet srcData.data, x, y, width, height, 1, @matrix[5] * r + @matrix[6] * g + @matrix[7] * b + @matrix[8] * a + @matrix[9]
+        @imSet srcData.data, x, y, width, height, 2, @matrix[10] * r + @matrix[11] * g + @matrix[12] * b + @matrix[13] * a + @matrix[14]
+        @imSet srcData.data, x, y, width, height, 3, @matrix[15] * r + @matrix[16] * g + @matrix[17] * b + @matrix[18] * a + @matrix[19]
+
     ctx.clearRect 0, 0, width, height
     ctx.putImageData srcData, 0, 0
     return
@@ -679,6 +699,14 @@ class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
 
 
 class SVGfeMorphologyFilterPrimitiveElement extends SVGElement
+  constructor: (node) ->
+    super node
+  
+  apply: (ctx, x, y, width, height) ->
+  # TODO: implement
+
+
+class SVGfeCompositeFilterPrimitiveElement extends SVGElement
   constructor: (node) ->
     super node
   
@@ -740,10 +768,19 @@ class SVGclipPathElement extends SVGElement
   apply: (ctx) ->
     #alert 'clipping'
     for child in @children
-      if child.path
+      if typeof child.path != 'undefined'
+        transform = null
+        if child.attribute('transform').hasValue()
+          transform = new TransformsList(child.attribute('transform').value)
+          transform.apply ctx
         child.path ctx
         ctx.clip()
+        if transform
+          transform.unapply ctx
+
     return
+
+
 
   render: (ctx) ->
   # NO RENDER
@@ -1076,7 +1113,7 @@ class SVGGradientElement extends SVGElement
       tempCtx.fillStyle = g
       tempSvg.render tempCtx
       return tempCtx.createPattern(c, "no-repeat")
-    g
+    return g
 
 
 class SVGradialGradientGradientElement extends SVGGradientElement
@@ -1104,7 +1141,7 @@ class SVGlinearGradientGradientElement extends SVGGradientElement
     super node
 
   getGradient: (ctx, element) ->
-    bb = element.getBoundingBox()
+    bb = if @gradientUnits() == 'objectBoundingBox' then element.getBoundingBox() else null
     if not @attribute("x1").hasValue() and not @attribute("y1").hasValue() and not @attribute("x2").hasValue() and not @attribute("y2").hasValue()
       @attribute("x1", true).value = 0
       @attribute("y1", true).value = 0
@@ -1216,6 +1253,22 @@ class SVGRenderedElement extends SVGElement
       ctx.lineJoin = @style("stroke-linejoin").value  
     if @style("stroke-miterlimit").hasValue()
       ctx.miterLimit = @style("stroke-miterlimit").value  
+    if @style('stroke-dasharray').hasValue() and @style('stroke-dasharray').value != 'none'
+      gaps = svg.ToNumberArray(@style('stroke-dasharray').value)
+      if typeof ctx.setLineDash != 'undefined'
+        ctx.setLineDash gaps
+      else if typeof ctx.webkitLineDash != 'undefined'
+        ctx.webkitLineDash = gaps
+      else if typeof ctx.mozDash != 'undefined'
+        ctx.mozDash = gaps
+      offset = @style('stroke-dashoffset').numValueOrDefault(1)
+      if typeof ctx.lineDashOffset != 'undefined'
+        ctx.lineDashOffset = offset
+      else if typeof ctx.webkitLineDashOffset != 'undefined'
+        ctx.webkitLineDashOffset = offset
+      else if typeof ctx.mozDashOffset != 'undefined'
+        ctx.mozDashOffset = offset
+
     
     # font
     daFont = new SVGFont
@@ -1230,8 +1283,8 @@ class SVGRenderedElement extends SVGElement
       transform.apply ctx
     
     # clip
-    if @attribute("clip-path").hasValue()
-      clip = @attribute("clip-path").getDefinition()
+    if @style("clip-path").hasValue()
+      clip = @style("clip-path").getDefinition()
       clip.apply ctx  if clip?
     
     # opacity
@@ -1529,9 +1582,9 @@ class SVGtextTextContentElement extends SVGRenderedElement
     new SVGBoundingBox(x, y - fontSize, x + Math.floor(fontSize * 2.0 / 3.0) * @children[0].getText().length, y)
 
   renderChildren: (ctx) ->
-    @textAnchor = @style('text-anchor').valueOrDefault('start')
     @x = @attribute('x').toPixels('x')
     @y = @attribute('y').toPixels('y')
+    #@x += @getAnchorDelta ctx, @, 0
     if @attribute('dx').hasValue()
       @x += @attribute('dx').toPixels('x')
     if @attribute('dy').hasValue()
@@ -1626,10 +1679,7 @@ class SVGElement extends SVGRenderedElement
     super ctx
     svg.ViewPort.RemoveCurrent()
 
-  setContext: (ctx) ->
-
-    debugger
-    
+  setContext: (ctx) ->    
     # initial values
     ctx.strokeStyle = "rgba(0,0,0,0)"
     ctx.lineCap = "butt"
@@ -1693,8 +1743,17 @@ class SVGGraphicsElement extends SVGRenderedElement
   renderChildren: (ctx) ->
     @path ctx
     svg.SVGMouse.checkPath this, ctx
-    ctx.fill()  unless ctx.fillStyle == ""
-    ctx.stroke()  unless ctx.strokeStyle == ""
+    unless ctx.fillStyle == ""
+      # TODO value 'inherit' is not handled
+      if @attribute('fill-rule').hasValue()
+        if @attribute('fill-rule').value != 'inherit'
+          ctx.fill @attribute('fill-rule').value
+        else
+          ctx.fill()
+      else
+        ctx.fill()
+    unless ctx.strokeStyle == ""
+      ctx.stroke()
     markers = @getMarkers()
     if markers?
       if @style("marker-start").isUrlDefinition()
@@ -2182,7 +2241,12 @@ class SVGpatternContainerElement extends SVGElement
   constructor: (node) ->
     super node
 
+  # NO RENDER, the pattern container just defines the pattern
+  # it will be rendered "later" via a fill referencing it
+  render: ->
+
   createPattern: (ctx, element) ->
+    debugger
     width = @attribute("width").toPixels("x", true)
     height = @attribute("height").toPixels("y", true)
 
@@ -2197,7 +2261,8 @@ class SVGpatternContainerElement extends SVGElement
     c.width = width
     c.height = height
     cctx = c.getContext("2d")
-    cctx.translate @attribute("x").toPixels("x", true), @attribute("y").toPixels("y", true)  if @attribute("x").hasValue() and @attribute("y").hasValue()
+    if @attribute("x").hasValue() and @attribute("y").hasValue()
+      cctx.translate(@attribute("x").toPixels("x", true), @attribute("y").toPixels("y", true))
 
     # render 3x3 grid so when we transform there's no white space on edges
     for x in [-1..1]
@@ -2259,6 +2324,13 @@ class TransformsList
       @transforms[i].apply ctx
     return
 
+  unapply: (ctx) ->
+    i = @transforms.length - 1
+    while i >= 0
+      @transforms[i].unapply ctx
+      i--
+    return
+
   applyToPoint: (p) ->
     for i in [0...@transforms.length]
       @transforms[i].applyToPoint p
@@ -2268,8 +2340,13 @@ class TransformsList
 class SVGscaleTransformType
   constructor: (s) ->
     @p = SVGPoint.pointsFromNumberArray(s)
+
   apply: (ctx) ->
     ctx.scale @p.x or 1.0, @p.y or @p.x or 1.0
+    return
+
+  unapply: (ctx) ->
+    ctx.scale 1.0 / @p.x or 1.0, 1.0 / @p.y or 1.0 / @p.x or 1.0
     return
 
   applyToPoint: (p) ->
@@ -2318,6 +2395,12 @@ class SVGrotateTransformType
     ctx.translate -@cx, -@cy
     return
 
+  unapply: (ctx) ->
+    ctx.translate @cx, @cy
+    ctx.rotate(-1 * @angle.toRadians())
+    ctx.translate -@cx, -@cy
+    return
+
   applyToPoint: (p) ->
     a = @angle.toRadians()
     p.applyTransform [1, 0, 0, 1, @p.x or 0.0, @p.y or 0.0]
@@ -2331,6 +2414,9 @@ class SVGtranslateTransformType
     @p = SVGPoint.pointsFromNumberArray(s)
   apply: (ctx) ->
     ctx.translate @p.x or 0.0, @p.y or 0.0
+    return
+  unapply: (ctx) ->
+    ctx.translate -1.0 * @p.x or 0.0, -1.0 * @p.y or 0.0
     return
   applyToPoint: (p) ->
     p.applyTransform [1, 0, 0, 1, @p.x or 0.0, @p.y or 0.0]
@@ -2580,7 +2666,7 @@ class SVGProperty
   # definition extensions
   # get the definition from the definitions table
   getDefinition: ->
-    name = @value.match(/#([^\)']+)/)
+    name = @value.match(/#([^\)'"]+)/)
     name = name[1]  if name
     name = @value  unless name
     if name == "" then return null
@@ -2593,10 +2679,19 @@ class SVGProperty
     def = @getDefinition()
     
     # gradient
-    return def.createGradient(svg.ctx, e, opacityProp)  if def? and def.createGradient
+    if def? and def.createGradient?
+      return def.createGradient(svg.ctx, e, opacityProp)
     
     # pattern
-    return def.createPattern(svg.ctx, e)  if def? and def.createPattern
+    if def? and def.createPattern?
+      if def.getHrefAttribute().hasValue()
+        pt = def.attribute('patternTransform')
+        def = def.getHrefAttribute().getDefinition()
+        if pt.hasValue()
+          def.attribute('patternTransform', true).value = pt.value
+      return def.createPattern(svg.ctx, e)
+
+
     null
 
 
