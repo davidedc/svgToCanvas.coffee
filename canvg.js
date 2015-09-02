@@ -653,7 +653,7 @@ SVGElement = (function() {
     if (this.style("display").value === "none") {
       return;
     }
-    if (this.attribute("visibility").value === "hidden") {
+    if (this.style("visibility").value === "hidden") {
       return;
     }
     ctx.save();
@@ -774,18 +774,25 @@ SVGfeColorMatrixFilterPrimitiveElement = (function(_super) {
   };
 
   SVGfeColorMatrixFilterPrimitiveElement.prototype.apply = function(ctx, x, y, width, height) {
-    var a, b, g, r, srcData, _i, _j;
+    var a, b, g, m, r, srcData, _i, _j;
     srcData = ctx.getImageData(0, 0, width, height);
+    m = (function(_this) {
+      return function(i, v) {
+        var mi;
+        mi = _this.matrix[i];
+        return mi * (mi < 0 ? v - 255 : v);
+      };
+    })(this);
     for (y = _i = 0; 0 <= height ? _i < height : _i > height; y = 0 <= height ? ++_i : --_i) {
       for (x = _j = 0; 0 <= width ? _j < width : _j > width; x = 0 <= width ? ++_j : --_j) {
         r = this.imGet(srcData.data, x, y, width, height, 0);
         g = this.imGet(srcData.data, x, y, width, height, 1);
         b = this.imGet(srcData.data, x, y, width, height, 2);
         a = this.imGet(srcData.data, x, y, width, height, 3);
-        this.imSet(srcData.data, x, y, width, height, 0, this.matrix[0] * r + this.matrix[1] * g + this.matrix[2] * b + this.matrix[3] * a + this.matrix[4]);
-        this.imSet(srcData.data, x, y, width, height, 1, this.matrix[5] * r + this.matrix[6] * g + this.matrix[7] * b + this.matrix[8] * a + this.matrix[9]);
-        this.imSet(srcData.data, x, y, width, height, 2, this.matrix[10] * r + this.matrix[11] * g + this.matrix[12] * b + this.matrix[13] * a + this.matrix[14]);
-        this.imSet(srcData.data, x, y, width, height, 3, this.matrix[15] * r + this.matrix[16] * g + this.matrix[17] * b + this.matrix[18] * a + this.matrix[19]);
+        this.imSet(srcData.data, x, y, width, height, 0, m(0, r) + m(1, g) + m(2, b) + m(3, a) + m(4, 1));
+        this.imSet(srcData.data, x, y, width, height, 1, m(5, r) + m(6, g) + m(7, b) + m(8, a) + m(9, 1));
+        this.imSet(srcData.data, x, y, width, height, 2, m(10, r) + m(11, g) + m(12, b) + m(13, a) + m(14, 1));
+        this.imSet(srcData.data, x, y, width, height, 3, m(15, r) + m(16, g) + m(17, b) + m(18, a) + m(19, 1));
       }
     }
     ctx.clearRect(0, 0, width, height);
@@ -1488,11 +1495,15 @@ SVGRenderedElement = (function(_super) {
 })(SVGElement);
 
 SVGuseGraphicsElement = (function(_super) {
+  var element;
+
   __extends(SVGuseGraphicsElement, _super);
 
   function SVGuseGraphicsElement() {
     return SVGuseGraphicsElement.__super__.constructor.apply(this, arguments);
   }
+
+  element = null;
 
   SVGuseGraphicsElement.prototype.contructor = function(node) {
     return SVGuseGraphicsElement.__super__.contructor.call(this, node);
@@ -1504,46 +1515,50 @@ SVGuseGraphicsElement = (function(_super) {
       ctx.translate(this.attribute("x").toPixels("x"), 0);
     }
     if (this.attribute("y").hasValue()) {
-      return ctx.translate(0, this.attribute("y").toPixels("y"));
+      ctx.translate(0, this.attribute("y").toPixels("y"));
     }
-  };
-
-  SVGuseGraphicsElement.prototype.getDefinition = function() {
-    var element;
-    element = this.getHrefAttribute().getDefinition();
-    if (this.attribute("width").hasValue()) {
-      element.attribute("width", true).value = this.attribute("width").value;
-    }
-    if (this.attribute("height").hasValue()) {
-      element.attribute("height", true).value = this.attribute("height").value;
-    }
-    return element;
+    return this.element = this.getHrefAttribute().getDefinition();
   };
 
   SVGuseGraphicsElement.prototype.path = function(ctx) {
-    var element;
-    element = this.getDefinition();
-    if (element != null) {
-      return element.path(ctx);
+    this.element = this.getHrefAttribute().getDefinition();
+    if (this.element != null) {
+      return this.element.path(ctx);
     }
   };
 
   SVGuseGraphicsElement.prototype.getBoundingBox = function() {
-    var element;
-    element = this.getDefinition();
-    if (element != null) {
-      return element.getBoundingBox();
+    this.element = this.getHrefAttribute().getDefinition();
+    if (this.element != null) {
+      return this.element.getBoundingBox();
     }
   };
 
   SVGuseGraphicsElement.prototype.renderChildren = function(ctx) {
-    var element, oldParent;
-    element = this.getDefinition();
-    if (element != null) {
-      oldParent = element.parent;
-      element.parent = null;
-      element.render(ctx);
-      element.parent = oldParent;
+    var oldParent, tempSvg;
+    this.element = this.getHrefAttribute().getDefinition();
+    if (this.element != null) {
+      tempSvg = this.element;
+      if (this.element.type === 'symbol') {
+        tempSvg = new SVGElement();
+        tempSvg.type = 'svg';
+        tempSvg.attributes['viewBox'] = new SVGProperty('viewBox', this.element.attribute('viewBox').value);
+        tempSvg.attributes['preserveAspectRatio'] = new SVGProperty('preserveAspectRatio', this.element.attribute('preserveAspectRatio').value);
+        tempSvg.attributes['overflow'] = new SVGProperty('overflow', this.element.attribute('overflow').value);
+        tempSvg.children = this.element.children;
+      }
+      if (tempSvg.type === 'svg') {
+        if (this.attribute('width').hasValue()) {
+          tempSvg.attributes['width'] = new SVGProperty('width', this.attribute('width').value);
+        }
+        if (this.attribute('height').hasValue()) {
+          tempSvg.attributes['height'] = new SVGProperty('height', this.attribute('height').value);
+        }
+      }
+      oldParent = tempSvg.parent;
+      tempSvg.parent = null;
+      tempSvg.render(ctx);
+      tempSvg.parent = oldParent;
     }
   };
 
@@ -1579,18 +1594,10 @@ SVGsymbolStructuralElement = (function(_super) {
   }
 
   SVGsymbolStructuralElement.prototype.setContext = function(ctx) {
-    var height, minX, minY, viewBox, width;
-    SVGsymbolStructuralElement.__super__.setContext.call(this, ctx);
-    if (this.attribute("viewBox").hasValue()) {
-      viewBox = svg.ToNumberArray(this.attribute("viewBox").value);
-      minX = viewBox[0];
-      minY = viewBox[1];
-      width = viewBox[2];
-      height = viewBox[3];
-      svg.AspectRatio(ctx, this.attribute("preserveAspectRatio").value, this.attribute("width").toPixels("x"), width, this.attribute("height").toPixels("y"), height, minX, minY);
-      return svg.ViewPort.SetCurrent(viewBox[2], viewBox[3]);
-    }
+    return SVGsymbolStructuralElement.__super__.setContext.call(this, ctx);
   };
+
+  SVGsymbolStructuralElement.prototype.render = function() {};
 
   return SVGsymbolStructuralElement;
 
@@ -2062,13 +2069,15 @@ SVGElement = (function(_super) {
         x = -this.attribute("refX").toPixels("x");
         y = -this.attribute("refY").toPixels("y");
       }
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(width, y);
-      ctx.lineTo(width, height);
-      ctx.lineTo(x, height);
-      ctx.closePath();
-      ctx.clip();
+      if (this.attribute('overflow').valueOrDefault('hidden') !== 'visible') {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(width, y);
+        ctx.lineTo(width, height);
+        ctx.lineTo(x, height);
+        ctx.closePath();
+        ctx.clip();
+      }
     }
     svg.ViewPort.SetCurrent(width, height);
     if (this.attribute("viewBox").hasValue()) {

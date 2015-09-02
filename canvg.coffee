@@ -591,7 +591,7 @@ class SVGElement
       return  
     
     # don't render visibility=hidden
-    if @attribute("visibility").value == "hidden"
+    if @style("visibility").value == "hidden"
       return
     ctx.save()
     if @attribute("mask").hasValue() # mask
@@ -675,11 +675,13 @@ class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
   imSet: (img, x, y, width, height, rgba, val) ->
     img[y * width * 4 + x * 4 + rgba] = val
 
-  apply: (ctx, x, y, width, height) ->
-    
-    # only supporting grayscale for now per Issue 195, need to extend to all matrix
+  apply: (ctx, x, y, width, height) ->    
     # assuming x==0 && y==0 for now
     srcData = ctx.getImageData(0, 0, width, height)
+
+    m = (i, v) =>
+      mi = @matrix[i]
+      return mi * (if mi < 0 then v - 255 else v)
 
     for y in [0...height]
       for x in [0...width]
@@ -687,10 +689,11 @@ class SVGfeColorMatrixFilterPrimitiveElement extends SVGElement
         g = @imGet(srcData.data, x, y, width, height, 1)
         b = @imGet(srcData.data, x, y, width, height, 2)
         a = @imGet(srcData.data, x, y, width, height, 3)
-        @imSet srcData.data, x, y, width, height, 0, @matrix[0] * r + @matrix[1] * g + @matrix[2] * b + @matrix[3] * a + @matrix[4]
-        @imSet srcData.data, x, y, width, height, 1, @matrix[5] * r + @matrix[6] * g + @matrix[7] * b + @matrix[8] * a + @matrix[9]
-        @imSet srcData.data, x, y, width, height, 2, @matrix[10] * r + @matrix[11] * g + @matrix[12] * b + @matrix[13] * a + @matrix[14]
-        @imSet srcData.data, x, y, width, height, 3, @matrix[15] * r + @matrix[16] * g + @matrix[17] * b + @matrix[18] * a + @matrix[19]
+
+        @imSet srcData.data, x, y, width, height, 0, m(0, r) + m(1, g) + m(2, b) + m(3, a) + m(4, 1)
+        @imSet srcData.data, x, y, width, height, 1, m(5, r) + m(6, g) + m(7, b) + m(8, a) + m(9, 1)
+        @imSet srcData.data, x, y, width, height, 2, m(10, r) + m(11, g) + m(12, b) + m(13, a) + m(14, 1)
+        @imSet srcData.data, x, y, width, height, 3, m(15, r) + m(16, g) + m(17, b) + m(18, a) + m(19, 1)
 
     ctx.clearRect 0, 0, width, height
     ctx.putImageData srcData, 0, 0
@@ -1295,6 +1298,8 @@ class SVGRenderedElement extends SVGElement
 # see http://www.w3.org/TR/SVG/struct.html#UseElement, picking one.
 class SVGuseGraphicsElement extends SVGRenderedElement
 
+  element = null
+
   contructor: (node) ->
     super node
   
@@ -1302,29 +1307,38 @@ class SVGuseGraphicsElement extends SVGRenderedElement
     super ctx
     ctx.translate @attribute("x").toPixels("x"), 0  if @attribute("x").hasValue()
     ctx.translate 0, @attribute("y").toPixels("y")  if @attribute("y").hasValue()
-
-  getDefinition: ->
-    element = @getHrefAttribute().getDefinition()
-    element.attribute("width", true).value = @attribute("width").value  if @attribute("width").hasValue()
-    element.attribute("height", true).value = @attribute("height").value  if @attribute("height").hasValue()
-    element
+    @element = @getHrefAttribute().getDefinition()
 
   path: (ctx) ->
-    element = @getDefinition()
-    element.path ctx  if element?
+    @element = @getHrefAttribute().getDefinition()
+    @element.path ctx  if @element?
 
   getBoundingBox: ->
-    element = @getDefinition()
-    element.getBoundingBox()  if element?
+    @element = @getHrefAttribute().getDefinition()
+    @element.getBoundingBox()  if @element?
 
   renderChildren: (ctx) ->
-    element = @getDefinition()
-    if element?
-      # temporarily detach from parent and render
-      oldParent = element.parent
-      element.parent = null
-      element.render ctx
-      element.parent = oldParent
+    @element = @getHrefAttribute().getDefinition()
+    if @element?
+      tempSvg = @element
+      if @element.type == 'symbol'
+        # render me using a temporary svg element in symbol cases (http://www.w3.org/TR/SVG/struct.html#UseElement)
+        tempSvg = new SVGElement()
+        tempSvg.type = 'svg'
+        tempSvg.attributes['viewBox'] = new SVGProperty('viewBox', @element.attribute('viewBox').value)
+        tempSvg.attributes['preserveAspectRatio'] = new SVGProperty('preserveAspectRatio', @element.attribute('preserveAspectRatio').value)
+        tempSvg.attributes['overflow'] = new SVGProperty('overflow', @element.attribute('overflow').value)
+        tempSvg.children = @element.children
+      if tempSvg.type == 'svg'
+        # if symbol or svg, inherit width/height from me
+        if @attribute('width').hasValue()
+          tempSvg.attributes['width'] = new SVGProperty('width', @attribute('width').value)
+        if @attribute('height').hasValue()
+          tempSvg.attributes['height'] = new SVGProperty('height', @attribute('height').value)
+      oldParent = tempSvg.parent
+      tempSvg.parent = null
+      tempSvg.render ctx
+      tempSvg.parent = oldParent
     return
 
 
@@ -1346,17 +1360,10 @@ class SVGsymbolStructuralElement extends SVGRenderedElement
   
   setContext: (ctx) ->
     super ctx
-    
-    # viewbox
-    if @attribute("viewBox").hasValue()
-      viewBox = svg.ToNumberArray(@attribute("viewBox").value)
-      minX = viewBox[0]
-      minY = viewBox[1]
-      width = viewBox[2]
-      height = viewBox[3]
-      svg.AspectRatio ctx, @attribute("preserveAspectRatio").value, @attribute("width").toPixels("x"), width, @attribute("height").toPixels("y"), height, minX, minY
-      svg.ViewPort.SetCurrent viewBox[2], viewBox[3]
 
+  # NO RENDER
+  render: ->
+    
 class SVGimageGraphicsElement extends SVGRenderedElement
   constructor: (node) ->
     super node
@@ -1703,13 +1710,14 @@ class SVGElement extends SVGRenderedElement
       if @attribute("refX").hasValue() and @attribute("refY").hasValue()
         x = -@attribute("refX").toPixels("x")
         y = -@attribute("refY").toPixels("y")
-      ctx.beginPath()
-      ctx.moveTo x, y
-      ctx.lineTo width, y
-      ctx.lineTo width, height
-      ctx.lineTo x, height
-      ctx.closePath()
-      ctx.clip()
+      if @attribute('overflow').valueOrDefault('hidden') != 'visible'
+        ctx.beginPath()
+        ctx.moveTo x, y
+        ctx.lineTo width, y
+        ctx.lineTo width, height
+        ctx.lineTo x, height
+        ctx.closePath()
+        ctx.clip()
     svg.ViewPort.SetCurrent width, height
     
     # viewbox
