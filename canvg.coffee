@@ -31,7 +31,7 @@ canvg = (target, s, opts) ->
   # no parametrs, means that all the svg tags
   # are turned into canvases
   if not target? and not s? and not opts?
-    svgTags = document.getElementsByTagName("svg")
+    svgTags = document.querySelectorAll("svg")
     for eachTag in svgTags
       svgTag = eachTag
       c = document.createElement("canvas")
