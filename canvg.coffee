@@ -1373,6 +1373,8 @@ class SVGimageGraphicsElement extends SVGRenderedElement
     @loaded = false
     unless isSvg
       @img = document.createElement("img")
+      if svg.opts['useCORS'] == true
+        @img.crossOrigin = 'Anonymous'
       self = this
       @img.onload = ->
         self.loaded = true
