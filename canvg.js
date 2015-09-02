@@ -9,7 +9,7 @@ svg = void 0;
 canvg = function(target, s, opts) {
   var c, ctx, div, eachTag, svgTag, svgTags, _i, _len;
   if ((target == null) && (s == null) && (opts == null)) {
-    svgTags = document.getElementsByTagName("svg");
+    svgTags = document.querySelectorAll("svg");
     for (_i = 0, _len = svgTags.length; _i < _len; _i++) {
       eachTag = svgTags[_i];
       svgTag = eachTag;
@@ -1615,6 +1615,9 @@ SVGimageGraphicsElement = (function(_super) {
     this.loaded = false;
     if (!isSvg) {
       this.img = document.createElement("img");
+      if (svg.opts['useCORS'] === true) {
+        this.img.crossOrigin = 'Anonymous';
+      }
       self = this;
       this.img.onload = function() {
         return self.loaded = true;
@@ -1900,12 +1903,14 @@ SVGtextTextContentElement = (function(_super) {
   }
 
   SVGtextTextContentElement.prototype.setContext = function(ctx) {
+    var textBaseline;
     SVGtextTextContentElement.__super__.setContext.call(this, ctx);
-    if (this.style("dominant-baseline").hasValue()) {
-      ctx.textBaseline = this.style("dominant-baseline").value;
+    textBaseline = this.style('dominant-baseline').toTextBaseline();
+    if (textBaseline === null) {
+      textBaseline = this.style('alignment-baseline').toTextBaseline();
     }
-    if (this.style("alignment-baseline").hasValue()) {
-      ctx.textBaseline = this.style("alignment-baseline").value;
+    if (textBaseline !== null) {
+      ctx.textBaseline = textBaseline;
     }
   };
 
@@ -2044,6 +2049,9 @@ SVGElement = (function(_super) {
     ctx.lineCap = "butt";
     ctx.lineJoin = "miter";
     ctx.miterLimit = 4;
+    if (typeof ctx.font !== 'undefined' && typeof window.getComputedStyle !== 'undefined') {
+      ctx.font = window.getComputedStyle(ctx.canvas).getPropertyValue('font');
+    }
     SVGElement.__super__.setContext.call(this, ctx);
     if (!this.attribute("x").hasValue()) {
       this.attribute("x", true).value = 0;
@@ -3387,10 +3395,26 @@ SVGFont = (function() {
 })();
 
 SVGProperty = (function() {
+  SVGProperty.prototype.textBaselineMapping = null;
+
   function SVGProperty(name, value) {
     this.name = name;
     this.value = value;
+    this.textBaselineMapping = {
+      'baseline': 'alphabetic',
+      'before-edge': 'top',
+      'text-before-edge': 'top',
+      'middle': 'middle',
+      'central': 'middle',
+      'after-edge': 'bottom',
+      'text-after-edge': 'bottom',
+      'ideographic': 'ideographic',
+      'alphabetic': 'alphabetic',
+      'hanging': 'hanging'
+    };
   }
+
+  SVGProperty.prototype['mathematical'] = 'alphabetic';
 
   SVGProperty.prototype.getValue = function() {
     return this.value;
@@ -3567,6 +3591,13 @@ SVGProperty = (function() {
       return this.numValue();
     }
     return this.numValue() * (Math.PI / 180.0);
+  };
+
+  SVGProperty.prototype.toTextBaseline = function() {
+    if (!this.hasValue()) {
+      return null;
+    }
+    return this.textBaselineMapping[this.value];
   };
 
   return SVGProperty;

@@ -1580,8 +1580,12 @@ class SVGtextTextContentElement extends SVGRenderedElement
   setContext: (ctx) ->
     #alert 'text.setContext'
     super ctx
-    ctx.textBaseline = @style("dominant-baseline").value  if @style("dominant-baseline").hasValue()
-    ctx.textBaseline = @style("alignment-baseline").value  if @style("alignment-baseline").hasValue()
+
+    textBaseline = @style('dominant-baseline').toTextBaseline()
+    if textBaseline == null
+      textBaseline = @style('alignment-baseline').toTextBaseline()
+    if textBaseline != null
+      ctx.textBaseline = textBaseline
     return
 
   getBoundingBox: ->
@@ -1689,11 +1693,15 @@ class SVGElement extends SVGRenderedElement
     svg.ViewPort.RemoveCurrent()
 
   setContext: (ctx) ->    
-    # initial values
+    # initial values and defaults
     ctx.strokeStyle = "rgba(0,0,0,0)"
     ctx.lineCap = "butt"
     ctx.lineJoin = "miter"
     ctx.miterLimit = 4
+
+    if typeof(ctx.font) != 'undefined' and typeof(window.getComputedStyle) != 'undefined'
+      ctx.font = window.getComputedStyle(ctx.canvas).getPropertyValue('font')
+
     super ctx
     
     # create new view port
@@ -2638,7 +2646,22 @@ class SVGFont
 
 
 class SVGProperty
+
+  textBaselineMapping: null
+
   constructor: (@name, @value) ->
+    @textBaselineMapping =
+      'baseline': 'alphabetic'
+      'before-edge': 'top'
+      'text-before-edge': 'top'
+      'middle': 'middle'
+      'central': 'middle'
+      'after-edge': 'bottom'
+      'text-after-edge': 'bottom'
+      'ideographic': 'ideographic'
+      'alphabetic': 'alphabetic'
+      'hanging': 'hanging'
+  'mathematical': 'alphabetic'
 
   getValue: ->
     @value
@@ -2759,6 +2782,10 @@ class SVGProperty
     @numValue() * (Math.PI / 180.0)
 
 
+  toTextBaseline: ->
+    if !@hasValue()
+      return null
+    @textBaselineMapping[@value]
 
 ###
 A class to parse color values
