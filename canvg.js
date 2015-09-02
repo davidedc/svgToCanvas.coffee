@@ -534,7 +534,7 @@ SVGElement = (function() {
         if (childNode.nodeType === 1) {
           this.addChild(childNode, true);
         }
-        if (this.captureTextNodes && childNode.nodeType === 3) {
+        if (this.captureTextNodes && (childNode.nodeType === 3 || childNode.nodeType === 4)) {
           text = childNode.nodeValue || childNode.text || '';
           if (svg.trim(svg.compressSpaces(text)) !== '') {
             this.addChild(new SVGtspanTextContentElement(childNode), false);

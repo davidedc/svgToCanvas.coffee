@@ -495,7 +495,7 @@ class SVGElement
       for childNode in node.childNodes
         if childNode.nodeType is 1 #ELEMENT_NODE
           @addChild childNode, true
-        if @captureTextNodes and childNode.nodeType == 3
+        if @captureTextNodes and (childNode.nodeType == 3 or childNode.nodeType == 4)
           text = childNode.nodeValue or childNode.text or ''
           if svg.trim(svg.compressSpaces(text)) != ''
             @addChild (new SVGtspanTextContentElement(childNode)), false
