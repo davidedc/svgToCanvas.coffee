@@ -2134,9 +2134,9 @@ SVGGraphicsElement = (function(_super) {
     this.path(ctx);
     svg.SVGMouse.checkPath(this, ctx);
     if (ctx.fillStyle !== "") {
-      if (this.attribute('fill-rule').hasValue()) {
-        if (this.attribute('fill-rule').value !== 'inherit') {
-          ctx.fill(this.attribute('fill-rule').value);
+      if (this.style('fill-rule').hasValue()) {
+        if (this.style('fill-rule').value !== 'inherit') {
+          ctx.fill(this.style('fill-rule').value);
         } else {
           ctx.fill();
         }

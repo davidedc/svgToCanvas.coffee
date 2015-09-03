@@ -1767,9 +1767,9 @@ class SVGGraphicsElement extends SVGRenderedElement
     svg.SVGMouse.checkPath this, ctx
     unless ctx.fillStyle == ""
       # TODO value 'inherit' is not handled
-      if @attribute('fill-rule').hasValue()
-        if @attribute('fill-rule').value != 'inherit'
-          ctx.fill @attribute('fill-rule').value
+      if @style('fill-rule').hasValue()
+        if @style('fill-rule').value != 'inherit'
+          ctx.fill @style('fill-rule').value
         else
           ctx.fill()
       else
