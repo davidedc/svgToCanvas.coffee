@@ -620,7 +620,7 @@ SVGElement = (function() {
     return svg.EmptyProperty;
   };
 
-  SVGElement.prototype.style = function(name, createIfNotExists) {
+  SVGElement.prototype.style = function(name, createIfNotExists, skipAncestors) {
     var a, p, ps, s;
     if (this.styles === void 0) {
       console.trace();
@@ -634,11 +634,13 @@ SVGElement = (function() {
       this.styles[name] = a;
       return a;
     }
-    p = this.parent;
-    if (p != null) {
-      ps = p.style(name);
-      if ((ps != null) && ps.hasValue()) {
-        return ps;
+    if (skipAncestors !== true) {
+      p = this.parent;
+      if (p != null) {
+        ps = p.style(name);
+        if (ps != null ? ps.hasValue() : void 0) {
+          return ps;
+        }
       }
     }
     if (createIfNotExists === true) {
@@ -1459,7 +1461,7 @@ SVGRenderedElement = (function(_super) {
         ctx.setLineDash(gaps);
       } else if (typeof ctx.webkitLineDash !== 'undefined') {
         ctx.webkitLineDash = gaps;
-      } else if (typeof ctx.mozDash !== 'undefined') {
+      } else if ((typeof ctx.mozDash !== 'undefined') && !(gaps.length === 1 && gaps[0] === 0)) {
         ctx.mozDash = gaps;
       }
       offset = this.style('stroke-dashoffset').numValueOrDefault(1);
@@ -1479,8 +1481,8 @@ SVGRenderedElement = (function(_super) {
       transform = new TransformsList(this.attribute("transform").value);
       transform.apply(ctx);
     }
-    if (this.style("clip-path").hasValue()) {
-      clip = this.style("clip-path").getDefinition();
+    if (this.style("clip-path", false, true).hasValue()) {
+      clip = this.style("clip-path", false, true).getDefinition();
       if (clip != null) {
         clip.apply(ctx);
       }

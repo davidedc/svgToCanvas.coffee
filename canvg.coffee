@@ -563,7 +563,7 @@ class SVGElement
 
   
   # get or create style, crawls up node tree
-  style: (name, createIfNotExists) ->
+  style: (name, createIfNotExists, skipAncestors) ->
     #console.log "name, createIfNotExists " + name + " " + createIfNotExists
     #console.log "@styles " + @styles + " class name: " + this.constructor.name
     if @styles == undefined then console.trace()
@@ -573,10 +573,14 @@ class SVGElement
     if a? and a.hasValue()
       @styles[name] = a # move up to me to cache
       return a
-    p = @parent
-    if p?
-      ps = p.style(name)
-      return ps  if ps? and ps.hasValue()
+
+    if skipAncestors != true
+      p = @parent
+      if p?
+        ps = p.style(name)
+        if ps?.hasValue()
+          return ps
+
     if createIfNotExists is true
       s = new SVGProperty(name, "")
       @styles[name] = s
@@ -1262,7 +1266,7 @@ class SVGRenderedElement extends SVGElement
         ctx.setLineDash gaps
       else if typeof ctx.webkitLineDash != 'undefined'
         ctx.webkitLineDash = gaps
-      else if typeof ctx.mozDash != 'undefined'
+      else if (typeof ctx.mozDash != 'undefined') and !(gaps.length==1 and gaps[0]==0)
         ctx.mozDash = gaps
       offset = @style('stroke-dashoffset').numValueOrDefault(1)
       if typeof ctx.lineDashOffset != 'undefined'
@@ -1286,8 +1290,8 @@ class SVGRenderedElement extends SVGElement
       transform.apply ctx
     
     # clip
-    if @style("clip-path").hasValue()
-      clip = @style("clip-path").getDefinition()
+    if @style("clip-path", false, true).hasValue()
+      clip = @style("clip-path", false, true).getDefinition()
       clip.apply ctx  if clip?
     
     # opacity
